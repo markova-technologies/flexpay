@@ -1,0 +1,138 @@
+.ops-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fp-sp-6);
+}
+
+.ops-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fp-sp-4);
+  flex-wrap: wrap;
+}
+
+.ops-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--fp-sp-4);
+}
+
+/* Recon Card */
+.ops-recon-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fp-sp-5);
+  border-left: 3px solid var(--fp-benefit);
+}
+
+.ops-recon-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fp-sp-4);
+  flex-wrap: wrap;
+}
+
+.ops-recon-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--fp-sp-3);
+}
+.ops-recon-title-wrap h3 {
+  font-size: 1.0625rem;
+  margin-bottom: 2px;
+}
+.ops-recon-title-wrap p {
+  font-size: 0.8125rem;
+}
+
+.ops-recon-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--fp-success-dim);
+  border: 1px solid rgba(34, 212, 122, 0.2);
+  color: var(--fp-success);
+  padding: 6px 14px;
+  border-radius: var(--fp-r-pill);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.ops-recon-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--fp-sp-4);
+}
+
+.ops-recon-metric {
+  background: var(--fp-surface-2);
+  border: 1px solid var(--fp-border);
+  border-radius: var(--fp-r-md);
+  padding: var(--fp-sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ops-recon-metric__val {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--fp-text-primary);
+}
+
+.ops-recon-metric__match {
+  font-size: 0.75rem;
+  color: var(--fp-success);
+}
+
+.ops-recon-result-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fp-sp-3);
+  background: rgba(34, 212, 122, 0.08);
+  border: 1px solid rgba(34, 212, 122, 0.3);
+  border-radius: var(--fp-r-md);
+  padding: var(--fp-sp-4);
+  font-size: 0.8125rem;
+  color: var(--fp-text-primary);
+}
+.ops-recon-result-banner strong {
+  display: block;
+  color: var(--fp-success);
+  margin-bottom: 2px;
+}
+
+/* Status Counters */
+.ops-status-counters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--fp-sp-3);
+}
+
+.ops-status-pill {
+  padding: var(--fp-sp-4);
+  border-radius: var(--fp-r-md);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--fp-surface-2);
+  border: 1px solid var(--fp-border);
+}
+
+.ops-status-pill strong {
+  font-size: 1.5rem;
+  font-family: var(--fp-font-mono);
+  font-weight: 700;
+}
+
+.ops-status-pill span {
+  font-size: 0.75rem;
+  color: var(--fp-text-secondary);
+}
+
+.ops-status-pill--completed strong { color: var(--fp-success); }
+.ops-status-pill--pending strong { color: var(--fp-pending); }
+.ops-status-pill--reversed strong { color: var(--fp-reversed); }
+.ops-status-pill--failed strong { color: var(--fp-danger); }

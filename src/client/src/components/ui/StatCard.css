@@ -1,0 +1,92 @@
+.stat-card {
+  background: var(--fp-surface-1);
+  border: 1px solid var(--fp-border);
+  border-radius: var(--fp-r-lg);
+  padding: var(--fp-sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fp-sp-2);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--fp-shadow-sm);
+  transition: transform 160ms var(--fp-ease-out),
+              border-color 160ms ease,
+              box-shadow 160ms ease;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+}
+
+.stat-card:hover {
+  border-color: var(--fp-border-strong);
+  box-shadow: var(--fp-shadow-md);
+  transform: translateY(-1px);
+}
+
+.stat-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stat-card__icon {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--fp-r-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fp-surface-2);
+  color: var(--fp-text-secondary);
+  border: 1px solid var(--fp-border);
+}
+
+.stat-card__value {
+  font-size: 1.625rem;
+  font-weight: 700;
+  color: var(--fp-text-primary);
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+
+.stat-card__sub {
+  font-size: 0.8125rem;
+  color: var(--fp-text-secondary);
+  line-height: 1.4;
+}
+
+/* Accents */
+.stat-card--benefit {
+  border-left: 3px solid var(--fp-benefit);
+}
+.stat-card--benefit .stat-card__icon {
+  background: var(--fp-benefit-dim);
+  color: var(--fp-benefit);
+  border-color: var(--fp-benefit-border);
+}
+
+.stat-card--salary {
+  border-left: 3px solid var(--fp-salary);
+}
+.stat-card--salary .stat-card__icon {
+  background: var(--fp-salary-dim);
+  color: var(--fp-salary);
+  border-color: var(--fp-salary-border);
+}
+
+.stat-card--success {
+  border-left: 3px solid var(--fp-success);
+}
+.stat-card--success .stat-card__icon {
+  background: var(--fp-success-dim);
+  color: var(--fp-success);
+  border-color: var(--fp-benefit-border);
+}

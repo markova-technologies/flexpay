@@ -90,11 +90,31 @@ To maintain institutional credibility:
 
 ---
 
-## 5. Implementation Recommendations for Agent 2 & Agent 3
+## 5. Skills & Animation Library Installation Summary
 
-1. **Frontend Stack:** Clean React (Vite) + Vanilla CSS or standard modern utilities.
-2. **Component Architecture:**
-   - `OrderSummary`: Displays ETB 2,000 total, merchant metadata, and eligibility checks.
-   - `BenefitSplitCard`: Visual breakdown of ETB 1,500 employer coverage vs. ETB 500 employee co-pay.
-   - `MpesaAuthorizer`: Phone number input (`2517XXXXXXXX`), USSD push trigger, live polling status indicator.
-   - `ReconciliationConsole`: Audit view showing ledger credits/debits, transaction reference, and reversal triggers.
+| Tool / Skill | Version / Source | Installation Command / Location | Verification Status |
+|---|---|---|---|
+| `ui-ux-pro-max` | Latest | `npx ui-ux-pro-max-cli init --ai antigravity` → `.agents/skills/ui-ux-pro-max/` | Verified & Operational |
+| `design-taste-frontend` | v2 (Leonxlnx) | `npx skills add ...` → `.agents/skills/design-taste-frontend/` | Verified & Operational |
+| Emil Kowalski Skills | Latest (8 skills) | `npx skills@latest add emilkowalski/skills` → `.agents/skills/` | Verified & Operational |
+| `scroll-craft` | Latest (Nate Herkai) | `npx -y skills add nateherkai/scroll-craft --skill scrollcraft` → `.agents/skills/scroll-craft/` | Verified & Operational |
+| `motion` | ^12.34.0 | `npm --prefix src/client install motion` → `src/client/node_modules/motion` | Verified (`motion/react` in SplitBar.jsx) |
+| `@playwright/test` | ^1.58.2 | Root devDependency | Verified (8/8 browser tests green) |
+
+---
+
+## 6. End-to-End Test Suite Verification
+
+Playwright suite executed via `npm run test:e2e` against live client and simulated Safaricom M-PESA orchestrator:
+
+1. `Duplicate click prevention: button enters loading state and disables` — **PASSED** (10.3s)
+2. `Ineligible merchant policy blocks employer co-funding` — **PASSED** (10.4s)
+3. `Mobile viewport (375x667) renders mobile header, bottom nav, and drawer toggle` — **PASSED** (4.3s)
+4. `User cancelled M-PESA USSD prompt (ResultCode 1032)` — **PASSED** (15.8s)
+5. `Core Demo: ETB 2,000 order co-funded by ETB 1,500 benefit and ETB 500 salary-linked M-PESA` — **PASSED** (16.0s)
+6. `Refund request workflow updates status and restores benefit` — **PASSED** (6.4s)
+7. `Accessible semantic hierarchy and skip to main content` — **PASSED** (3.7s)
+8. `Operations Console allows running End-of-Day reconciliation audit` — **PASSED** (5.4s)
+
+**Total:** 8 passed (34.6s), 0 failed.  
+**Unit & API Suite:** 33 passed, 0 failed.

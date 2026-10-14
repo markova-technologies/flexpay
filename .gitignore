@@ -14,6 +14,12 @@ node_modules/
 *.cert
 *.pfx
 
+# Databases
+data/*.sqlite*
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+
 # Production build outputs
 dist/
 build/
@@ -41,3 +47,8 @@ lerna-debug.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class

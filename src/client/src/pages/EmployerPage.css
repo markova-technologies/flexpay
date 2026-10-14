@@ -1,0 +1,153 @@
+.employer-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fp-sp-6);
+}
+
+.employer-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--fp-sp-4);
+}
+
+.employer-content-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: var(--fp-sp-6);
+  align-items: start;
+}
+
+.employer-table-scroll {
+  overflow-x: auto;
+}
+
+.employer-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.employer-table th {
+  background: var(--fp-surface-2);
+  padding: 10px 14px;
+  color: var(--fp-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--fp-border);
+}
+
+.employer-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--fp-border);
+  color: var(--fp-text-primary);
+}
+
+.employer-phone {
+  display: block;
+  font-size: 0.6875rem;
+  color: var(--fp-text-muted);
+}
+
+.employer-active-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--fp-r-pill);
+  background: var(--fp-success-dim);
+  color: var(--fp-success);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+/* Policy Controls */
+.employer-policy-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fp-sp-4);
+}
+
+.employer-cat-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fp-sp-3);
+  margin-bottom: var(--fp-sp-4);
+}
+
+.employer-cat-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: var(--fp-surface-1);
+  border: 1px solid var(--fp-border);
+  border-radius: var(--fp-r-md);
+}
+
+.employer-cat-item strong {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--fp-text-primary);
+}
+
+.employer-cat-sub {
+  font-size: 0.75rem;
+  color: var(--fp-text-muted);
+}
+
+.employer-cat-toggle {
+  width: 42px;
+  height: 24px;
+  border-radius: var(--fp-r-pill);
+  background: var(--fp-surface-3);
+  border: 1px solid var(--fp-border);
+  position: relative;
+  cursor: pointer;
+  padding: 2px;
+  transition: background 180ms ease;
+}
+
+.employer-cat-toggle--on {
+  background: var(--fp-benefit);
+  border-color: var(--fp-benefit);
+}
+
+.employer-cat-toggle__knob {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  display: block;
+  transition: transform 180ms var(--fp-ease-out);
+}
+
+.employer-cat-toggle--on .employer-cat-toggle__knob {
+  transform: translateX(18px);
+}
+
+.employer-policy-caps {
+  background: var(--fp-surface-1);
+  border: 1px solid var(--fp-border);
+  border-radius: var(--fp-r-md);
+  padding: var(--fp-sp-3) var(--fp-sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.employer-policy-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+}
+.employer-policy-row span {
+  color: var(--fp-text-secondary);
+}
+
+@media (max-width: 900px) {
+  .employer-content-grid {
+    grid-template-columns: 1fr;
+  }
+}

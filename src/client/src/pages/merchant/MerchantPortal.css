@@ -1,0 +1,163 @@
+/* ============================================================
+   MERCHANT POS PORTAL STYLING (MerchantPortal.css)
+   Clean, high-contrast POS Terminal aesthetic for retail cashiers
+   ============================================================ */
+
+.pos-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fp-sp-6);
+  max-width: var(--fp-content-max);
+  margin: 0 auto;
+}
+
+.pos-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: var(--fp-sp-6);
+  align-items: start;
+}
+
+.pos-terminal-card {
+  background: var(--fp-surface-1);
+  border: 1px solid var(--fp-border-strong);
+  border-radius: var(--fp-r-xl);
+  padding: var(--fp-sp-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fp-sp-4);
+  box-shadow: var(--fp-shadow-md);
+}
+
+.pos-terminal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--fp-border);
+  padding-bottom: var(--fp-sp-3);
+}
+
+.pos-merchant-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--fp-r-pill);
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--fp-sim);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.pos-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pos-field label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--fp-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pos-input-big {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--fp-surface-2);
+  border: 1px solid var(--fp-border);
+  border-radius: var(--fp-r-md);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--fp-text-primary);
+  font-family: var(--fp-font-sans);
+}
+
+.pos-input-big:focus {
+  outline: none;
+  border-color: var(--fp-benefit);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+/* Customer Verified Card */
+.pos-customer-card {
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: var(--fp-r-lg);
+  padding: var(--fp-sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pos-customer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pos-customer-name {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--fp-text-primary);
+}
+
+.pos-customer-org {
+  font-size: 0.8125rem;
+  color: var(--fp-benefit);
+  font-weight: 500;
+}
+
+.pos-balance-chips {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.pos-balance-chip {
+  padding: 6px 10px;
+  border-radius: var(--fp-r-sm);
+  background: var(--fp-surface-2);
+  border: 1px solid var(--fp-border);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.pos-balance-chip-label {
+  font-size: 0.6875rem;
+  color: var(--fp-text-muted);
+  text-transform: uppercase;
+}
+
+.pos-balance-chip-val {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--fp-text-primary);
+}
+
+/* Transactions sidebar */
+.pos-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fp-sp-4);
+}
+
+.pos-summary-box {
+  background: var(--fp-surface-1);
+  border: 1px solid var(--fp-border);
+  border-radius: var(--fp-r-xl);
+  padding: var(--fp-sp-5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+@media (max-width: 900px) {
+  .pos-grid {
+    grid-template-columns: 1fr;
+  }
+}

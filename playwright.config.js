@@ -5,8 +5,14 @@ module.exports = defineConfig({
   fullyParallel: true,
   reporter: 'list',
   use: {
-    baseURL: process.env.CLIENT_ORIGIN || 'http://localhost:3000',
+    baseURL: process.env.CLIENT_ORIGIN || 'http://localhost:3100',
     trace: 'on-first-retry',
+  },
+  webServer: {
+    command: 'npm run client:dev',
+    url: 'http://localhost:3100',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120000,
   },
   projects: [
     {

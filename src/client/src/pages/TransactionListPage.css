@@ -1,0 +1,150 @@
+.tx-list-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fp-sp-6);
+}
+
+.tx-list-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fp-sp-4);
+  flex-wrap: wrap;
+}
+
+.tx-list-tabs {
+  display: flex;
+  gap: var(--fp-sp-1);
+  background: var(--fp-surface-1);
+  padding: 4px;
+  border-radius: var(--fp-r-md);
+  border: 1px solid var(--fp-border);
+  overflow-x: auto;
+}
+
+.tx-list-tab {
+  background: transparent;
+  border: none;
+  padding: 6px 14px;
+  border-radius: var(--fp-r-sm);
+  color: var(--fp-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 140ms ease;
+}
+.tx-list-tab:hover {
+  color: var(--fp-text-primary);
+}
+.tx-list-tab--active {
+  background: var(--fp-surface-2);
+  color: var(--fp-benefit);
+  font-weight: 600;
+  box-shadow: var(--fp-shadow-sm);
+}
+
+.tx-list-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--fp-surface-1);
+  border: 1px solid var(--fp-border);
+  border-radius: var(--fp-r-md);
+  padding: 8px 12px;
+  width: 280px;
+}
+
+.tx-list-search-icon {
+  color: var(--fp-text-muted);
+}
+
+.tx-list-search-input {
+  background: transparent;
+  border: none;
+  color: var(--fp-text-primary);
+  font-size: 0.8125rem;
+  width: 100%;
+}
+.tx-list-search-input:focus {
+  outline: none;
+}
+
+.tx-list-table-card {
+  background: var(--fp-surface-1);
+  border: 1px solid var(--fp-border);
+  border-radius: var(--fp-r-lg);
+  overflow: hidden;
+}
+
+.tx-list-table-scroll {
+  overflow-x: auto;
+}
+
+.tx-list-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.tx-list-table th {
+  background: var(--fp-surface-2);
+  padding: 12px 16px;
+  color: var(--fp-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--fp-border);
+}
+
+.tx-list-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--fp-border);
+  color: var(--fp-text-primary);
+}
+
+.tx-list-table-row {
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+.tx-list-table-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tx-col-date {
+  font-size: 0.8125rem;
+  color: var(--fp-text-secondary);
+  white-space: nowrap;
+}
+
+.tx-col-merchant {
+  display: flex;
+  flex-direction: column;
+}
+.tx-col-category {
+  font-size: 0.6875rem;
+  color: var(--fp-text-muted);
+}
+
+.tx-col-order code {
+  color: var(--fp-text-secondary);
+  font-size: 0.8125rem;
+}
+
+.tx-col-benefit {
+  color: var(--fp-benefit);
+}
+
+.tx-col-mpesa {
+  color: var(--fp-salary);
+}
+
+.tx-col-total {
+  font-weight: 600;
+}
+
+.tx-list-loading {
+  padding: var(--fp-sp-6);
+}

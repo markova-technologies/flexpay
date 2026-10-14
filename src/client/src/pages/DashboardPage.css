@@ -1,0 +1,197 @@
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fp-sp-8);
+}
+
+.dashboard-welcome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fp-sp-4);
+  flex-wrap: wrap;
+  padding-bottom: var(--fp-sp-2);
+  border-bottom: 1px solid var(--fp-border);
+}
+
+.dashboard-welcome h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--fp-text-primary);
+}
+
+.dashboard-welcome__sub {
+  margin-top: 6px;
+  font-size: 0.875rem;
+  color: var(--fp-text-secondary);
+}
+
+.dashboard-welcome__sub code {
+  color: var(--fp-benefit);
+  background: var(--fp-benefit-dim);
+  padding: 2px 7px;
+  border-radius: var(--fp-r-sm);
+  font-size: 0.8125rem;
+  border: 1px solid var(--fp-benefit-border);
+}
+
+.dashboard-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--fp-sp-4);
+}
+
+.dashboard-main-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: var(--fp-sp-6);
+  align-items: start;
+}
+
+.dashboard-tx-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fp-sp-2);
+}
+
+.dashboard-tx-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: var(--fp-surface-2);
+  border: 1px solid var(--fp-border);
+  border-radius: var(--fp-r-md);
+  cursor: pointer;
+  transition: transform 140ms var(--fp-ease-out),
+              border-color 140ms ease,
+              background-color 140ms ease;
+}
+.dashboard-tx-item:hover {
+  border-color: var(--fp-border-strong);
+  background: var(--fp-surface-3);
+  transform: translateY(-1px);
+}
+
+.dashboard-tx-item__left {
+  display: flex;
+  align-items: center;
+  gap: var(--fp-sp-3);
+}
+
+.dashboard-tx-item__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--fp-r-md);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--fp-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fp-text-secondary);
+}
+
+.dashboard-tx-item__name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--fp-text-primary);
+  letter-spacing: -0.01em;
+}
+
+.dashboard-tx-item__date {
+  font-size: 0.75rem;
+  color: var(--fp-text-muted);
+  margin-top: 2px;
+}
+
+.dashboard-tx-item__right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.dashboard-tx-item__amount {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--fp-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sidebar Column Steps */
+.dashboard-sidebar-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fp-sp-4);
+}
+
+.dashboard-info-step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--fp-sp-3);
+  margin-bottom: var(--fp-sp-4);
+  padding-bottom: var(--fp-sp-3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.dashboard-info-step:last-of-type {
+  border-bottom: none;
+  margin-bottom: var(--fp-sp-2);
+}
+
+.dashboard-info-step__num {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--fp-benefit-dim);
+  color: var(--fp-benefit);
+  border: 1px solid var(--fp-benefit-border);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.dashboard-info-step strong {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--fp-text-primary);
+  margin-bottom: 3px;
+}
+
+.dashboard-info-step p {
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--fp-text-secondary);
+}
+
+.dashboard-cta-banner {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(245, 158, 11, 0.05) 100%);
+  border: 1px dashed var(--fp-benefit-border);
+  border-radius: var(--fp-r-md);
+  padding: var(--fp-sp-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fp-sp-3);
+  margin-top: var(--fp-sp-3);
+}
+
+.dashboard-cta-banner strong {
+  font-size: 0.875rem;
+  color: var(--fp-benefit);
+}
+
+.dashboard-cta-banner p {
+  font-size: 0.75rem;
+  color: var(--fp-text-secondary);
+}
+
+@media (max-width: 900px) {
+  .dashboard-main-grid {
+    grid-template-columns: 1fr;
+  }
+}

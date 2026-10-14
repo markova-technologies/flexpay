@@ -1,0 +1,189 @@
+/* ============================================================
+   EMPLOYEE DASHBOARD STYLING (EmployeeDashboard.css)
+   ============================================================ */
+
+.emp-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fp-sp-6);
+  max-width: var(--fp-content-max);
+  margin: 0 auto;
+}
+
+.emp-hero-card {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(12, 19, 34, 0.95) 100%);
+  border: 1px solid var(--fp-border-strong);
+  border-radius: var(--fp-r-xl);
+  padding: var(--fp-sp-6);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.emp-hero-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fp-sp-2);
+}
+
+.emp-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--fp-r-pill);
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: var(--fp-benefit);
+  font-size: 0.75rem;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.emp-hero-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--fp-text-primary);
+}
+
+.emp-hero-sub {
+  font-size: 0.875rem;
+  color: var(--fp-text-secondary);
+}
+
+.emp-hero-actions {
+  display: flex;
+  gap: var(--fp-sp-3);
+}
+
+/* Category Wallets Section */
+.emp-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--fp-sp-3);
+}
+
+.emp-section-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--fp-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.emp-wallets-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--fp-sp-4);
+}
+
+/* PayLater Credit Bar */
+.emp-credit-bar-card {
+  background: var(--fp-surface-1);
+  border: 1px solid var(--fp-border);
+  border-radius: var(--fp-r-lg);
+  padding: var(--fp-sp-5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fp-sp-4);
+}
+
+.emp-credit-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.emp-credit-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--fp-salary);
+  letter-spacing: 0.05em;
+}
+
+.emp-credit-amount {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--fp-text-primary);
+}
+
+.emp-credit-sub {
+  font-size: 0.75rem;
+  color: var(--fp-text-muted);
+}
+
+/* Recent Transactions Table */
+.emp-tx-card {
+  background: var(--fp-surface-1);
+  border: 1px solid var(--fp-border);
+  border-radius: var(--fp-r-lg);
+  overflow: hidden;
+}
+
+.emp-tx-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.emp-tx-table th {
+  padding: 12px 16px;
+  background: var(--fp-surface-2);
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--fp-text-muted);
+  border-bottom: 1px solid var(--fp-border);
+}
+
+.emp-tx-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--fp-border);
+  font-size: 0.875rem;
+  color: var(--fp-text-secondary);
+}
+
+.emp-tx-table tr:hover td {
+  background: var(--fp-surface-2);
+}
+
+.emp-tx-merchant {
+  font-weight: 600;
+  color: var(--fp-text-primary);
+}
+
+.emp-tx-split-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--fp-benefit);
+  margin-top: 2px;
+}
+
+@media (max-width: 900px) {
+  .emp-wallets-grid {
+    grid-template-columns: 1fr;
+  }
+  .emp-hero-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--fp-sp-4);
+  }
+  .emp-credit-bar-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

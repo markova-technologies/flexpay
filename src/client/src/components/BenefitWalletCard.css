@@ -1,0 +1,160 @@
+.fp-wallet-card {
+  background: var(--fp-surface-1);
+  border: 1px solid var(--fp-border);
+  border-radius: var(--fp-r-lg);
+  padding: var(--fp-sp-5);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fp-sp-3);
+  transition: transform 0.2s var(--fp-ease-out), border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fp-wallet-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--fp-border-strong);
+  box-shadow: var(--fp-shadow-md);
+}
+
+.fp-wallet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fp-wallet-category {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.fp-wallet-icon-box {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--fp-r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.fp-wallet-card.food .fp-wallet-icon-box {
+  background: var(--fp-cat-food-dim);
+  color: var(--fp-cat-food);
+}
+
+.fp-wallet-card.transport .fp-wallet-icon-box {
+  background: var(--fp-cat-transport-dim);
+  color: var(--fp-cat-transport);
+}
+
+.fp-wallet-card.health .fp-wallet-icon-box {
+  background: var(--fp-cat-health-dim);
+  color: var(--fp-cat-health);
+}
+
+.fp-wallet-card.paylater .fp-wallet-icon-box {
+  background: var(--fp-cat-paylater-dim);
+  color: var(--fp-cat-paylater);
+}
+
+.fp-wallet-balance-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fp-wallet-balance-label {
+  font-size: 0.6875rem;
+  color: var(--fp-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.fp-wallet-balance-amount {
+  font-size: 1.625rem;
+  font-weight: 700;
+  color: var(--fp-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.fp-wallet-currency {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--fp-text-secondary);
+  margin-left: 4px;
+}
+
+/* Progress bar */
+.fp-wallet-bar-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--fp-r-pill);
+  overflow: hidden;
+  position: relative;
+}
+
+.fp-wallet-bar-fill {
+  height: 100%;
+  border-radius: var(--fp-r-pill);
+  transition: width 0.6s var(--fp-ease-out);
+}
+
+.fp-wallet-card.food .fp-wallet-bar-fill {
+  background: var(--fp-cat-food);
+}
+
+.fp-wallet-card.transport .fp-wallet-bar-fill {
+  background: var(--fp-cat-transport);
+}
+
+.fp-wallet-card.health .fp-wallet-bar-fill {
+  background: var(--fp-cat-health);
+}
+
+.fp-wallet-card.paylater .fp-wallet-bar-fill {
+  background: var(--fp-cat-paylater);
+}
+
+.fp-wallet-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--fp-text-muted);
+  padding-top: var(--fp-sp-2);
+  border-top: 1px solid var(--fp-border);
+}
+
+.fp-wallet-badge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--fp-r-pill);
+}
+
+.fp-wallet-card.food .fp-wallet-badge {
+  background: var(--fp-cat-food-dim);
+  color: var(--fp-cat-food);
+}
+
+.fp-wallet-card.transport .fp-wallet-badge {
+  background: var(--fp-cat-transport-dim);
+  color: var(--fp-cat-transport);
+}
+
+.fp-wallet-card.health .fp-wallet-badge {
+  background: var(--fp-cat-health-dim);
+  color: var(--fp-cat-health);
+}
+
+.fp-wallet-card.paylater .fp-wallet-badge {
+  background: var(--fp-cat-paylater-dim);
+  color: var(--fp-cat-paylater);
+}

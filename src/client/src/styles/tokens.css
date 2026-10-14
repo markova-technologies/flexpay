@@ -1,0 +1,116 @@
+/* ============================================================
+   FLEXPAY ELEVATED FINTECH DESIGN TOKENS (v2.0)
+   Institutional, high-contrast dark palette for Ethiopia.
+   Accents: Emerald (benefit) + Warm Amber (salary-linked co-pay).
+   Anti-slop discipline: No generic AI purple gradients or neon green.
+   ============================================================ */
+
+:root {
+  /* --- Surfaces --- */
+  --fp-bg:          #060A14;   /* Deep obsidian midnight base */
+  --fp-surface-1:   #0C1322;   /* Standard card background */
+  --fp-surface-2:   #121C32;   /* Elevated containers / modals */
+  --fp-surface-3:   #182542;   /* Interactive hover / active */
+  --fp-surface-glass: rgba(12, 19, 34, 0.75);
+
+  /* --- Borders --- */
+  --fp-border:        rgba(255, 255, 255, 0.08);
+  --fp-border-strong: rgba(255, 255, 255, 0.16);
+  --fp-border-focus:  rgba(16, 185, 129, 0.55);
+
+  /* --- Text --- */
+  --fp-text-primary:   #F8FAFC;   /* High-contrast crisp white */
+  --fp-text-secondary: #94A3B8;   /* Slate secondary */
+  --fp-text-muted:     #64748B;   /* Slate muted */
+  --fp-text-inverse:   #060A14;
+
+  /* --- Benefit (Calibrated Emerald / Jade) — employer-funded allocations --- */
+  --fp-benefit:        #10B981;
+  --fp-benefit-dim:    rgba(16, 185, 129, 0.12);
+  --fp-benefit-border: rgba(16, 185, 129, 0.28);
+  --fp-benefit-glow:   rgba(16, 185, 129, 0.22);
+
+  /* --- Salary-linked (Warm Amber) — employee co-pay --- */
+  --fp-salary:        #F59E0B;
+  --fp-salary-dim:    rgba(245, 158, 11, 0.12);
+  --fp-salary-border: rgba(245, 158, 11, 0.28);
+  --fp-salary-glow:   rgba(245, 158, 11, 0.20);
+
+  /* --- Status colours --- */
+  --fp-success:     #10B981;
+  --fp-success-dim: rgba(16, 185, 129, 0.12);
+  --fp-pending:     #F59E0B;
+  --fp-pending-dim: rgba(245, 158, 11, 0.12);
+  --fp-danger:      #EF4444;
+  --fp-danger-dim:  rgba(239, 68, 68, 0.12);
+  --fp-reversed:    #A855F7;
+  --fp-reversed-dim:rgba(168, 85, 247, 0.12);
+
+  /* --- Benefit Categories --- */
+  --fp-cat-food:       #F59E0B;
+  --fp-cat-food-dim:   rgba(245, 158, 11, 0.14);
+  --fp-cat-transport:  #38BDF8;
+  --fp-cat-transport-dim: rgba(56, 189, 248, 0.14);
+  --fp-cat-health:     #10B981;
+  --fp-cat-health-dim: rgba(16, 185, 129, 0.14);
+  --fp-cat-paylater:   #A855F7;
+  --fp-cat-paylater-dim: rgba(168, 85, 247, 0.14);
+
+  /* --- Simulation / Ops badge --- */
+  --fp-sim:     #38BDF8;
+  --fp-sim-dim: rgba(56, 189, 248, 0.12);
+
+  /* --- Typography --- */
+  --fp-font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --fp-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* --- Spacing scale --- */
+  --fp-sp-1:  4px;
+  --fp-sp-2:  8px;
+  --fp-sp-3:  12px;
+  --fp-sp-4:  16px;
+  --fp-sp-5:  20px;
+  --fp-sp-6:  24px;
+  --fp-sp-8:  32px;
+  --fp-sp-10: 40px;
+  --fp-sp-12: 48px;
+  --fp-sp-16: 64px;
+
+  /* --- Radius Scale --- */
+  --fp-r-sm:   6px;
+  --fp-r-md:   10px;
+  --fp-r-lg:   14px;
+  --fp-r-xl:   20px;
+  --fp-r-pill: 9999px;
+
+  /* --- Shadows & Micro-Elevation --- */
+  --fp-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --fp-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --fp-shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.06);
+
+  /* --- Emil Kowalski Easing Curves --- */
+  --fp-ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+  --fp-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --fp-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* --- Layout Bounds --- */
+  --fp-nav-w:     260px;
+  --fp-nav-w-mob: 0px;
+  --fp-content-max: 1140px;
+}
+
+/* Tabular figures for all financial amounts and currency codes */
+.fp-tabular-nums, .fp-amount, [data-amount] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "cv05" 1;
+}
+
+/* Reduced-motion overrides — keep opacity, eliminate transforms */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
