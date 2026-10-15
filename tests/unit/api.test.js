@@ -9,8 +9,12 @@ let server;
 let baseUrl;
 
 test.before(async () => {
-  // Initialize db
-  getDb();
+  // Initialize db & ensure clean test balances
+  const db = getDb();
+  try {
+    db.prepare(`UPDATE benefit_accounts SET used_allowance_etb = 1500 WHERE employee_id = 'emp-001'`).run();
+    db.prepare(`UPDATE benefit_wallets SET used_etb = 500 WHERE employee_id = 'emp-001' AND category = 'FOOD'`).run();
+  } catch {}
 
   const app = express();
   app.use(express.json());

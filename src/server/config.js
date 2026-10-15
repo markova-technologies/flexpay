@@ -4,6 +4,7 @@ const config = {
   port: parseInt(process.env.PORT || '4000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
   dbPath: process.env.DB_PATH || 'data/flexpay.sqlite',
+  databaseUrl: process.env.DATABASE_URL || '',
 
   jwtSecret: process.env.JWT_SECRET || 'flexpay_secret_addis_key_2026',
 

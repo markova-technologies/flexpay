@@ -7,7 +7,7 @@
     "test": "playwright test",
     "test:smoke": "playwright test tests/smoke.spec.js",
     "test:e2e": "playwright test tests/e2e",
-    "test:unit": "node --test tests/unit/*.test.js",
+    "test:unit": "node --test --test-concurrency=1 tests/unit/*.test.js",
     "server": "node src/server/index.js",
     "server:dev": "node --watch src/server/index.js",
     "client:dev": "npm --prefix src/client run dev",
@@ -23,6 +23,7 @@
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^18.0.7",
-    "express": "^5.3.0"
+    "express": "^5.3.0",
+    "pg": "^8.23.1"
   }
 }

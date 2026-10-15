@@ -1,12 +1,60 @@
 const { DatabaseSync } = require('node:sqlite');
+const { Pool } = require('pg');
 const path = require('node:path');
 const fs = require('node:fs');
 const config = require('../config.js');
 
 let instance = null;
 
+function isPostgres(url = config.databaseUrl) {
+  return typeof url === 'string' && (url.startsWith('postgres://') || url.startsWith('postgresql://'));
+}
+
+function toPgSql(sql) {
+  let paramIndex = 1;
+  return sql.replace(/\?/g, () => `$${paramIndex++}`);
+}
+
+function createPostgresAdapter(connString) {
+  const pool = new Pool({
+    connectionString: connString,
+    ssl: { rejectUnauthorized: false },
+  });
+
+  return {
+    _type: 'postgres',
+    pool,
+    prepare(sql) {
+      const pgSql = toPgSql(sql);
+      return {
+        get: async (...params) => {
+          const res = await pool.query(pgSql, params.flat());
+          return res.rows[0];
+        },
+        all: async (...params) => {
+          const res = await pool.query(pgSql, params.flat());
+          return res.rows;
+        },
+        run: async (...params) => {
+          const res = await pool.query(pgSql, params.flat());
+          return { changes: res.rowCount };
+        },
+      };
+    },
+    exec: async (sql) => {
+      return pool.query(sql);
+    },
+  };
+}
+
 function getDb(dbPath = config.dbPath) {
   if (instance) return instance;
+
+  if (isPostgres()) {
+    console.log('[Database] Connecting to Supabase PostgreSQL...');
+    instance = createPostgresAdapter(config.databaseUrl);
+    return instance;
+  }
 
   // Ensure data directory exists if writing to file
   if (dbPath !== ':memory:') {

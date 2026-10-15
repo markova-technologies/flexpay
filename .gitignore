@@ -25,6 +25,7 @@ dist/
 build/
 .next/
 out/
+src/server/public/
 
 # Playwright & Testing
 test-results/
