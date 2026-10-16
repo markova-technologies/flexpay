@@ -62,10 +62,31 @@ async function authRoutes(fastify, options) {
       passwordHash,
     });
 
+    const accessToken = signAccessToken({
+      sub: user.id,
+      role: user.role,
+      orgId: org.id,
+    });
+
+    const rawRefreshToken = await sessionRepo.createRefreshToken(user.id, {
+      ipAddress: request.ip,
+      userAgent: request.headers['user-agent'],
+    });
+
+    setRefreshTokenCookie(reply, rawRefreshToken);
+    await authRepo.updateLastLogin(user.id);
+
     return reply.code(201).send({
       message: 'Organization registered successfully',
       organizationId: org.id,
       userId: user.id,
+      accessToken,
+      user: {
+        id: user.id,
+        role: user.role,
+        orgId: org.id,
+        orgName: org.name,
+      },
     });
   });
 
@@ -158,10 +179,31 @@ async function authRoutes(fastify, options) {
       passwordHash,
     });
 
+    const accessToken = signAccessToken({
+      sub: user.id,
+      role: user.role,
+      merchantId: merchant.id,
+    });
+
+    const rawRefreshToken = await sessionRepo.createRefreshToken(user.id, {
+      ipAddress: request.ip,
+      userAgent: request.headers['user-agent'],
+    });
+
+    setRefreshTokenCookie(reply, rawRefreshToken);
+    await authRepo.updateLastLogin(user.id);
+
     return reply.code(201).send({
       message: 'Merchant registered successfully',
       merchantId: merchant.id,
       userId: user.id,
+      accessToken,
+      user: {
+        id: user.id,
+        role: user.role,
+        merchantId: merchant.id,
+        businessName: merchant.business_name,
+      },
     });
   });
 

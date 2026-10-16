@@ -62,7 +62,19 @@ export default function MerchantAuthPage() {
         contactPhone: contactPhone.trim(),
         password: regPassword,
       });
-      setAuth(res.data.user, res.data.accessToken);
+
+      if (res.data?.user && res.data?.accessToken) {
+        setAuth(res.data.user, res.data.accessToken);
+        navigate('/merchant');
+        return;
+      }
+
+      // Auto-login fallback if backend returns only metadata
+      const loginRes = await api.post('/auth/merchant/login', {
+        mpesaNumber: mpesaNumber.trim(),
+        password: regPassword,
+      });
+      setAuth(loginRes.data.user, loginRes.data.accessToken);
       navigate('/merchant');
     } catch (err) {
       const msg =
