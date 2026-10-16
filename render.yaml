@@ -10,3 +10,9 @@ services:
         value: production
       - key: PORT
         value: 3001
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_PRIVATE_KEY
+        sync: false
+      - key: JWT_PUBLIC_KEY
+        sync: false
