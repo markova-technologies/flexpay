@@ -203,6 +203,7 @@ async function authRoutes(fastify, options) {
         role: user.role,
         merchantId: merchant.id,
         businessName: merchant.business_name,
+        category: merchant.category,
       },
     });
   });

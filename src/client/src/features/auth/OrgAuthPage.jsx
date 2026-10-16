@@ -66,19 +66,14 @@ export default function OrgAuthPage() {
       }
 
       const res = await api.post('/auth/org/register', payload);
-      if (res.data?.user && res.data?.accessToken) {
+      if (res.data.user && res.data.accessToken) {
         setAuth(res.data.user, res.data.accessToken);
         navigate('/org');
-        return;
+      } else {
+        setMode('login');
+        setLoginTin(tinNumber.trim());
+        setError('');
       }
-
-      // Auto-login fallback if backend returns only metadata
-      const loginRes = await api.post('/auth/org/login', {
-        tinNumber: payload.tinNumber,
-        password: payload.password,
-      });
-      setAuth(loginRes.data.user, loginRes.data.accessToken);
-      navigate('/org');
     } catch (err) {
       const msg =
         err.response?.data?.details?.[0]?.message ||
