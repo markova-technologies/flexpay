@@ -1,0 +1,79 @@
+const fs = require('node:fs');
+const path = require('node:path');
+
+const privPem = fs.readFileSync(path.resolve(__dirname, '../jwt_private.pem'), 'utf8');
+const pubPem = fs.readFileSync(path.resolve(__dirname, '../jwt_public.pem'), 'utf8');
+
+const privSingleLine = privPem.replace(/\r?\n/g, '\\n');
+const pubSingleLine = pubPem.replace(/\r?\n/g, '\\n');
+
+const envContent = [
+  '# Server configuration',
+  'PORT=3001',
+  'NODE_ENV=development',
+  'CORS_ORIGIN=http://localhost:5173',
+  'LOG_LEVEL=info',
+  '',
+  '# Database (PostgreSQL / Supabase)',
+  'DATABASE_URL=postgresql://postgres:postgres@localhost:5432/flexpay',
+  '',
+  '# JWT RS256 Asymmetric Cryptography',
+  `JWT_PRIVATE_KEY="${privSingleLine}"`,
+  `JWT_PUBLIC_KEY="${pubSingleLine}"`,
+  'JWT_ACCESS_EXPIRY=900',
+  'JWT_REFRESH_EXPIRY=604800',
+  '',
+  '# Safaricom M-PESA Ethiopia API Credentials (Sandbox)',
+  'MPESA_ENV=sandbox',
+  'MPESA_BASE_URL=https://apisandbox.safaricom.et',
+  'MPESA_CONSUMER_KEY=your_mpesa_consumer_key',
+  'MPESA_CONSUMER_SECRET=your_mpesa_consumer_secret',
+  'MPESA_SHORTCODE=2005',
+  'MPESA_PASSKEY=your_mpesa_passkey',
+  'MPESA_INITIATOR_NAME=YellowBusinessInit',
+  'MPESA_SECURITY_CREDENTIAL=your_encrypted_initiator_password',
+  'MPESA_CALLBACK_BASE=http://localhost:3001',
+  '',
+  "# Africa's Talking SMS Credentials",
+  'AT_API_KEY=mock_africastalking_api_key',
+  'AT_USERNAME=sandbox',
+  ''
+].join('\n');
+
+fs.writeFileSync(path.resolve(__dirname, '../.env'), envContent);
+
+const envExampleContent = [
+  '# Server configuration',
+  'PORT=3001',
+  'NODE_ENV=development',
+  'CORS_ORIGIN=http://localhost:5173',
+  'LOG_LEVEL=info',
+  '',
+  '# Database (PostgreSQL / Supabase)',
+  'DATABASE_URL=postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres',
+  '',
+  '# JWT RS256 Asymmetric Cryptography',
+  'JWT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\\n...\\n-----END PRIVATE KEY-----"',
+  'JWT_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\\n...\\n-----END PUBLIC KEY-----"',
+  'JWT_ACCESS_EXPIRY=900',
+  'JWT_REFRESH_EXPIRY=604800',
+  '',
+  '# Safaricom M-PESA Ethiopia API Credentials',
+  'MPESA_ENV=sandbox',
+  'MPESA_BASE_URL=https://apisandbox.safaricom.et',
+  'MPESA_CONSUMER_KEY=your_mpesa_consumer_key',
+  'MPESA_CONSUMER_SECRET=your_mpesa_consumer_secret',
+  'MPESA_SHORTCODE=2005',
+  'MPESA_PASSKEY=your_mpesa_passkey',
+  'MPESA_INITIATOR_NAME=your_initiator_name',
+  'MPESA_SECURITY_CREDENTIAL=your_encrypted_initiator_password',
+  'MPESA_CALLBACK_BASE=https://your-domain.com',
+  '',
+  "# Africa's Talking SMS Credentials",
+  'AT_API_KEY=your_africastalking_api_key',
+  'AT_USERNAME=sandbox',
+  ''
+].join('\n');
+
+fs.writeFileSync(path.resolve(__dirname, '../.env.example'), envExampleContent);
+console.log('.env and .env.example created successfully.');

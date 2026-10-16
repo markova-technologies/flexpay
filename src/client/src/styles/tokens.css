@@ -6,6 +6,22 @@
    ============================================================ */
 
 :root {
+  /* --- Blueprint v2 Token Compatibility Aliases --- */
+  --color-bg-base:        #060A14;
+  --color-bg-surface:     #0C1322;
+  --color-bg-elevated:    #121C32;
+  --color-border:         rgba(255, 255, 255, 0.08);
+  --color-border-subtle:  rgba(255, 255, 255, 0.04);
+  --color-accent:         #00C853;
+  --color-accent-dim:     rgba(0, 200, 83, 0.12);
+  --color-accent-hover:   #00E676;
+  --color-text-primary:   #F8FAFC;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted:     #64748B;
+  --color-danger:         #EF4444;
+  --color-warning:        #F59E0B;
+  --color-info:           #38BDF8;
+
   /* --- Surfaces --- */
   --fp-bg:          #060A14;   /* Deep obsidian midnight base */
   --fp-surface-1:   #0C1322;   /* Standard card background */

@@ -1,112 +1,72 @@
-/**
- * FlexPay Authoritative Backend Server
- * =====================================
- * Node.js Modular Monolith Server Entry Point.
- * Port: 4000 (Proxy target for Vite dev server on port 3100).
- */
+const Fastify = require('fastify');
+const { loadConfig } = require('./config');
+const authModule = require('./modules/auth');
+const organizationModule = require('./modules/organizations');
+const employeeModule = require('./modules/employees');
+const merchantModule = require('./modules/merchants');
+const transactionModule = require('./modules/transactions');
+const payrollModule = require('./modules/payroll');
 
-const express = require('express');
-const cors = require('cors');
-const path = require('node:path');
-const fs = require('node:fs');
-const config = require('./config.js');
-const { getDb } = require('./storage/db.js');
-const { router } = require('./api/routes.js');
+async function buildServer(options = {}) {
+  const config = loadConfig();
 
-const app = express();
-
-// Initialize database
-const db = getDb();
-
-// Middlewares
-app.use(cors());
-app.use(express.json());
-
-// Request logger
-app.use((req, res, next) => {
-  const start = Date.now();
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    if (req.path.startsWith('/api')) {
-      console.log(`[HTTP] ${req.method} ${req.path} -> ${res.statusCode} (${duration}ms)`);
-    }
+  const fastify = Fastify({
+    logger: options.logger ?? {
+      level: config.LOG_LEVEL,
+      redact: ['req.headers.authorization', 'body.password', 'body.passwordHash'],
+    },
+    genReqId: () => require('node:crypto').randomUUID(),
   });
-  next;
-  next();
-});
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'UP',
-    name: 'FlexPay Authoritative Core',
-    env: config.safaricom.env,
+  // Plugins
+  await fastify.register(require('@fastify/cors'), {
+    origin: config.CORS_ORIGIN,
+    credentials: true,
+  });
+  await fastify.register(require('@fastify/helmet'), {
+    contentSecurityPolicy: false,
+  });
+  await fastify.register(require('@fastify/cookie'));
+  await fastify.register(require('@fastify/rate-limit'), {
+    max: 100,
+    timeWindow: '1 minute',
+  });
+
+  // Register Modules under /api/v1
+  await fastify.register(authModule, { prefix: '/api/v1', ...options });
+  await fastify.register(organizationModule, { prefix: '/api/v1', ...options });
+  await fastify.register(employeeModule, { prefix: '/api/v1', ...options });
+  await fastify.register(merchantModule, { prefix: '/api/v1', ...options });
+  await fastify.register(transactionModule, { prefix: '/api/v1', ...options });
+  await fastify.register(payrollModule, { prefix: '/api/v1', ...options });
+
+  // System Health endpoint
+  fastify.get('/health', async () => ({
+    status: 'ok',
     timestamp: new Date().toISOString(),
-  });
-});
+  }));
 
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'UP',
-    name: 'FlexPay Authoritative Core',
-    env: config.safaricom.env,
+  fastify.get('/api/v1/health', async () => ({
+    status: 'ok',
     timestamp: new Date().toISOString(),
-  });
-});
+  }));
 
-// Mount Authoritative API routes
-app.use('/api', router);
+  return fastify;
+}
 
-// Serve compiled client static assets if available
-const publicDir = path.join(__dirname, 'public');
-if (fs.existsSync(publicDir)) {
-  app.use(express.static(publicDir));
+async function start() {
+  const config = loadConfig();
+  const server = await buildServer();
+  await server.listen({ port: config.PORT, host: '0.0.0.0' });
+  console.log(`FlexPay v2 server listening at http://localhost:${config.PORT}`);
+  return server;
+}
 
-  // SPA fallback for frontend client routing
-  app.get('{*path}', (req, res, next) => {
-    if (req.path.startsWith('/api')) return next();
-    const indexPath = path.join(publicDir, 'index.html');
-    if (fs.existsSync(indexPath)) {
-      res.sendFile(indexPath);
-    } else {
-      next();
-    }
+if (require.main === module) {
+  start().catch((err) => {
+    console.error(err);
+    process.exit(1);
   });
 }
 
-// 404 handler for API routes
-app.use('/api', (req, res) => {
-  res.status(404).json({
-    error: { code: 'NOT_FOUND', message: `Cannot ${req.method} ${req.originalUrl}` },
-  });
-});
-
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error('[Unhandled Server Error]', err);
-  res.status(500).json({
-    error: { code: 'INTERNAL_ERROR', message: err.message || 'An unexpected error occurred.' },
-  });
-});
-
-const server = app.listen(config.port, () => {
-  console.log(`=======================================================`);
-  console.log(`🚀 FlexPay Authoritative Core active on port ${config.port}`);
-  console.log(`   Gateway Environment: ${config.safaricom.env.toUpperCase()}`);
-  console.log(`   Authoritative SQLite: ${config.dbPath}`);
-  console.log(`=======================================================`);
-});
-
-// Handle graceful shutdown
-function handleShutdown() {
-  console.log('\n[FlexPay Core] Gracefully stopping server...');
-  server.close(() => {
-    console.log('[FlexPay Core] HTTP server closed.');
-    process.exit(0);
-  });
-}
-
-process.on('SIGTERM', handleShutdown);
-process.on('SIGINT', handleShutdown);
-
-module.exports = { app, server };
+module.exports = { buildServer, start };
