@@ -21,11 +21,12 @@ async function authRoutes(fastify, options) {
   // Helper to set secure refresh token cookie
   function setRefreshTokenCookie(reply, rawToken) {
     if (!rawToken) return;
+    const isProduction = process.env.NODE_ENV === 'production';
     reply.setCookie('refresh_token', rawToken, {
       path: '/api/v1/auth',
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
     });
   }
@@ -100,7 +101,11 @@ async function authRoutes(fastify, options) {
       mpesaShortcode,
     });
 
-    await authRepo.createOrgCreditPolicy(org.id, 0);
+    try {
+      await authRepo.createOrgCreditPolicy(org.id, 0);
+    } catch (policyErr) {
+      request.log.warn({ err: policyErr.message }, 'Non-fatal: failed to initialize default credit policy');
+    }
 
     const user = await authRepo.createUser({
       role: 'ORG_ADMIN',
@@ -286,6 +291,10 @@ async function authRoutes(fastify, options) {
       return reply.code(401).send({ error: 'Invalid M-PESA number or credentials' });
     }
 
+    if (merchant.status !== 'ACTIVE') {
+      return reply.code(403).send({ error: 'Merchant account is pending verification or suspended. Contact support.' });
+    }
+
     const user = await authRepo.findUserByMerchantId(merchant.id);
     if (!user) {
       return reply.code(401).send({ error: 'Invalid M-PESA number or credentials' });
@@ -463,7 +472,13 @@ async function authRoutes(fastify, options) {
     if (request.user?.sub) {
       await sessionRepo.revokeAllForUser(request.user.sub);
     }
-    reply.clearCookie('refresh_token', { path: '/api/v1/auth' });
+    const isProduction = process.env.NODE_ENV === 'production';
+    reply.clearCookie('refresh_token', {
+      path: '/api/v1/auth',
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+    });
     return reply.send({ message: 'Successfully logged out' });
   });
 }

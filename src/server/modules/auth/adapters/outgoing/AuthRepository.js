@@ -29,15 +29,20 @@ class AuthRepository {
   }
 
   async createOrgCreditPolicy(orgId, globalLimit = 0) {
-    return this.db
-      .insertInto('org_credit_policies')
-      .values({
-        organization_id: orgId,
-        global_credit_limit: globalLimit,
-        allowed_categories: ['FOOD', 'TRANSPORT', 'HEALTH', 'GROCERY', 'FUEL'],
-      })
-      .returningAll()
-      .executeTakeFirst();
+    try {
+      return await this.db
+        .insertInto('org_credit_policies')
+        .values({
+          organization_id: orgId,
+          global_credit_limit: globalLimit,
+          allowed_categories: ['FOOD', 'TRANSPORT', 'HEALTH', 'GROCERY', 'FUEL'],
+        })
+        .returningAll()
+        .executeTakeFirst();
+    } catch (err) {
+      console.warn('[AuthRepo] Warning: could not initialize default org_credit_policy:', err.message);
+      return null;
+    }
   }
 
   async createUser({ role, organizationId, merchantId, employeeId, passwordHash, mustChangePassword = false }) {
@@ -74,7 +79,7 @@ class AuthRepository {
       .executeTakeFirst();
   }
 
-  async createMerchant({ businessName, mpesaNumber, category, contactPhone }) {
+  async createMerchant({ businessName, mpesaNumber, category, contactPhone, status = 'ACTIVE' }) {
     return this.db
       .insertInto('merchants')
       .values({
@@ -82,7 +87,7 @@ class AuthRepository {
         mpesa_number: mpesaNumber,
         category,
         contact_phone: contactPhone,
-        status: 'ACTIVE', // Active for self-service or verified
+        status,
       })
       .returningAll()
       .executeTakeFirstOrThrow();

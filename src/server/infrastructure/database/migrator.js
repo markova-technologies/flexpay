@@ -38,6 +38,10 @@ async function ensureSchema() {
 
           IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'merchants') THEN
             ALTER TABLE merchants ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+            BEGIN
+              ALTER TABLE merchants ALTER COLUMN status SET DEFAULT 'ACTIVE'::merchant_status;
+            EXCEPTION WHEN OTHERS THEN NULL;
+            END;
           END IF;
 
           IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'org_credit_policies') THEN

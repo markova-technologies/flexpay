@@ -6,13 +6,19 @@ export const useAuthStore = create(
     (set) => ({
       user: null,
       accessToken: null,
+      _hasHydrated: false,
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
       setAuth: (user, accessToken) => set({ user, accessToken }),
       setAccessToken: (accessToken) => set({ accessToken }),
       clearAuth: () => set({ user: null, accessToken: null }),
     }),
     {
       name: 'flexpay-auth',
-      partialize: (state) => ({ user: state.user }), // Don't persist raw token in localStorage
+      partialize: (state) => ({ user: state.user, accessToken: state.accessToken }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );
+

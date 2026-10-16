@@ -39,11 +39,12 @@ export default function OrgAuthPage() {
         err.response?.data?.details?.[0]?.message ||
         err.response?.data?.error ||
         err.response?.data?.message ||
+        (typeof err.response?.data === 'string' && err.response.data.length < 200 ? err.response.data : null) ||
         (err.code === 'ECONNABORTED'
           ? 'Request timed out. Render backend may be waking up from sleep. Please try again in a few seconds.'
           : !err.response
           ? 'Network error: Cannot reach backend server. Please verify VITE_API_URL.'
-          : 'Login failed. Please verify your credentials.');
+          : `Server error (${err.response?.status || '500'}): Login failed. Please verify your credentials.`);
       setError(msg);
     } finally {
       setLoading(false);
@@ -79,11 +80,12 @@ export default function OrgAuthPage() {
         err.response?.data?.details?.[0]?.message ||
         err.response?.data?.error ||
         err.response?.data?.message ||
+        (typeof err.response?.data === 'string' && err.response.data.length < 200 ? err.response.data : null) ||
         (err.code === 'ECONNABORTED'
           ? 'Request timed out. Render backend may be waking up from sleep. Please try again in a few seconds.'
           : !err.response
           ? 'Network error: Cannot reach backend server. Please verify VITE_API_URL.'
-          : 'Registration failed. Please check inputs.');
+          : `Server error (${err.response?.status || '500'}): Registration failed. Please check inputs.`);
       setError(msg);
     } finally {
       setLoading(false);

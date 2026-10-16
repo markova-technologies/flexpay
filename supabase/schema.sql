@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS merchants (
   mpesa_number      TEXT NOT NULL UNIQUE,  -- The Safaricom Till/Paybill number
   category          merchant_category NOT NULL,
   contact_phone     TEXT NOT NULL,
-  status            merchant_status NOT NULL DEFAULT 'PENDING_VERIFICATION',
+  status            merchant_status NOT NULL DEFAULT 'ACTIVE',
   created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   deleted_at        TIMESTAMPTZ

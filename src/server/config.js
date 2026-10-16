@@ -30,24 +30,24 @@ function loadConfig() {
     }
   }
 
-  // If RS256 keys are not provided via environment or files (e.g. initial cloud deploy),
-  // automatically generate a compliant 2048-bit RS256 keypair so the server boots cleanly
-  if (!privateKey || !publicKey) {
-    console.warn('[Config] JWT_PRIVATE_KEY / JWT_PUBLIC_KEY not set. Auto-generating 2048-bit RS256 keypair for session security.');
-    const { privateKey: genPriv, publicKey: genPub } = crypto.generateKeyPairSync('rsa', {
-      modulusLength: 2048,
-      publicKeyEncoding: { type: 'spki', format: 'pem' },
-      privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
-    });
-    privateKey = genPriv;
-    publicKey = genPub;
-  }
-
   const required = ['DATABASE_URL'];
   const missing = required.filter((k) => !process.env[k]);
 
   if (missing.length > 0) {
     throw new Error(`Missing required configuration: ${missing.join(', ')}`);
+  }
+
+  let lazyKeyPair = null;
+  function getLazyKeyPair() {
+    if (!lazyKeyPair) {
+      console.warn('[Config] JWT_PRIVATE_KEY / JWT_PUBLIC_KEY not set. Auto-generating 2048-bit RS256 keypair on demand.');
+      lazyKeyPair = crypto.generateKeyPairSync('rsa', {
+        modulusLength: 2048,
+        publicKeyEncoding: { type: 'spki', format: 'pem' },
+        privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+      });
+    }
+    return lazyKeyPair;
   }
 
   cachedConfig = {
@@ -56,8 +56,14 @@ function loadConfig() {
     CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173',
     LOG_LEVEL: process.env.LOG_LEVEL || 'info',
     DATABASE_URL: process.env.DATABASE_URL,
-    JWT_PRIVATE_KEY: privateKey,
-    JWT_PUBLIC_KEY: publicKey,
+    get JWT_PRIVATE_KEY() {
+      if (privateKey) return privateKey;
+      return getLazyKeyPair().privateKey;
+    },
+    get JWT_PUBLIC_KEY() {
+      if (publicKey) return publicKey;
+      return getLazyKeyPair().publicKey;
+    },
     JWT_ACCESS_EXPIRY: Number(process.env.JWT_ACCESS_EXPIRY) || 900,
     JWT_REFRESH_EXPIRY: Number(process.env.JWT_REFRESH_EXPIRY) || 604800,
     MPESA_ENV: process.env.MPESA_ENV || 'sandbox',

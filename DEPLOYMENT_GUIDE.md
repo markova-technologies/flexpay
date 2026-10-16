@@ -58,17 +58,21 @@ This guide gives you the exact, step-by-step instructions to deploy FlexPay to p
 4. Under **Environment Variables**, add:
    | Key | Value | Notes |
    |---|---|---|
-   | `NODE_ENV` | `production` | Production mode |
+   | `NODE_ENV` | `production` | Production mode (enforces HTTPS-only cookies & SameSite=None) |
    | `PORT` | `10000` | Render standard port |
    | `DATABASE_URL` | `postgresql://...` | *Your Supabase URI from Stage 1* |
-   | `JWT_SECRET` | *Random 32-char string* | e.g. `flexpay_jwt_prod_key_2026_super_secret` |
+   | `JWT_PRIVATE_KEY` | *Contents of jwt_private.pem* | 2048-bit RS256 private key (preserves sessions across restarts) |
+   | `JWT_PUBLIC_KEY` | *Contents of jwt_public.pem* | 2048-bit RS256 public key (preserves sessions across restarts) |
    | `SAFARICOM_ENV` | `mock` | Keep `mock` for instant demo, or `sandbox` for live SIMs |
-   | `CORS_ORIGIN` | `*` | Or your Vercel URL |
+   | `CORS_ORIGIN` | `https://flexpay1.vercel.app` | Your Vercel frontend URL (or leave blank to auto-allow Vercel) |
+
+   > **Note on JWT Keys**: You can copy the contents of `jwt_private.pem` and `jwt_public.pem` from the repository root. If pasting into the Render Dashboard, paste the full text including `-----BEGIN PRIVATE KEY-----` and `-----END PRIVATE KEY-----`. If keys are not set, the server will auto-generate an ephemeral keypair on first request.
+
 5. Click **Deploy Web Service**.
 6. When deployment finishes, copy your Render URL:  
    `https://flexpay-backend-xxxx.onrender.com`
 7. Test the health endpoint in your browser:  
-   `https://flexpay-backend-xxxx.onrender.com/health` -> should return `{"status":"UP"}`.
+   `https://flexpay-backend-xxxx.onrender.com/health` -> should return `{"status":"ok"}`.
 
 ---
 
