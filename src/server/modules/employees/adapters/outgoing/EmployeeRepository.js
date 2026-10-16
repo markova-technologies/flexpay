@@ -1,3 +1,4 @@
+const { randomUUID } = require('node:crypto');
 const { getDb } = require('../../../../infrastructure/database/client');
 
 class EmployeeRepository {
@@ -75,10 +76,14 @@ class EmployeeRepository {
     department,
     passwordHash,
   }) {
+    const employeeId = randomUUID();
+    const userId = randomUUID();
+
     return this.db.transaction().execute(async (trx) => {
       const emp = await trx
         .insertInto('employees')
         .values({
+          id: employeeId,
           fp_employee_id: fpEmployeeId,
           organization_id: organizationId,
           full_name: fullName,
@@ -94,6 +99,7 @@ class EmployeeRepository {
       await trx
         .insertInto('users')
         .values({
+          id: userId,
           role: 'EMPLOYEE',
           organization_id: organizationId,
           employee_id: emp.id,

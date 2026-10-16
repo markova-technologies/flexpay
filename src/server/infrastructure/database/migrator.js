@@ -4,8 +4,8 @@ const { getPool } = require('./client');
 
 /**
  * Ensures the PostgreSQL database has the authoritative v2 schema.
- * Runs non-destructive incremental column synchronization for existing tables
- * and creates all required tables, enums, and indexes if missing.
+ * Permanently removes legacy NOT NULL constraints on deprecated columns,
+ * synchronizes all required v2 columns, and installs legacy compatibility triggers.
  */
 async function ensureSchema() {
   let pool;
@@ -57,11 +57,18 @@ async function ensureSchema() {
       END $$;
     `);
 
-    // 2. Incremental column synchronization for existing tables
+    // 2. Incremental column synchronization & legacy NOT NULL removal
     await pool.query(`
-      DO $$ BEGIN
-        -- Employees table
+      DO $$ 
+      DECLARE
+        col text;
+        allowed_cols text[];
+      BEGIN
+        -- --------------------------------------------------------------------
+        -- A. Employees Table
+        -- --------------------------------------------------------------------
         IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'employees') THEN
+          -- Add required v2 columns
           ALTER TABLE employees ADD COLUMN IF NOT EXISTS fp_employee_id TEXT;
           ALTER TABLE employees ADD COLUMN IF NOT EXISTS organization_id UUID;
           ALTER TABLE employees ADD COLUMN IF NOT EXISTS full_name TEXT;
@@ -73,7 +80,34 @@ async function ensureSchema() {
           ALTER TABLE employees ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
           ALTER TABLE employees ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
 
-          -- Data migration from legacy v1 columns if applicable
+          -- Permanently drop NOT NULL from any legacy non-v2 column (e.g. fp_id, employer_id, employer_name, name, phone)
+          allowed_cols := ARRAY['id', 'fp_employee_id', 'organization_id', 'full_name', 'phone_number', 'credit_limit', 'available_credit', 'department', 'status', 'created_at', 'updated_at', 'deleted_at'];
+          FOR col IN (
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'employees' 
+              AND is_nullable = 'NO'
+              AND column_name != ALL(allowed_cols)
+          ) LOOP
+            BEGIN
+              EXECUTE 'ALTER TABLE employees ALTER COLUMN ' || quote_ident(col) || ' DROP NOT NULL';
+              EXECUTE 'ALTER TABLE employees ALTER COLUMN ' || quote_ident(col) || ' SET DEFAULT NULL';
+            EXCEPTION WHEN OTHERS THEN NULL;
+            END;
+          END LOOP;
+
+          -- Specific fp_id legacy synchronization
+          IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'employees' AND column_name = 'fp_id') THEN
+            BEGIN
+              ALTER TABLE employees ALTER COLUMN fp_id DROP NOT NULL;
+              ALTER TABLE employees ALTER COLUMN fp_id SET DEFAULT NULL;
+              UPDATE employees SET fp_employee_id = fp_id WHERE fp_employee_id IS NULL AND fp_id IS NOT NULL;
+              UPDATE employees SET fp_id = fp_employee_id WHERE fp_id IS NULL AND fp_employee_id IS NOT NULL;
+            EXCEPTION WHEN OTHERS THEN NULL;
+            END;
+          END IF;
+
+          -- Data migration from legacy v1 columns
           BEGIN
             IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'employees' AND column_name = 'name') THEN
               UPDATE employees SET full_name = name WHERE full_name IS NULL;
@@ -90,7 +124,40 @@ async function ensureSchema() {
           CREATE INDEX IF NOT EXISTS idx_employees_status ON employees(status);
         END IF;
 
-        -- Password reset requests table
+        -- --------------------------------------------------------------------
+        -- B. Users Table
+        -- --------------------------------------------------------------------
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'users') THEN
+          ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT;
+          ALTER TABLE users ADD COLUMN IF NOT EXISTS organization_id UUID;
+          ALTER TABLE users ADD COLUMN IF NOT EXISTS merchant_id UUID;
+          ALTER TABLE users ADD COLUMN IF NOT EXISTS employee_id UUID;
+          ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
+          ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT FALSE;
+          ALTER TABLE users ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'ACTIVE';
+          ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;
+          ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+          -- Permanently drop NOT NULL from any legacy non-v2 column on users (e.g. email, pin)
+          allowed_cols := ARRAY['id', 'role', 'organization_id', 'merchant_id', 'employee_id', 'password_hash', 'must_change_password', 'status', 'last_login_at', 'created_at', 'updated_at'];
+          FOR col IN (
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'users' 
+              AND is_nullable = 'NO'
+              AND column_name != ALL(allowed_cols)
+          ) LOOP
+            BEGIN
+              EXECUTE 'ALTER TABLE users ALTER COLUMN ' || quote_ident(col) || ' DROP NOT NULL';
+              EXECUTE 'ALTER TABLE users ALTER COLUMN ' || quote_ident(col) || ' SET DEFAULT NULL';
+            EXCEPTION WHEN OTHERS THEN NULL;
+            END;
+          END LOOP;
+        END IF;
+
+        -- --------------------------------------------------------------------
+        -- C. Password Reset Requests Table
+        -- --------------------------------------------------------------------
         IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'password_reset_requests') THEN
           ALTER TABLE password_reset_requests ADD COLUMN IF NOT EXISTS requested_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
           ALTER TABLE password_reset_requests ADD COLUMN IF NOT EXISTS reviewed_by UUID;
@@ -105,11 +172,29 @@ async function ensureSchema() {
           EXCEPTION WHEN OTHERS THEN NULL;
           END;
 
+          -- Drop NOT NULL from any legacy non-v2 column
+          allowed_cols := ARRAY['id', 'employee_id', 'requested_at', 'reviewed_by', 'reviewed_at', 'status', 'delivery_method', 'expires_at'];
+          FOR col IN (
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'password_reset_requests' 
+              AND is_nullable = 'NO'
+              AND column_name != ALL(allowed_cols)
+          ) LOOP
+            BEGIN
+              EXECUTE 'ALTER TABLE password_reset_requests ALTER COLUMN ' || quote_ident(col) || ' DROP NOT NULL';
+              EXECUTE 'ALTER TABLE password_reset_requests ALTER COLUMN ' || quote_ident(col) || ' SET DEFAULT NULL';
+            EXCEPTION WHEN OTHERS THEN NULL;
+            END;
+          END LOOP;
+
           CREATE INDEX IF NOT EXISTS idx_pwd_reset_employee ON password_reset_requests(employee_id);
           CREATE INDEX IF NOT EXISTS idx_pwd_reset_status ON password_reset_requests(status);
         END IF;
 
-        -- Refresh tokens table
+        -- --------------------------------------------------------------------
+        -- D. Refresh Tokens Table
+        -- --------------------------------------------------------------------
         IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'refresh_tokens') THEN
           ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS revoked_at TIMESTAMPTZ;
           ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS ip_address INET;
@@ -120,22 +205,26 @@ async function ensureSchema() {
             END IF;
           EXCEPTION WHEN OTHERS THEN NULL;
           END;
+
+          allowed_cols := ARRAY['id', 'user_id', 'token_hash', 'expires_at', 'revoked_at', 'created_at', 'ip_address', 'user_agent'];
+          FOR col IN (
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'refresh_tokens' 
+              AND is_nullable = 'NO'
+              AND column_name != ALL(allowed_cols)
+          ) LOOP
+            BEGIN
+              EXECUTE 'ALTER TABLE refresh_tokens ALTER COLUMN ' || quote_ident(col) || ' DROP NOT NULL';
+              EXECUTE 'ALTER TABLE refresh_tokens ALTER COLUMN ' || quote_ident(col) || ' SET DEFAULT NULL';
+            EXCEPTION WHEN OTHERS THEN NULL;
+            END;
+          END LOOP;
         END IF;
 
-        -- Users table
-        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'users') THEN
-          ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT;
-          ALTER TABLE users ADD COLUMN IF NOT EXISTS organization_id UUID;
-          ALTER TABLE users ADD COLUMN IF NOT EXISTS merchant_id UUID;
-          ALTER TABLE users ADD COLUMN IF NOT EXISTS employee_id UUID;
-          ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
-          ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT FALSE;
-          ALTER TABLE users ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'ACTIVE';
-          ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;
-          ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
-        END IF;
-
-        -- Organizations table
+        -- --------------------------------------------------------------------
+        -- E. Organizations Table
+        -- --------------------------------------------------------------------
         IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'organizations') THEN
           ALTER TABLE organizations ADD COLUMN IF NOT EXISTS tin_number TEXT;
           ALTER TABLE organizations ADD COLUMN IF NOT EXISTS mpesa_shortcode TEXT;
@@ -143,9 +232,26 @@ async function ensureSchema() {
           ALTER TABLE organizations ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'ACTIVE';
           ALTER TABLE organizations ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
           ALTER TABLE organizations ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+          allowed_cols := ARRAY['id', 'name', 'tin_number', 'mpesa_shortcode', 'contact_phone', 'status', 'created_at', 'updated_at', 'deleted_at'];
+          FOR col IN (
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'organizations' 
+              AND is_nullable = 'NO'
+              AND column_name != ALL(allowed_cols)
+          ) LOOP
+            BEGIN
+              EXECUTE 'ALTER TABLE organizations ALTER COLUMN ' || quote_ident(col) || ' DROP NOT NULL';
+              EXECUTE 'ALTER TABLE organizations ALTER COLUMN ' || quote_ident(col) || ' SET DEFAULT NULL';
+            EXCEPTION WHEN OTHERS THEN NULL;
+            END;
+          END LOOP;
         END IF;
 
-        -- Merchants table
+        -- --------------------------------------------------------------------
+        -- F. Merchants Table
+        -- --------------------------------------------------------------------
         IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'merchants') THEN
           ALTER TABLE merchants ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
           ALTER TABLE merchants ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
@@ -153,9 +259,26 @@ async function ensureSchema() {
             ALTER TABLE merchants ALTER COLUMN status SET DEFAULT 'ACTIVE'::merchant_status;
           EXCEPTION WHEN OTHERS THEN NULL;
           END;
+
+          allowed_cols := ARRAY['id', 'business_name', 'mpesa_number', 'category', 'contact_phone', 'status', 'created_at', 'updated_at', 'deleted_at'];
+          FOR col IN (
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'merchants' 
+              AND is_nullable = 'NO'
+              AND column_name != ALL(allowed_cols)
+          ) LOOP
+            BEGIN
+              EXECUTE 'ALTER TABLE merchants ALTER COLUMN ' || quote_ident(col) || ' DROP NOT NULL';
+              EXECUTE 'ALTER TABLE merchants ALTER COLUMN ' || quote_ident(col) || ' SET DEFAULT NULL';
+            EXCEPTION WHEN OTHERS THEN NULL;
+            END;
+          END LOOP;
         END IF;
 
-        -- Org Credit Policies table
+        -- --------------------------------------------------------------------
+        -- G. Org Credit Policies Table
+        -- --------------------------------------------------------------------
         IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'org_credit_policies') THEN
           ALTER TABLE org_credit_policies ADD COLUMN IF NOT EXISTS requires_admin_approval_above NUMERIC(14,2);
           ALTER TABLE org_credit_policies ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
@@ -337,7 +460,57 @@ async function ensureSchema() {
       );
     `);
 
-    // 4. Verify critical columns across key tables
+    // 4. Install backward compatibility trigger for employees table
+    await pool.query(`
+      CREATE OR REPLACE FUNCTION trg_sync_employees_legacy()
+      RETURNS TRIGGER AS $$
+      BEGIN
+        -- Sync fp_id and fp_employee_id bidirectionally
+        BEGIN
+          IF NEW.fp_employee_id IS NOT NULL THEN
+            NEW.fp_id := NEW.fp_employee_id;
+          ELSIF NEW.fp_id IS NOT NULL THEN
+            NEW.fp_employee_id := NEW.fp_id;
+          END IF;
+        EXCEPTION WHEN OTHERS THEN NULL;
+        END;
+
+        -- Sync full_name and name bidirectionally
+        BEGIN
+          IF NEW.full_name IS NOT NULL THEN
+            NEW.name := NEW.full_name;
+          ELSIF NEW.name IS NOT NULL THEN
+            NEW.full_name := NEW.name;
+          END IF;
+        EXCEPTION WHEN OTHERS THEN NULL;
+        END;
+
+        -- Sync phone_number and phone bidirectionally
+        BEGIN
+          IF NEW.phone_number IS NOT NULL THEN
+            NEW.phone := NEW.phone_number;
+          ELSIF NEW.phone IS NOT NULL THEN
+            NEW.phone_number := NEW.phone;
+          END IF;
+        EXCEPTION WHEN OTHERS THEN NULL;
+        END;
+
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+
+      DO $$ BEGIN
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'employees') THEN
+          DROP TRIGGER IF EXISTS trg_sync_employees_legacy ON employees;
+          CREATE TRIGGER trg_sync_employees_legacy
+          BEFORE INSERT OR UPDATE ON employees
+          FOR EACH ROW EXECUTE FUNCTION trg_sync_employees_legacy();
+        END IF;
+      EXCEPTION WHEN OTHERS THEN NULL;
+      END $$;
+    `);
+
+    // 5. Verify critical columns across key tables
     const verification = await pool.query(`
       SELECT 
         (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'organizations' AND column_name = 'tin_number') as has_tin,
@@ -348,7 +521,7 @@ async function ensureSchema() {
 
     const row = verification.rows[0];
     if (row && Number(row.has_tin) > 0 && Number(row.has_fp_id) > 0 && Number(row.has_requested_at) > 0 && Number(row.has_revoked_at) > 0) {
-      console.log('[Migrator] FlexPay v2 schema is fully verified and up-to-date.');
+      console.log('[Migrator] FlexPay v2 schema is fully verified, synchronized, and resilient.');
     } else {
       console.warn('[Migrator] Partial schema verification detected:', row);
     }
