@@ -93,10 +93,15 @@ async function buildServer(options = {}) {
 
 async function start() {
   const config = loadConfig();
-  await ensureSchema();
   const server = await buildServer();
   await server.listen({ port: config.PORT, host: '0.0.0.0' });
   console.log(`FlexPay v2 server listening at http://localhost:${config.PORT}`);
+
+  // Run schema verification without blocking port discovery for Cloud PaaS
+  ensureSchema().catch((err) => {
+    console.warn('[Migrator] Background schema verification warning:', err.message);
+  });
+
   return server;
 }
 
