@@ -34,7 +34,7 @@ export default function EmployeeLoginPage() {
         password: password,
       });
       setAuth(res.data.user, res.data.accessToken);
-      navigate('/employee');
+      navigate('/employee', { replace: true });
     } catch (err) {
       const msg =
         err.response?.data?.details?.[0]?.message ||

@@ -33,7 +33,7 @@ export default function OrgAuthPage() {
         password: loginPassword,
       });
       setAuth(res.data.user, res.data.accessToken);
-      navigate('/org');
+      navigate('/org', { replace: true });
     } catch (err) {
       const msg =
         err.response?.data?.details?.[0]?.message ||
@@ -69,7 +69,7 @@ export default function OrgAuthPage() {
       const res = await api.post('/auth/org/register', payload);
       if (res.data.user && res.data.accessToken) {
         setAuth(res.data.user, res.data.accessToken);
-        navigate('/org');
+        navigate('/org', { replace: true });
       } else {
         setMode('login');
         setLoginTin(tinNumber.trim());

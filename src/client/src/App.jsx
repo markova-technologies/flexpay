@@ -1,36 +1,108 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Component } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 
-// Lazy-loaded portals & features
-const LandingPage = lazy(() => import('./features/landing/LandingPage'));
-const AuthHub = lazy(() => import('./features/auth/AuthHub'));
-const OrgAuthPage = lazy(() => import('./features/auth/OrgAuthPage'));
-const MerchantAuthPage = lazy(() => import('./features/auth/MerchantAuthPage'));
-const EmployeeLoginPage = lazy(() => import('./features/auth/EmployeeLoginPage'));
-const OrgDashboard = lazy(() => import('./features/organization/OrgDashboard'));
-const EmployeeDashboard = lazy(() => import('./features/employee/EmployeeDashboard'));
-const MerchantPOS = lazy(() => import('./features/merchant/MerchantPOS'));
+// Direct synchronous imports for zero-delay, chunk-failure-free portal navigation
+import LandingPage from './features/landing/LandingPage';
+import AuthHub from './features/auth/AuthHub';
+import OrgAuthPage from './features/auth/OrgAuthPage';
+import MerchantAuthPage from './features/auth/MerchantAuthPage';
+import EmployeeLoginPage from './features/auth/EmployeeLoginPage';
+import OrgDashboard from './features/organization/OrgDashboard';
+import EmployeeDashboard from './features/employee/EmployeeDashboard';
+import MerchantPOS from './features/merchant/MerchantPOS';
 
-export default function App() {
-  return (
-    <Suspense
-      fallback={
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Unhandled runtime error in portal:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
         <div
           style={{
             minHeight: '100vh',
             background: 'var(--fp-bg)',
+            color: 'var(--fp-text-primary)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'var(--fp-text-muted)',
-            fontFamily: 'var(--fp-font-mono)',
+            padding: '24px',
+            fontFamily: 'var(--fp-font-sans)',
           }}
         >
-          Loading FlexPay...
+          <div
+            style={{
+              maxWidth: '460px',
+              width: '100%',
+              background: 'var(--fp-surface-1)',
+              border: '1px solid var(--fp-border)',
+              borderRadius: '20px',
+              padding: '36px',
+              textAlign: 'center',
+              boxShadow: 'var(--fp-shadow-lg)',
+            }}
+          >
+            <div
+              style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
+                background: 'rgba(239, 68, 68, 0.15)',
+                color: '#EF4444',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px',
+                fontWeight: 800,
+                fontSize: '1.25rem',
+              }}
+            >
+              !
+            </div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '8px' }}>
+              Portal Render Issue
+            </h2>
+            <p style={{ color: 'var(--fp-text-secondary)', fontSize: '0.875rem', marginBottom: '24px', lineHeight: 1.5 }}>
+              A view error occurred. Refreshing the portal will restore the active session.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '8px',
+                background: 'var(--fp-benefit)',
+                color: '#060A14',
+                fontWeight: 700,
+                fontSize: '0.95rem',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              Refresh Portal
+            </button>
+          </div>
         </div>
-      }
-    >
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
       <Routes>
         {/* Public Landing & Auth Hub */}
         <Route path="/" element={<LandingPage />} />
@@ -50,9 +122,25 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/org"
+          element={
+            <ProtectedRoute allowedRoles={['ORG_ADMIN', 'ORG_CONTROLLER']}>
+              <OrgDashboard />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/employee/*"
+          element={
+            <ProtectedRoute allowedRoles={['EMPLOYEE']}>
+              <EmployeeDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/employee"
           element={
             <ProtectedRoute allowedRoles={['EMPLOYEE']}>
               <EmployeeDashboard />
@@ -68,10 +156,18 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/merchant"
+          element={
+            <ProtectedRoute allowedRoles={['MERCHANT_OWNER', 'MERCHANT_STAFF']}>
+              <MerchantPOS />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Catch-all redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </Suspense>
+    </ErrorBoundary>
   );
 }

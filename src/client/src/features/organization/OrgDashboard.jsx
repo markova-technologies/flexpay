@@ -107,6 +107,35 @@ export default function OrgDashboard() {
     return name.includes(q) || fpId.includes(q) || phone.includes(q);
   });
 
+  if (loading && !stats && employees.length === 0) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--fp-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div
+            style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              border: '3px solid rgba(16, 185, 129, 0.2)',
+              borderTopColor: 'var(--fp-benefit)',
+              animation: 'fp-spin 0.8s linear infinite',
+              margin: '0 auto 16px',
+            }}
+          />
+          <p style={{ color: 'var(--fp-text-muted)', fontSize: '0.9rem', fontFamily: 'var(--fp-font-sans)' }}>
+            Loading Organization Portal...
+          </p>
+        </div>
+        <style>{`@keyframes fp-spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  const totalAllocated = stats?.totalAllocatedCredit ?? stats?.stats?.totalCreditExtended ?? 0;
+  const totalSpent = stats?.totalSpentCredit ?? stats?.stats?.totalCreditUtilized ?? 0;
+  const utilizationPct = stats?.utilizationPercentage ?? stats?.stats?.utilizationPercentage ?? 0;
+  const pendingSettlement = stats?.pendingSettlementAmount ?? stats?.stats?.pendingSettlementAmount ?? 0;
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--fp-bg)', color: 'var(--fp-text-primary)' }}>
       {/* Navbar */}
@@ -138,7 +167,7 @@ export default function OrgDashboard() {
           </div>
           <div>
             <h1 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>
-              {stats?.organization?.name || user?.organizationName || 'Corporate Admin'}
+              {stats?.organization?.name || stats?.org?.name || user?.orgName || user?.organizationName || 'Corporate Admin'}
             </h1>
             <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-muted)' }}>
               Organization Management Portal • Role: {user?.role || 'ORG_ADMIN'}
@@ -235,7 +264,7 @@ export default function OrgDashboard() {
               <div style={{ background: 'var(--fp-surface-1)', border: '1px solid var(--fp-border)', borderRadius: '16px', padding: '24px' }}>
                 <span style={{ fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>Total Allocated Credit</span>
                 <div className="mono" style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '6px' }}>
-                  ETB {Number(stats?.totalAllocatedCredit || 0).toLocaleString()}
+                  ETB {Number(totalAllocated).toLocaleString()}
                 </div>
                 <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-secondary)', marginTop: '4px', display: 'block' }}>
                   Across {employees.length} enrolled staff members
@@ -245,17 +274,17 @@ export default function OrgDashboard() {
               <div style={{ background: 'var(--fp-surface-1)', border: '1px solid var(--fp-border)', borderRadius: '16px', padding: '24px' }}>
                 <span style={{ fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>Credit Spent This Cycle</span>
                 <div className="mono" style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--fp-salary)', marginTop: '6px' }}>
-                  ETB {Number(stats?.totalSpentCredit || 0).toLocaleString()}
+                  ETB {Number(totalSpent).toLocaleString()}
                 </div>
                 <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-secondary)', marginTop: '4px', display: 'block' }}>
-                  {stats?.utilizationPercentage || 0}% overall company utilization
+                  {utilizationPct}% overall company utilization
                 </span>
               </div>
 
               <div style={{ background: 'var(--fp-surface-1)', border: '1px solid var(--fp-border)', borderRadius: '16px', padding: '24px' }}>
                 <span style={{ fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>Pending Merchant Payables</span>
                 <div className="mono" style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--fp-benefit)', marginTop: '6px' }}>
-                  ETB {Number(stats?.pendingSettlementAmount || 0).toLocaleString()}
+                  ETB {Number(pendingSettlement).toLocaleString()}
                 </div>
                 <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-secondary)', marginTop: '4px', display: 'block' }}>
                   To be wired at month-end payroll
