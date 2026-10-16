@@ -20,6 +20,7 @@ async function authRoutes(fastify, options) {
 
   // Helper to set secure refresh token cookie
   function setRefreshTokenCookie(reply, rawToken) {
+    if (!rawToken) return;
     reply.setCookie('refresh_token', rawToken, {
       path: '/api/v1/auth',
       httpOnly: true,
@@ -27,6 +28,23 @@ async function authRoutes(fastify, options) {
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
     });
+  }
+
+  // Safe wrapper that attempts to create and set session refresh token without failing the HTTP request
+  async function safeCreateRefreshToken(userId, req, rep) {
+    try {
+      const rawToken = await sessionRepo.createRefreshToken(userId, {
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      });
+      if (rawToken) {
+        setRefreshTokenCookie(rep, rawToken);
+      }
+      return rawToken;
+    } catch (err) {
+      req.log.warn({ err: err.message }, 'Warning: Non-fatal error while creating refresh token session');
+      return null;
+    }
   }
 
   // --------------------------------------------------------------------------
@@ -43,7 +61,35 @@ async function authRoutes(fastify, options) {
     // Check duplicate TIN
     const existing = await authRepo.findOrgByTin(tinNumber);
     if (existing) {
-      return reply.code(409).send({ error: 'Organization with this TIN is already registered' });
+      // Graceful auto-recovery for interrupted registrations with matching admin password
+      const existingUser = await authRepo.findUserByOrgId(existing.id, 'ORG_ADMIN');
+      if (existingUser) {
+        const isMatch = await verifyPassword(existingUser.password_hash, password);
+        if (isMatch) {
+          const accessToken = signAccessToken({
+            sub: existingUser.id,
+            role: existingUser.role,
+            orgId: existing.id,
+          });
+
+          await safeCreateRefreshToken(existingUser.id, request, reply);
+          await authRepo.updateLastLogin(existingUser.id);
+
+          return reply.code(200).send({
+            message: 'Organization registered and verified successfully',
+            organizationId: existing.id,
+            userId: existingUser.id,
+            accessToken,
+            user: {
+              id: existingUser.id,
+              role: existingUser.role,
+              orgId: existing.id,
+              orgName: existing.name,
+            },
+          });
+        }
+      }
+      return reply.code(409).send({ error: 'Organization with this TIN is already registered. Please sign in.' });
     }
 
     const passwordHash = await hashPassword(password);
@@ -68,12 +114,7 @@ async function authRoutes(fastify, options) {
       orgId: org.id,
     });
 
-    const rawRefreshToken = await sessionRepo.createRefreshToken(user.id, {
-      ipAddress: request.ip,
-      userAgent: request.headers['user-agent'],
-    });
-
-    setRefreshTokenCookie(reply, rawRefreshToken);
+    await safeCreateRefreshToken(user.id, request, reply);
     await authRepo.updateLastLogin(user.id);
 
     return reply.code(201).send({
@@ -130,12 +171,7 @@ async function authRoutes(fastify, options) {
       orgId: org.id,
     });
 
-    const rawRefreshToken = await sessionRepo.createRefreshToken(user.id, {
-      ipAddress: request.ip,
-      userAgent: request.headers['user-agent'],
-    });
-
-    setRefreshTokenCookie(reply, rawRefreshToken);
+    await safeCreateRefreshToken(user.id, request, reply);
     await authRepo.updateLastLogin(user.id);
 
     return reply.send({
@@ -162,7 +198,35 @@ async function authRoutes(fastify, options) {
 
     const existing = await authRepo.findMerchantByMpesaNumber(mpesaNumber);
     if (existing) {
-      return reply.code(409).send({ error: 'Merchant with this M-PESA number is already registered' });
+      const existingUser = await authRepo.findUserByMerchantId(existing.id);
+      if (existingUser) {
+        const isMatch = await verifyPassword(existingUser.password_hash, password);
+        if (isMatch) {
+          const accessToken = signAccessToken({
+            sub: existingUser.id,
+            role: existingUser.role,
+            merchantId: existing.id,
+          });
+
+          await safeCreateRefreshToken(existingUser.id, request, reply);
+          await authRepo.updateLastLogin(existingUser.id);
+
+          return reply.code(200).send({
+            message: 'Merchant registered and verified successfully',
+            merchantId: existing.id,
+            userId: existingUser.id,
+            accessToken,
+            user: {
+              id: existingUser.id,
+              role: existingUser.role,
+              merchantId: existing.id,
+              businessName: existing.business_name,
+              category: existing.category,
+            },
+          });
+        }
+      }
+      return reply.code(409).send({ error: 'Merchant with this M-PESA number is already registered. Please sign in.' });
     }
 
     const passwordHash = await hashPassword(password);
@@ -185,12 +249,7 @@ async function authRoutes(fastify, options) {
       merchantId: merchant.id,
     });
 
-    const rawRefreshToken = await sessionRepo.createRefreshToken(user.id, {
-      ipAddress: request.ip,
-      userAgent: request.headers['user-agent'],
-    });
-
-    setRefreshTokenCookie(reply, rawRefreshToken);
+    await safeCreateRefreshToken(user.id, request, reply);
     await authRepo.updateLastLogin(user.id);
 
     return reply.code(201).send({
@@ -248,12 +307,7 @@ async function authRoutes(fastify, options) {
       merchantId: merchant.id,
     });
 
-    const rawRefreshToken = await sessionRepo.createRefreshToken(user.id, {
-      ipAddress: request.ip,
-      userAgent: request.headers['user-agent'],
-    });
-
-    setRefreshTokenCookie(reply, rawRefreshToken);
+    await safeCreateRefreshToken(user.id, request, reply);
     await authRepo.updateLastLogin(user.id);
 
     return reply.send({
@@ -314,12 +368,7 @@ async function authRoutes(fastify, options) {
       orgId: employee.organization_id,
     });
 
-    const rawRefreshToken = await sessionRepo.createRefreshToken(user.id, {
-      ipAddress: request.ip,
-      userAgent: request.headers['user-agent'],
-    });
-
-    setRefreshTokenCookie(reply, rawRefreshToken);
+    await safeCreateRefreshToken(user.id, request, reply);
     await authRepo.updateLastLogin(user.id);
 
     return reply.send({

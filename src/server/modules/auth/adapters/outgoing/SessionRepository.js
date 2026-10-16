@@ -11,6 +11,15 @@ class SessionRepository {
     const tokenHash = createHash('sha256').update(rawToken).digest('hex');
     const expiresAt = new Date(Date.now() + expiresInSeconds * 1000);
 
+    // Sanitize ipAddress: INET type in PostgreSQL only accepts valid IPv4/IPv6, not comma lists
+    let cleanIp = null;
+    if (typeof ipAddress === 'string') {
+      const firstIp = ipAddress.split(',')[0].trim();
+      if (/^(\d{1,3}\.){3}\d{1,3}$|^([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}$/.test(firstIp)) {
+        cleanIp = firstIp;
+      }
+    }
+
     try {
       await this.db
         .insertInto('refresh_tokens')
@@ -18,12 +27,27 @@ class SessionRepository {
           user_id: userId,
           token_hash: tokenHash,
           expires_at: expiresAt,
-          ip_address: ipAddress || null,
-          user_agent: userAgent || null,
+          ip_address: cleanIp,
+          user_agent: userAgent ? String(userAgent).substring(0, 500) : null,
         })
         .execute();
     } catch (err) {
-      // In case table or connection has an issue, throw clean error
+      // In case table is missing audit columns (e.g. ip_address / user_agent) or INET fails, gracefully fallback
+      if (err.message && (err.message.includes('ip_address') || err.message.includes('user_agent') || err.message.includes('inet'))) {
+        try {
+          await this.db
+            .insertInto('refresh_tokens')
+            .values({
+              user_id: userId,
+              token_hash: tokenHash,
+              expires_at: expiresAt,
+            })
+            .execute();
+          return rawToken;
+        } catch (fallbackErr) {
+          throw new Error(`Failed to create refresh token: ${fallbackErr.message}`);
+        }
+      }
       throw new Error(`Failed to create refresh token: ${err.message}`);
     }
 

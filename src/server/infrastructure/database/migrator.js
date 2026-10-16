@@ -17,7 +17,40 @@ async function ensureSchema() {
   }
 
   try {
-    // Check if the organizations table exists and has the required v2 'tin_number' column
+    // 1. Run incremental column synchronization for existing tables (e.g. refresh_tokens audit columns)
+    try {
+      await pool.query(`
+        DO $$ BEGIN
+          IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'refresh_tokens') THEN
+            ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS ip_address INET;
+            ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS user_agent TEXT;
+          END IF;
+
+          IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'users') THEN
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT FALSE;
+          END IF;
+
+          IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'organizations') THEN
+            ALTER TABLE organizations ADD COLUMN IF NOT EXISTS mpesa_shortcode TEXT;
+            ALTER TABLE organizations ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+          END IF;
+
+          IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'merchants') THEN
+            ALTER TABLE merchants ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+          END IF;
+
+          IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'org_credit_policies') THEN
+            ALTER TABLE org_credit_policies ADD COLUMN IF NOT EXISTS requires_admin_approval_above NUMERIC(14,2);
+          END IF;
+        END $$;
+      `);
+      console.log('[Migrator] Incremental table and column verification complete.');
+    } catch (patchErr) {
+      console.warn('[Migrator] Incremental column patch notice:', patchErr.message);
+    }
+
+    // 2. Check if the organizations table exists and has the required v2 'tin_number' column
     const checkRes = await pool.query(`
       SELECT column_name 
       FROM information_schema.columns 
