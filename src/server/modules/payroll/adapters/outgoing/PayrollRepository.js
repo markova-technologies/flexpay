@@ -1,3 +1,4 @@
+const { randomUUID } = require('node:crypto');
 const { getDb } = require('../../../../infrastructure/database/client');
 
 class PayrollRepository {
@@ -16,6 +17,7 @@ class PayrollRepository {
     return this.db
       .insertInto('payroll_settlements')
       .values({
+        id: randomUUID(),
         organization_id: organizationId,
         period_start: periodStart,
         period_end: periodEnd,
@@ -37,6 +39,7 @@ class PayrollRepository {
       const res = await this.db
         .insertInto('payroll_disbursement_lines')
         .values({
+          id: randomUUID(),
           settlement_id: line.settlement_id,
           recipient_type: line.recipient_type,
           merchant_id: line.merchant_id || null,

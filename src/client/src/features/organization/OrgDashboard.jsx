@@ -89,13 +89,15 @@ export default function OrgDashboard() {
     e.preventDefault();
     if (!editingEmp) return;
     try {
-      await api.patch(`/org/employees/${editingEmp.fp_employee_id || editingEmp.fpEmployeeId}/credit`, {
+      const empId = editingEmp.fp_employee_id || editingEmp.fpEmployeeId;
+      await api.patch(`/org/employees/${empId}/credit`, {
+        creditLimit: Number(newCreditLimit),
         newCreditLimit: Number(newCreditLimit),
       });
       setEditingEmp(null);
       await fetchOrgData();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to update credit limit.');
+      alert(err.response?.data?.message || err.response?.data?.error || 'Failed to update credit limit.');
     }
   };
 
@@ -131,10 +133,11 @@ export default function OrgDashboard() {
     );
   }
 
-  const totalAllocated = stats?.totalAllocatedCredit ?? stats?.stats?.totalCreditExtended ?? 0;
-  const totalSpent = stats?.totalSpentCredit ?? stats?.stats?.totalCreditUtilized ?? 0;
-  const utilizationPct = stats?.utilizationPercentage ?? stats?.stats?.utilizationPercentage ?? 0;
-  const pendingSettlement = stats?.pendingSettlementAmount ?? stats?.stats?.pendingSettlementAmount ?? 0;
+  const totalAllocated = Number(stats?.totalAllocatedCredit ?? stats?.stats?.totalCreditExtended ?? 0);
+  const totalSpent = Number(stats?.totalSpentCredit ?? stats?.stats?.totalCreditUtilized ?? 0);
+  const utilizationPct = stats?.utilizationPercentage ?? stats?.stats?.utilizationPercentage ?? 
+    (totalAllocated > 0 ? Math.round((totalSpent / totalAllocated) * 100) : 0);
+  const pendingSettlement = Number(stats?.pendingSettlementAmount ?? stats?.stats?.pendingSettlementAmount ?? totalSpent);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--fp-bg)', color: 'var(--fp-text-primary)' }}>

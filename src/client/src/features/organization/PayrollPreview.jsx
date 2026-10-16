@@ -49,10 +49,16 @@ export default function PayrollPreview() {
     setSuccessMsg('');
     setErrorMsg('');
     try {
+      const today = new Date();
+      const periodStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
+      const periodEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().slice(0, 10);
       const res = await api.post('/org/payroll/run', {
-        settlementDate: new Date().toISOString(),
+        periodStart,
+        periodEnd,
+        settlementDate: today.toISOString(),
       });
-      setSuccessMsg(`Payroll settlement initiated successfully! Settlement Reference: ${res.data.settlement?.id}. M-PESA B2C wires dispatched.`);
+      const stlRef = res.data.settlementId || res.data.settlement?.id || 'Ref-OK';
+      setSuccessMsg(`Payroll settlement initiated successfully! Settlement Reference: ${stlRef}. M-PESA B2C wires dispatched.`);
       await loadData();
     } catch (err) {
       setErrorMsg(err.response?.data?.message || 'Failed to execute payroll settlement.');

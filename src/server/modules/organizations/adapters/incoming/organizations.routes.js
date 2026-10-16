@@ -14,11 +14,13 @@ const addEmployeeSchema = z.object({
   phoneNumber: phoneSchema,
   department: z.string().trim().max(50).optional(),
   creditLimitOverride: z.number().min(0).optional(),
+  creditLimit: z.number().min(0).optional(),
   sendSms: z.boolean().default(false),
 });
 
 const updateCreditSchema = z.object({
-  creditLimit: z.number().min(0, 'Credit limit must be a positive number'),
+  creditLimit: z.number().min(0, 'Credit limit must be a positive number').optional(),
+  newCreditLimit: z.number().min(0, 'Credit limit must be a positive number').optional(),
 });
 
 const resetReviewSchema = z.object({
@@ -167,6 +169,7 @@ async function organizationRoutes(fastify, options) {
         merchantDisbursements: Array.from(merchantMap.values()),
         employeeOutstandingBalances: Array.from(employeeBalanceMap.values()),
         totalMerchantDisbursements: Number(totalMerchantDisbursements.toFixed(2)),
+        totalCreditUsed: Number(totalMerchantDisbursements.toFixed(2)),
         totalEmployeeSettlements: 0,
       });
     }
@@ -229,7 +232,8 @@ async function organizationRoutes(fastify, options) {
       }
 
       const { orgId } = request.user;
-      const { fullName, phoneNumber, department, creditLimitOverride, sendSms } = parse.data;
+      const { fullName, phoneNumber, department, creditLimitOverride, creditLimit, sendSms } = parse.data;
+      const effectiveLimit = creditLimitOverride !== undefined ? creditLimitOverride : creditLimit;
 
       try {
         const result = await createEmployeeUseCase.execute({
@@ -237,7 +241,7 @@ async function organizationRoutes(fastify, options) {
           fullName,
           phoneNumber,
           department,
-          creditLimitOverride,
+          creditLimitOverride: effectiveLimit,
           sendSms,
         });
 
@@ -300,40 +304,45 @@ async function organizationRoutes(fastify, options) {
   );
 
   // --------------------------------------------------------------------------
-  // 6. Update Employee Credit Limit (ORG_ADMIN only)
+  // 6. Update Employee Credit Limit (ORG_ADMIN only, PATCH and POST supported)
   // --------------------------------------------------------------------------
-  fastify.patch(
-    '/org/employees/:fpId/credit',
-    { preHandler: [requireRole('ORG_ADMIN')] },
-    async (request, reply) => {
-      const { fpId } = request.params;
-      const parse = updateCreditSchema.safeParse(request.body);
-      if (!parse.success) {
-        return reply.code(400).send({ error: 'Validation error', details: parse.error.issues });
-      }
-
-      const { creditLimit } = parse.data;
-      const employeeRaw = await employeeRepo.findByFpId(fpId);
-
-      if (!employeeRaw || employeeRaw.organization_id !== request.user.orgId) {
-        return reply.code(404).send({ error: 'Employee not found in your organization' });
-      }
-
-      const entity = new Employee(employeeRaw);
-      const validation = entity.canUpdateCreditLimit(creditLimit);
-      if (!validation.allowed) {
-        return reply.code(400).send({ error: validation.reason });
-      }
-
-      const updated = await employeeRepo.updateCreditLimit(employeeRaw.id, creditLimit);
-
-      return reply.send({
-        message: 'Credit limit updated successfully',
-        creditLimit: Number(updated.credit_limit),
-        availableCredit: Number(updated.available_credit),
-      });
+  const handleCreditUpdate = async (request, reply) => {
+    const { fpId } = request.params;
+    const parse = updateCreditSchema.safeParse(request.body);
+    if (!parse.success) {
+      return reply.code(400).send({ error: 'Validation error', details: parse.error.issues });
     }
-  );
+
+    const targetLimit = parse.data.creditLimit !== undefined ? parse.data.creditLimit : parse.data.newCreditLimit;
+    if (targetLimit === undefined) {
+      return reply.code(400).send({ error: 'creditLimit or newCreditLimit is required' });
+    }
+
+    const employeeRaw = await employeeRepo.findByFpId(fpId);
+
+    if (!employeeRaw || employeeRaw.organization_id !== request.user.orgId) {
+      return reply.code(404).send({ error: 'Employee not found in your organization' });
+    }
+
+    const entity = new Employee(employeeRaw);
+    const validation = entity.canUpdateCreditLimit(targetLimit);
+    if (!validation.allowed) {
+      return reply.code(400).send({ error: validation.reason });
+    }
+
+    const updated = await employeeRepo.updateCreditLimit(employeeRaw.id, targetLimit);
+
+    return reply.send({
+      message: 'Credit limit updated successfully',
+      creditLimit: Number(updated.credit_limit),
+      availableCredit: Number(updated.available_credit),
+    });
+  };
+
+  fastify.patch('/org/employees/:fpId/credit', { preHandler: [requireRole('ORG_ADMIN')] }, handleCreditUpdate);
+  fastify.post('/org/employees/:fpId/credit', { preHandler: [requireRole('ORG_ADMIN')] }, handleCreditUpdate);
+  fastify.patch('/org/employees/:fpId/credit-limit', { preHandler: [requireRole('ORG_ADMIN')] }, handleCreditUpdate);
+  fastify.post('/org/employees/:fpId/credit-limit', { preHandler: [requireRole('ORG_ADMIN')] }, handleCreditUpdate);
 
   // --------------------------------------------------------------------------
   // 7. List Pending Password Reset Requests
@@ -349,61 +358,60 @@ async function organizationRoutes(fastify, options) {
   );
 
   // --------------------------------------------------------------------------
-  // 8. Review Password Reset Request
+  // 8. Review Password Reset Request (Supports both PATCH and POST)
   // --------------------------------------------------------------------------
-  fastify.patch(
-    '/org/password-reset-requests/:id',
-    { preHandler: [requireRole('ORG_ADMIN')] },
-    async (request, reply) => {
-      const { id } = request.params;
-      const parse = resetReviewSchema.safeParse(request.body);
-      if (!parse.success) {
-        return reply.code(400).send({ error: 'Validation error', details: parse.error.issues });
-      }
-
-      const resetReq = await employeeRepo.findPasswordResetRequestById(id);
-      if (!resetReq || resetReq.organizationId !== request.user.orgId) {
-        return reply.code(404).send({ error: 'Password reset request not found' });
-      }
-
-      if (resetReq.status !== 'PENDING') {
-        return reply.code(400).send({ error: `Request is already ${resetReq.status}` });
-      }
-
-      const { action } = parse.data;
-
-      if (action === 'APPROVE') {
-        const newPassword = generateCompliantPassword(16);
-        const newHash = await hashPassword(newPassword);
-
-        await employeeRepo.approvePasswordReset(id, request.user.sub, newHash);
-
-        if (resetReq.deliveryMethod === 'SMS' && notificationService && typeof notificationService.sendPasswordResetApprovedSms === 'function') {
-          try {
-            await notificationService.sendPasswordResetApprovedSms({
-              to: resetReq.phoneNumber,
-              newPassword,
-            });
-          } catch (err) {
-            console.warn(`[SMS delivery warning]: ${err.message}`);
-          }
-        }
-
-        return reply.send({
-          approved: true,
-          message: 'Password reset approved. Provide this new 16-character password to the employee.',
-          newPassword,
-          deliveryMethod: resetReq.deliveryMethod,
-        });
-      } else {
-        await employeeRepo.rejectPasswordReset(id, request.user.sub);
-        return reply.send({
-          approved: false,
-          message: 'Password reset request was rejected.',
-        });
-      }
+  const handleResetReview = async (request, reply) => {
+    const { id } = request.params;
+    const parse = resetReviewSchema.safeParse(request.body);
+    if (!parse.success) {
+      return reply.code(400).send({ error: 'Validation error', details: parse.error.issues });
     }
-  );
+
+    const resetReq = await employeeRepo.findPasswordResetRequestById(id);
+    if (!resetReq || resetReq.organizationId !== request.user.orgId) {
+      return reply.code(404).send({ error: 'Password reset request not found' });
+    }
+
+    if (resetReq.status !== 'PENDING') {
+      return reply.code(400).send({ error: `Request is already ${resetReq.status}` });
+    }
+
+    const { action } = parse.data;
+
+    if (action === 'APPROVE') {
+      const newPassword = generateCompliantPassword(16);
+      const newHash = await hashPassword(newPassword);
+
+      await employeeRepo.approvePasswordReset(id, request.user.sub, newHash);
+
+      if (resetReq.deliveryMethod === 'SMS' && notificationService && typeof notificationService.sendPasswordResetApprovedSms === 'function') {
+        try {
+          await notificationService.sendPasswordResetApprovedSms({
+            to: resetReq.phoneNumber,
+            newPassword,
+          });
+        } catch (err) {
+          console.warn(`[SMS delivery warning]: ${err.message}`);
+        }
+      }
+
+      return reply.send({
+        approved: true,
+        message: 'Password reset approved. Provide this new 16-character password to the employee.',
+        newPassword,
+        deliveryMethod: resetReq.deliveryMethod,
+      });
+    } else {
+      await employeeRepo.rejectPasswordReset(id, request.user.sub);
+      return reply.send({
+        approved: false,
+        message: 'Password reset request was rejected.',
+      });
+    }
+  };
+
+  fastify.patch('/org/password-reset-requests/:id', { preHandler: [requireRole('ORG_ADMIN')] }, handleResetReview);
+  fastify.post('/org/password-reset-requests/:id', { preHandler: [requireRole('ORG_ADMIN')] }, handleResetReview);
 
   // --------------------------------------------------------------------------
   // 9. Organization Credit Policy (GET / PATCH)

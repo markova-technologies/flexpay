@@ -151,101 +151,116 @@ export default function EmployeeDashboard() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             {/* Top Row: Gauge & Balances */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                gap: '24px',
-                alignItems: 'stretch',
-              }}
-            >
-              {/* Credit Ring Container */}
-              <div
-                style={{
-                  background: 'var(--fp-surface-1)',
-                  border: '1px solid var(--fp-border)',
-                  borderRadius: '20px',
-                  padding: '28px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: 'var(--fp-shadow-md)',
-                }}
-              >
-                <CreditRing
-                  limit={data.creditLimit}
-                  available={data.availableCredit}
-                  spent={data.spentThisMonth}
-                  size={200}
-                />
-              </div>
+            {(() => {
+              const emp = data?.employee || {};
+              const creditLimit = Number(data?.creditLimit ?? emp.creditLimit ?? 0);
+              const availableCredit = Number(data?.availableCredit ?? emp.availableCredit ?? 0);
+              const spentThisMonth = Number(data?.spentThisMonth ?? data?.spentCredit ?? emp.spentCredit ?? 0);
+              const qrEmployee = {
+                ...emp,
+                fpEmployeeId: data?.fpEmployeeId || emp.fpEmployeeId || user?.fpEmployeeId,
+                fullName: data?.fullName || emp.fullName || user?.fullName || 'Employee',
+                organizationName: data?.organizationName || emp.organizationName || 'Corporate Partner',
+              };
 
-              {/* Balance Summary Cards */}
-              <div style={{ display: 'grid', gridTemplateRows: 'repeat(3, 1fr)', gap: '14px' }}>
+              return (
                 <div
                   style={{
-                    background: 'var(--fp-surface-1)',
-                    border: '1px solid var(--fp-border)',
-                    borderRadius: '16px',
-                    padding: '20px 24px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                    gap: '24px',
+                    alignItems: 'stretch',
                   }}
                 >
-                  <div>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>Monthly Credit Limit</span>
-                    <div className="mono" style={{ fontSize: '1.4rem', fontWeight: 800 }}>
-                      ETB {Number(data.creditLimit).toLocaleString()}
+                  {/* Credit Ring Container */}
+                  <div
+                    style={{
+                      background: 'var(--fp-surface-1)',
+                      border: '1px solid var(--fp-border)',
+                      borderRadius: '20px',
+                      padding: '28px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: 'var(--fp-shadow-md)',
+                    }}
+                  >
+                    <CreditRing
+                      limit={creditLimit}
+                      available={availableCredit}
+                      spent={spentThisMonth}
+                      size={200}
+                    />
+                  </div>
+
+                  {/* Balance Summary Cards */}
+                  <div style={{ display: 'grid', gridTemplateRows: 'repeat(3, 1fr)', gap: '14px' }}>
+                    <div
+                      style={{
+                        background: 'var(--fp-surface-1)',
+                        border: '1px solid var(--fp-border)',
+                        borderRadius: '16px',
+                        padding: '20px 24px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <div>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>Monthly Credit Limit</span>
+                        <div className="mono" style={{ fontSize: '1.4rem', fontWeight: 800 }}>
+                          ETB {creditLimit.toLocaleString()}
+                        </div>
+                      </div>
+                      <CreditCard size={32} color="var(--fp-text-secondary)" />
+                    </div>
+
+                    <div
+                      style={{
+                        background: 'rgba(16, 185, 129, 0.08)',
+                        border: '1px solid rgba(16, 185, 129, 0.25)',
+                        borderRadius: '16px',
+                        padding: '20px 24px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <div>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--fp-benefit)' }}>Available for Spend</span>
+                        <div className="mono" style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--fp-benefit)' }}>
+                          ETB {availableCredit.toLocaleString()}
+                        </div>
+                      </div>
+                      <CheckCircle size={32} color="var(--fp-benefit)" weight="fill" />
+                    </div>
+
+                    <div
+                      style={{
+                        background: 'var(--fp-surface-1)',
+                        border: '1px solid var(--fp-border)',
+                        borderRadius: '16px',
+                        padding: '20px 24px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <div>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>Spent This Cycle</span>
+                        <div className="mono" style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--fp-salary)' }}>
+                          ETB {spentThisMonth.toLocaleString()}
+                        </div>
+                      </div>
+                      <Receipt size={32} color="var(--fp-salary)" />
                     </div>
                   </div>
-                  <CreditCard size={32} color="var(--fp-text-secondary)" />
-                </div>
 
-                <div
-                  style={{
-                    background: 'rgba(16, 185, 129, 0.08)',
-                    border: '1px solid rgba(16, 185, 129, 0.25)',
-                    borderRadius: '16px',
-                    padding: '20px 24px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <div>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--fp-benefit)' }}>Available for Spend</span>
-                    <div className="mono" style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--fp-benefit)' }}>
-                      ETB {Number(data.availableCredit).toLocaleString()}
-                    </div>
-                  </div>
-                  <CheckCircle size={32} color="var(--fp-benefit)" weight="fill" />
+                  {/* QR Card */}
+                  <QRCodeCard employee={qrEmployee} />
                 </div>
-
-                <div
-                  style={{
-                    background: 'var(--fp-surface-1)',
-                    border: '1px solid var(--fp-border)',
-                    borderRadius: '16px',
-                    padding: '20px 24px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <div>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>Spent This Cycle</span>
-                    <div className="mono" style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--fp-salary)' }}>
-                      ETB {Number(data.spentThisMonth).toLocaleString()}
-                    </div>
-                  </div>
-                  <Receipt size={32} color="var(--fp-salary)" />
-                </div>
-              </div>
-
-              {/* QR Card */}
-              <QRCodeCard employee={data.employee} />
-            </div>
+              );
+            })()}
 
             {/* Category Spending Breakdown */}
             <div

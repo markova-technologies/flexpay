@@ -7,8 +7,9 @@ const { EmployeeRepository } = require('../../../employees/adapters/outgoing/Emp
 const { z } = require('zod');
 
 const runPayrollSchema = z.object({
-  periodStart: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'periodStart must be YYYY-MM-DD'),
-  periodEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'periodEnd must be YYYY-MM-DD'),
+  periodStart: z.string().optional(),
+  periodEnd: z.string().optional(),
+  settlementDate: z.string().optional(),
   employeeSalaries: z
     .array(
       z.object({
@@ -42,12 +43,23 @@ async function payrollRoutes(fastify, options) {
     '/org/payroll/run',
     { preHandler: [requireRole('ORG_ADMIN')] },
     async (request, reply) => {
-      const parse = runPayrollSchema.safeParse(request.body);
+      const parse = runPayrollSchema.safeParse(request.body || {});
       if (!parse.success) {
         return reply.code(400).send({ error: 'Validation error', details: parse.error.issues });
       }
 
-      const { periodStart, periodEnd, employeeSalaries } = parse.data;
+      const today = new Date();
+      const defaultStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
+      const defaultEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().slice(0, 10);
+
+      const periodStart = (parse.data.periodStart && /^\d{4}-\d{2}-\d{2}$/.test(parse.data.periodStart))
+        ? parse.data.periodStart
+        : defaultStart;
+      const periodEnd = (parse.data.periodEnd && /^\d{4}-\d{2}-\d{2}$/.test(parse.data.periodEnd))
+        ? parse.data.periodEnd
+        : defaultEnd;
+
+      const { employeeSalaries } = parse.data;
 
       const result = await runPayrollUseCase.execute({
         organizationId: request.user.orgId,
@@ -60,6 +72,14 @@ async function payrollRoutes(fastify, options) {
       return reply.code(201).send({
         message: 'Payroll settlement executed. Automated B2C wire payouts dispatched to merchants and employees.',
         settlementId: result.settlementId,
+        settlement: {
+          id: result.settlementId,
+          status: 'RUNNING',
+          totalMerchantDisbursements: result.totalMerchantDisbursements,
+          totalEmployeeDisbursements: result.totalEmployeeDisbursements,
+          merchantsCount: result.merchantsCount,
+          employeesCount: result.employeesCount,
+        },
         totalMerchantDisbursements: result.totalMerchantDisbursements,
         totalEmployeeDisbursements: result.totalEmployeeDisbursements,
         merchantsCount: result.merchantsCount,

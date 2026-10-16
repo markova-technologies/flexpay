@@ -50,6 +50,7 @@ const forgotPasswordSchema = z.object({
   fpEmployeeId: z.string().trim().regex(/^FP-[A-Z]{2,4}-\d{4}-[0-9A-Z]{5}-[A-Z]$/, 'Invalid Employee ID format'),
   phoneNumber: phoneSchema,
   deliveryMethod: z.enum(['SMS', 'MANUAL']).default('SMS'),
+  reason: z.string().optional(),
 });
 
 module.exports = {

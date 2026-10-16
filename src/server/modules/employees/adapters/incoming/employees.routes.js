@@ -44,6 +44,13 @@ async function employeeRoutes(fastify, options) {
       }));
 
       return reply.send({
+        creditLimit: entity.creditLimit,
+        availableCredit: entity.availableCredit,
+        spentCredit: entity.spentCredit,
+        spentThisMonth: entity.spentCredit,
+        fpEmployeeId: entity.fpEmployeeId,
+        fullName: entity.fullName,
+        organizationName: employeeRaw.organization_name || 'Organization',
         employee: {
           fpEmployeeId: entity.fpEmployeeId,
           fullName: entity.fullName,
@@ -51,6 +58,7 @@ async function employeeRoutes(fastify, options) {
           creditLimit: entity.creditLimit,
           availableCredit: entity.availableCredit,
           spentCredit: entity.spentCredit,
+          spentThisMonth: entity.spentCredit,
           utilizationPct: entity.creditUtilizationPct,
         },
         recentTransactions,

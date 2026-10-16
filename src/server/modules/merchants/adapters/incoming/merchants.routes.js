@@ -14,6 +14,7 @@ const verifyEmployeeSchema = z.object({
 const createTransactionSchema = z.object({
   fpEmployeeId: z.string().trim().regex(/^FP-[A-Z]{2,4}-\d{4}-[0-9A-Z]{5}-[A-Z]$/, 'Invalid Employee ID format'),
   totalAmount: z.number().positive('Total amount must be greater than zero'),
+  idempotencyKey: z.string().optional(),
 });
 
 async function merchantRoutes(fastify, options) {
@@ -74,14 +75,24 @@ async function merchantRoutes(fastify, options) {
         }
       }
 
+      const availableCredit = Number(employee.available_credit);
+      const creditLimit = Number(employee.credit_limit);
+      const fullName = employee.full_name;
+
       return reply.send({
         eligible,
         ineligibilityReason,
+        fullName,
+        employeeName: fullName,
+        fpEmployeeId: employee.fp_employee_id,
+        availableCredit,
+        creditLimit,
         employee: {
-          fullName: employee.full_name,
+          fullName,
+          employeeName: fullName,
           fpEmployeeId: employee.fp_employee_id,
-          availableCredit: Number(employee.available_credit),
-          creditLimit: Number(employee.credit_limit),
+          availableCredit,
+          creditLimit,
           organizationId: employee.organization_id,
         },
         merchant: {

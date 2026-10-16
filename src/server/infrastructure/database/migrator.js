@@ -283,6 +283,49 @@ async function ensureSchema() {
           ALTER TABLE org_credit_policies ADD COLUMN IF NOT EXISTS requires_admin_approval_above NUMERIC(14,2);
           ALTER TABLE org_credit_policies ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
         END IF;
+
+        -- --------------------------------------------------------------------
+        -- H. Payroll Settlements & Disbursement Lines
+        -- --------------------------------------------------------------------
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'payroll_settlements') THEN
+          ALTER TABLE payroll_settlements ADD COLUMN IF NOT EXISTS total_merchant_disbursements NUMERIC(14,2) NOT NULL DEFAULT 0;
+          ALTER TABLE payroll_settlements ADD COLUMN IF NOT EXISTS total_employee_disbursements NUMERIC(14,2) NOT NULL DEFAULT 0;
+          ALTER TABLE payroll_settlements ADD COLUMN IF NOT EXISTS initiated_by UUID;
+          ALTER TABLE payroll_settlements ADD COLUMN IF NOT EXISTS initiated_at TIMESTAMPTZ;
+          ALTER TABLE payroll_settlements ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;
+          ALTER TABLE payroll_settlements ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+          BEGIN
+            ALTER TABLE payroll_settlements ALTER COLUMN id SET DEFAULT gen_random_uuid();
+          EXCEPTION WHEN OTHERS THEN NULL;
+          END;
+        END IF;
+
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'payroll_disbursement_lines') THEN
+          ALTER TABLE payroll_disbursement_lines ADD COLUMN IF NOT EXISTS mpesa_conversation_id TEXT;
+          ALTER TABLE payroll_disbursement_lines ADD COLUMN IF NOT EXISTS mpesa_receipt TEXT;
+          ALTER TABLE payroll_disbursement_lines ADD COLUMN IF NOT EXISTS dispatched_at TIMESTAMPTZ;
+          ALTER TABLE payroll_disbursement_lines ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;
+          ALTER TABLE payroll_disbursement_lines ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+          BEGIN
+            ALTER TABLE payroll_disbursement_lines ALTER COLUMN id SET DEFAULT gen_random_uuid();
+          EXCEPTION WHEN OTHERS THEN NULL;
+          END;
+        END IF;
+
+        -- --------------------------------------------------------------------
+        -- I. Transactions & Ledger
+        -- --------------------------------------------------------------------
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'transactions') THEN
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS mpesa_checkout_request_id TEXT;
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS mpesa_receipt_number TEXT;
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS copay_amount NUMERIC(14,2) NOT NULL DEFAULT 0;
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS credit_amount NUMERIC(14,2) NOT NULL DEFAULT 0;
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS category_snapshot TEXT;
+          BEGIN
+            ALTER TABLE transactions ALTER COLUMN id SET DEFAULT gen_random_uuid();
+          EXCEPTION WHEN OTHERS THEN NULL;
+          END;
+        END IF;
       END $$;
     `);
 
@@ -491,6 +534,16 @@ async function ensureSchema() {
             NEW.phone := NEW.phone_number;
           ELSIF NEW.phone IS NOT NULL THEN
             NEW.phone_number := NEW.phone;
+          END IF;
+        EXCEPTION WHEN OTHERS THEN NULL;
+        END;
+
+        -- Sync organization_id and employer_id bidirectionally
+        BEGIN
+          IF NEW.organization_id IS NOT NULL THEN
+            NEW.employer_id := NEW.organization_id;
+          ELSIF NEW.employer_id IS NOT NULL THEN
+            NEW.organization_id := NEW.employer_id;
           END IF;
         EXCEPTION WHEN OTHERS THEN NULL;
         END;

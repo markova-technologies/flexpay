@@ -20,12 +20,18 @@ export default function AddEmployeeForm({ onClose, onCreated }) {
         phoneNumber: phoneNumber.trim(),
         department: department.trim(),
         creditLimit: Number(creditLimit),
+        creditLimitOverride: Number(creditLimit),
       });
 
       // Pass employee data and the one-time generated password to parent
       onCreated(res.data.employee, res.data.plainPassword);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to onboard employee. Please verify details.');
+      const msg =
+        err.response?.data?.details?.[0]?.message ||
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        'Failed to onboard employee. Please verify details.';
+      setError(msg);
     } finally {
       setLoading(false);
     }

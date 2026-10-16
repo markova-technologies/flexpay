@@ -63,10 +63,31 @@ export default function MerchantPOS() {
       const res = await api.post('/merchant/verify-employee', {
         fpEmployeeId: fpIdInput.trim().toUpperCase(),
       });
-      setVerifiedEmployee(res.data);
+      const emp = res.data.employee || res.data;
+      const normalizedEmployee = {
+        ...emp,
+        fpEmployeeId: emp.fpEmployeeId || res.data.fpEmployeeId || fpIdInput.trim().toUpperCase(),
+        availableCredit: Number(emp.availableCredit ?? res.data.availableCredit ?? 0),
+        creditLimit: Number(emp.creditLimit ?? res.data.creditLimit ?? 0),
+        employeeName: emp.fullName || res.data.fullName || emp.employeeName || res.data.employeeName || 'Verified Employee',
+        fullName: emp.fullName || res.data.fullName || emp.employeeName || res.data.employeeName || 'Verified Employee',
+        organizationName: emp.organizationName || res.data.organizationName || 'Corporate Partner',
+      };
+
+      if (res.data.eligible === false) {
+        setVerifyError(res.data.ineligibilityReason || 'Customer is not eligible for purchases at this merchant category.');
+        return;
+      }
+
+      setVerifiedEmployee(normalizedEmployee);
       setStep(2);
     } catch (err) {
-      setVerifyError(err.response?.data?.message || 'Employee verification failed. Check FP-ID.');
+      const msg =
+        err.response?.data?.details?.[0]?.message ||
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        'Employee verification failed. Check FP-ID.';
+      setVerifyError(msg);
     } finally {
       setVerifying(false);
     }
@@ -87,9 +108,10 @@ export default function MerchantPOS() {
     setAuthError('');
     setAuthorizing(true);
     try {
+      const targetFpId = verifiedEmployee?.fpEmployeeId || verifiedEmployee?.fp_employee_id || fpIdInput.trim().toUpperCase();
       const idempotencyKey = `pos-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
       const res = await api.post('/merchant/transaction', {
-        fpEmployeeId: verifiedEmployee.fpEmployeeId,
+        fpEmployeeId: targetFpId,
         totalAmount: total,
         idempotencyKey,
       });
@@ -98,7 +120,12 @@ export default function MerchantPOS() {
       setStep(3);
       fetchMerchantDashboard();
     } catch (err) {
-      setAuthError(err.response?.data?.message || 'Transaction authorization failed.');
+      const msg =
+        err.response?.data?.details?.[0]?.message ||
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        'Transaction authorization failed.';
+      setAuthError(msg);
     } finally {
       setAuthorizing(false);
     }
