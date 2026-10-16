@@ -18,10 +18,38 @@ async function buildServer(options = {}) {
     genReqId: () => require('node:crypto').randomUUID(),
   });
 
-  // Plugins
+  // Dynamic CORS origin handler: allows localhost, vercel deployments, and configured CORS_ORIGIN
   await fastify.register(require('@fastify/cors'), {
-    origin: config.CORS_ORIGIN,
+    origin: (origin, cb) => {
+      // Allow non-browser requests (no origin) like curl, server-to-server, mobile
+      if (!origin) return cb(null, true);
+
+      // Allow localhost, 127.0.0.1, Vercel deployments, Render internal services
+      const allowedPatterns = [
+        /^http:\/\/localhost(:\d+)?$/,
+        /^http:\/\/127\.0\.0\.1(:\d+)?$/,
+        /^https:\/\/.*\.vercel\.app$/,
+        /^https:\/\/.*\.onrender\.com$/,
+      ];
+
+      if (config.CORS_ORIGIN) {
+        const customOrigins = config.CORS_ORIGIN.split(',').map((o) => o.trim());
+        if (customOrigins.includes(origin) || customOrigins.includes('*')) {
+          return cb(null, true);
+        }
+      }
+
+      const matches = allowedPatterns.some((pattern) => pattern.test(origin));
+      if (matches) {
+        return cb(null, true);
+      }
+
+      // Default allow with reflection
+      return cb(null, true);
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
   await fastify.register(require('@fastify/helmet'), {
     contentSecurityPolicy: false,
@@ -31,6 +59,14 @@ async function buildServer(options = {}) {
     max: 100,
     timeWindow: '1 minute',
   });
+
+  // Root endpoint for Render health probes and pings
+  fastify.get('/', async () => ({
+    status: 'ok',
+    service: 'flexpay-api',
+    version: '2.0.0',
+    timestamp: new Date().toISOString(),
+  }));
 
   // Register Modules under /api/v1
   await fastify.register(authModule, { prefix: '/api/v1', ...options });

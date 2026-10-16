@@ -1,11 +1,24 @@
 import axios from 'axios';
 import { useAuthStore } from '../stores/authStore';
 
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+function resolveBaseURL() {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (!envUrl) {
+    return 'http://localhost:3001/api/v1';
+  }
+  const clean = envUrl.trim().replace(/\/+$/, '');
+  if (clean.endsWith('/api/v1')) {
+    return clean;
+  }
+  return `${clean}/api/v1`;
+}
+
+const baseURL = resolveBaseURL();
 
 const api = axios.create({
   baseURL,
   withCredentials: true, // Automatically sends HTTP-only refresh token cookie
+  timeout: 30000, // 30 second timeout for cold starts
 });
 
 // Request interceptor: attach current Bearer token

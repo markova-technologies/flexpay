@@ -39,7 +39,11 @@ export default function MerchantAuthPage() {
         err.response?.data?.details?.[0]?.message ||
         err.response?.data?.error ||
         err.response?.data?.message ||
-        'Merchant login failed. Check your credentials.';
+        (err.code === 'ECONNABORTED'
+          ? 'Request timed out. Render backend may be waking up from sleep. Please try again in a few seconds.'
+          : !err.response
+          ? 'Network error: Cannot reach backend server. Please verify VITE_API_URL.'
+          : 'Merchant login failed. Check your credentials.');
       setError(msg);
     } finally {
       setLoading(false);
@@ -65,7 +69,11 @@ export default function MerchantAuthPage() {
         err.response?.data?.details?.[0]?.message ||
         err.response?.data?.error ||
         err.response?.data?.message ||
-        'Merchant registration failed.';
+        (err.code === 'ECONNABORTED'
+          ? 'Request timed out. Render backend may be waking up from sleep. Please try again in a few seconds.'
+          : !err.response
+          ? 'Network error: Cannot reach backend server. Please verify VITE_API_URL.'
+          : 'Merchant registration failed.');
       setError(msg);
     } finally {
       setLoading(false);
