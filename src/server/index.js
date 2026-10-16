@@ -1,5 +1,6 @@
 const Fastify = require('fastify');
 const { loadConfig } = require('./config');
+const { ensureSchema } = require('./infrastructure/database/migrator');
 const authModule = require('./modules/auth');
 const organizationModule = require('./modules/organizations');
 const employeeModule = require('./modules/employees');
@@ -92,6 +93,7 @@ async function buildServer(options = {}) {
 
 async function start() {
   const config = loadConfig();
+  await ensureSchema();
   const server = await buildServer();
   await server.listen({ port: config.PORT, host: '0.0.0.0' });
   console.log(`FlexPay v2 server listening at http://localhost:${config.PORT}`);
