@@ -38,7 +38,22 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (error.response?.status !== 401 || originalRequest._retry) {
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
+
+    // Do NOT attempt token refresh on login, register, or refresh endpoints
+    const url = originalRequest.url || '';
+    const isAuthRoute =
+      url.includes('/auth/login') ||
+      url.includes('/auth/register') ||
+      url.includes('/auth/refresh') ||
+      url.includes('/auth/org/login') ||
+      url.includes('/auth/merchant/login') ||
+      url.includes('/auth/employee/login') ||
+      url.includes('/auth/employee/forgot-password');
+
+    if (error.response?.status !== 401 || originalRequest._retry || isAuthRoute) {
       return Promise.reject(error);
     }
 

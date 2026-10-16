@@ -22,8 +22,15 @@ async function ensureSchema() {
       await pool.query(`
         DO $$ BEGIN
           IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'refresh_tokens') THEN
+            ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS revoked_at TIMESTAMPTZ;
             ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS ip_address INET;
             ALTER TABLE refresh_tokens ADD COLUMN IF NOT EXISTS user_agent TEXT;
+            BEGIN
+              IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'refresh_tokens' AND column_name = 'revoked') THEN
+                UPDATE refresh_tokens SET revoked_at = NOW() WHERE revoked = TRUE AND revoked_at IS NULL;
+              END IF;
+            EXCEPTION WHEN OTHERS THEN NULL;
+            END;
           END IF;
 
           IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'users') THEN

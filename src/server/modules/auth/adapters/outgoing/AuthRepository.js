@@ -6,10 +6,12 @@ class AuthRepository {
   }
 
   async findOrgByTin(tinNumber) {
+    if (!tinNumber) return null;
+    const clean = String(tinNumber).trim();
     return this.db
       .selectFrom('organizations')
       .selectAll()
-      .where('tin_number', '=', tinNumber)
+      .where('tin_number', '=', clean)
       .where('deleted_at', 'is', null)
       .executeTakeFirst();
   }
@@ -61,13 +63,19 @@ class AuthRepository {
       .executeTakeFirstOrThrow();
   }
 
-  async findUserByOrgId(orgId, role = 'ORG_ADMIN') {
-    return this.db
+  async findUserByOrgId(orgId, role) {
+    let query = this.db
       .selectFrom('users')
       .selectAll()
-      .where('organization_id', '=', orgId)
-      .where('role', '=', role)
-      .executeTakeFirst();
+      .where('organization_id', '=', orgId);
+
+    if (role) {
+      query = query.where('role', '=', role);
+    } else {
+      query = query.where('role', 'in', ['ORG_ADMIN', 'ORG_CONTROLLER']);
+    }
+
+    return query.executeTakeFirst();
   }
 
   async findMerchantByMpesaNumber(mpesaNumber) {

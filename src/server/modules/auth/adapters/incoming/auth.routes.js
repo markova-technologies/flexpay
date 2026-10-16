@@ -63,7 +63,7 @@ async function authRoutes(fastify, options) {
     const existing = await authRepo.findOrgByTin(tinNumber);
     if (existing) {
       // Graceful auto-recovery for interrupted registrations with matching admin password
-      const existingUser = await authRepo.findUserByOrgId(existing.id, 'ORG_ADMIN');
+      const existingUser = await authRepo.findUserByOrgId(existing.id);
       if (existingUser) {
         const isMatch = await verifyPassword(existingUser.password_hash, password);
         if (isMatch) {
@@ -155,7 +155,7 @@ async function authRoutes(fastify, options) {
       return reply.code(401).send({ error: 'Invalid TIN or credentials' });
     }
 
-    const user = await authRepo.findUserByOrgId(org.id, 'ORG_ADMIN');
+    const user = await authRepo.findUserByOrgId(org.id);
     if (!user) {
       return reply.code(401).send({ error: 'Invalid TIN or credentials' });
     }

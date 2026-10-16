@@ -58,34 +58,70 @@ class SessionRepository {
     if (!rawToken || typeof rawToken !== 'string') return null;
     const tokenHash = createHash('sha256').update(rawToken).digest('hex');
 
-    const record = await this.db
-      .selectFrom('refresh_tokens')
-      .selectAll()
-      .where('token_hash', '=', tokenHash)
-      .where('expires_at', '>', new Date())
-      .where('revoked_at', 'is', null)
-      .executeTakeFirst();
+    let record = null;
+    try {
+      record = await this.db
+        .selectFrom('refresh_tokens')
+        .selectAll()
+        .where('token_hash', '=', tokenHash)
+        .where('expires_at', '>', new Date())
+        .where('revoked_at', 'is', null)
+        .executeTakeFirst();
+    } catch (err) {
+      if (err.message && err.message.includes('revoked_at')) {
+        record = await this.db
+          .selectFrom('refresh_tokens')
+          .selectAll()
+          .where('token_hash', '=', tokenHash)
+          .where('expires_at', '>', new Date())
+          .executeTakeFirst();
+        if (record && record.revoked === true) return null;
+      } else {
+        throw err;
+      }
+    }
 
     if (!record) return null;
+    if (record.revoked === true) return null;
 
     // Immediately revoke old token to prevent replay attacks
-    await this.db
-      .updateTable('refresh_tokens')
-      .set({ revoked_at: new Date() })
-      .where('id', '=', record.id)
-      .execute();
+    try {
+      await this.db
+        .updateTable('refresh_tokens')
+        .set({ revoked_at: new Date() })
+        .where('id', '=', record.id)
+        .execute();
+    } catch {
+      try {
+        await this.db
+          .updateTable('refresh_tokens')
+          .set({ revoked: true })
+          .where('id', '=', record.id)
+          .execute();
+      } catch {}
+    }
 
     return record;
   }
 
   async revokeAllForUser(userId) {
     if (!userId) return;
-    await this.db
-      .updateTable('refresh_tokens')
-      .set({ revoked_at: new Date() })
-      .where('user_id', '=', userId)
-      .where('revoked_at', 'is', null)
-      .execute();
+    try {
+      await this.db
+        .updateTable('refresh_tokens')
+        .set({ revoked_at: new Date() })
+        .where('user_id', '=', userId)
+        .where('revoked_at', 'is', null)
+        .execute();
+    } catch {
+      try {
+        await this.db
+          .updateTable('refresh_tokens')
+          .set({ revoked: true })
+          .where('user_id', '=', userId)
+          .execute();
+      } catch {}
+    }
   }
 }
 
