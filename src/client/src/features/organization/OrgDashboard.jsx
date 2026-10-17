@@ -15,13 +15,67 @@ import {
 } from '@phosphor-icons/react';
 import api from '../../services/api';
 import { useAuthStore } from '../../stores/authStore';
+import { useToast } from '../../contexts/ToastContext';
 import AddEmployeeForm from './AddEmployeeForm';
 import PasswordDisplay from './PasswordDisplay';
 import PasswordResetRequests from './PasswordResetRequests';
 import PayrollPreview from './PayrollPreview';
 
+function KPICardSkeleton() {
+  return (
+    <div
+      style={{
+        background: 'var(--fp-surface-1)',
+        border: '1px solid var(--fp-border)',
+        borderRadius: '16px',
+        padding: '24px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        boxShadow: 'var(--fp-shadow-sm)',
+      }}
+    >
+      <div className="fp-skeleton" style={{ width: '45%', height: '14px' }} />
+      <div className="fp-skeleton" style={{ width: '65%', height: '34px', borderRadius: '8px' }} />
+      <div className="fp-skeleton" style={{ width: '55%', height: '12px' }} />
+    </div>
+  );
+}
+
+function TableSkeleton({ rows = 5 }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      {Array.from({ length: rows }).map((_, i) => (
+        <div
+          key={i}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '2fr 1.5fr 1fr 1fr 1fr 1fr 80px',
+            gap: '16px',
+            alignItems: 'center',
+            padding: '14px',
+            borderBottom: '1px solid var(--fp-border-subtle)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="fp-skeleton" style={{ width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0 }} />
+            <div className="fp-skeleton" style={{ width: '120px', height: '16px' }} />
+          </div>
+          <div className="fp-skeleton" style={{ width: '130px', height: '16px' }} />
+          <div className="fp-skeleton" style={{ width: '80px', height: '16px' }} />
+          <div className="fp-skeleton" style={{ width: '90px', height: '16px' }} />
+          <div className="fp-skeleton" style={{ width: '70px', height: '16px' }} />
+          <div className="fp-skeleton" style={{ width: '70px', height: '16px' }} />
+          <div className="fp-skeleton" style={{ width: '64px', height: '28px', borderRadius: '6px', justifySelf: 'end' }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function OrgDashboard() {
   const navigate = useNavigate();
+  const toast = useToast();
   const { user, clearAuth } = useAuthStore();
 
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'employees' | 'resets' | 'payroll'
@@ -95,9 +149,10 @@ export default function OrgDashboard() {
         newCreditLimit: Number(newCreditLimit),
       });
       setEditingEmp(null);
+      toast.success('Credit allowance updated successfully.');
       await fetchOrgData();
     } catch (err) {
-      alert(err.response?.data?.message || err.response?.data?.error || 'Failed to update credit limit.');
+      toast.error(err.response?.data?.message || err.response?.data?.error || 'Failed to update credit limit.');
     }
   };
 
@@ -108,30 +163,6 @@ export default function OrgDashboard() {
     const phone = (emp.phone_number || emp.phoneNumber || '').toLowerCase();
     return name.includes(q) || fpId.includes(q) || phone.includes(q);
   });
-
-  if (loading && !stats && employees.length === 0) {
-    return (
-      <div style={{ minHeight: '100vh', background: 'var(--fp-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div
-            style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
-              border: '3px solid rgba(16, 185, 129, 0.2)',
-              borderTopColor: 'var(--fp-benefit)',
-              animation: 'fp-spin 0.8s linear infinite',
-              margin: '0 auto 16px',
-            }}
-          />
-          <p style={{ color: 'var(--fp-text-muted)', fontSize: '0.9rem', fontFamily: 'var(--fp-font-sans)' }}>
-            Loading Organization Portal...
-          </p>
-        </div>
-        <style>{`@keyframes fp-spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-  }
 
   const totalAllocated = Number(stats?.totalAllocatedCredit ?? stats?.stats?.totalCreditExtended ?? 0);
   const totalSpent = Number(stats?.totalSpentCredit ?? stats?.stats?.totalCreditUtilized ?? 0);
@@ -150,6 +181,8 @@ export default function OrgDashboard() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '16px',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -178,7 +211,56 @@ export default function OrgDashboard() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {loading && (
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '6px 14px',
+                borderRadius: '20px',
+                background: 'rgba(16, 185, 129, 0.1)',
+                border: '1px solid rgba(16, 185, 129, 0.25)',
+                color: 'var(--fp-benefit)',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+              }}
+            >
+              <div
+                style={{
+                  width: '7px',
+                  height: '7px',
+                  borderRadius: '50%',
+                  background: 'var(--fp-benefit)',
+                  animation: 'fp-pulse 1.4s infinite',
+                }}
+              />
+              <span>Syncing Live Ledger...</span>
+            </div>
+          )}
+
+          <button
+            onClick={fetchOrgData}
+            disabled={loading}
+            title="Refresh ledger state"
+            style={{
+              background: 'var(--fp-surface-2)',
+              border: '1px solid var(--fp-border)',
+              borderRadius: '8px',
+              padding: '8px 12px',
+              color: 'var(--fp-text-secondary)',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '0.85rem',
+            }}
+          >
+            <ArrowsClockwise size={16} className={loading ? 'spin' : ''} />
+            <span>Sync</span>
+          </button>
+
           <button
             onClick={() => setShowAddModal(true)}
             style={{
@@ -198,6 +280,7 @@ export default function OrgDashboard() {
             <UserPlus size={18} weight="bold" />
             Add Employee
           </button>
+
           <button
             onClick={handleLogout}
             style={{
@@ -227,11 +310,16 @@ export default function OrgDashboard() {
           padding: '0 28px',
           display: 'flex',
           gap: '32px',
+          overflowX: 'auto',
         }}
       >
         {[
           { id: 'overview', label: 'Overview & Analytics', icon: <Buildings size={18} /> },
-          { id: 'employees', label: `Staff & Allowances (${employees.length})`, icon: <Users size={18} /> },
+          {
+            id: 'employees',
+            label: `Staff & Allowances (${loading && employees.length === 0 ? '...' : employees.length})`,
+            icon: <Users size={18} />,
+          },
           { id: 'resets', label: 'Password Reset Queue', icon: <Key size={18} /> },
           { id: 'payroll', label: 'Automated Payroll & Wires', icon: <CurrencyDollar size={18} /> },
         ].map((tab) => (
@@ -250,6 +338,7 @@ export default function OrgDashboard() {
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
+              whiteSpace: 'nowrap',
             }}
           >
             {tab.icon}
@@ -262,48 +351,57 @@ export default function OrgDashboard() {
       <main style={{ maxWidth: '1240px', margin: '0 auto', padding: '36px 24px' }}>
         {activeTab === 'overview' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-            {/* KPI Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
-              <div style={{ background: 'var(--fp-surface-1)', border: '1px solid var(--fp-border)', borderRadius: '16px', padding: '24px' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>Total Allocated Credit</span>
-                <div className="mono" style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '6px' }}>
-                  ETB {Number(totalAllocated).toLocaleString()}
-                </div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-secondary)', marginTop: '4px', display: 'block' }}>
-                  Across {employees.length} enrolled staff members
-                </span>
+            {/* KPI Cards / Shimmer Skeletons */}
+            {loading && !stats ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
+                <KPICardSkeleton />
+                <KPICardSkeleton />
+                <KPICardSkeleton />
+                <KPICardSkeleton />
               </div>
+            ) : (
+              <div className="fp-page-enter" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
+                <div style={{ background: 'var(--fp-surface-1)', border: '1px solid var(--fp-border)', borderRadius: '16px', padding: '24px' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>Total Allocated Credit</span>
+                  <div className="mono" style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '6px' }}>
+                    ETB {Number(totalAllocated).toLocaleString()}
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-secondary)', marginTop: '4px', display: 'block' }}>
+                    Across {employees.length} enrolled staff members
+                  </span>
+                </div>
 
-              <div style={{ background: 'var(--fp-surface-1)', border: '1px solid var(--fp-border)', borderRadius: '16px', padding: '24px' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>Credit Spent This Cycle</span>
-                <div className="mono" style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--fp-salary)', marginTop: '6px' }}>
-                  ETB {Number(totalSpent).toLocaleString()}
+                <div style={{ background: 'var(--fp-surface-1)', border: '1px solid var(--fp-border)', borderRadius: '16px', padding: '24px' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>Credit Spent This Cycle</span>
+                  <div className="mono" style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--fp-salary)', marginTop: '6px' }}>
+                    ETB {Number(totalSpent).toLocaleString()}
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-secondary)', marginTop: '4px', display: 'block' }}>
+                    {utilizationPct}% overall company utilization
+                  </span>
                 </div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-secondary)', marginTop: '4px', display: 'block' }}>
-                  {utilizationPct}% overall company utilization
-                </span>
-              </div>
 
-              <div style={{ background: 'var(--fp-surface-1)', border: '1px solid var(--fp-border)', borderRadius: '16px', padding: '24px' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>Pending Merchant Payables</span>
-                <div className="mono" style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--fp-benefit)', marginTop: '6px' }}>
-                  ETB {Number(pendingSettlement).toLocaleString()}
+                <div style={{ background: 'var(--fp-surface-1)', border: '1px solid var(--fp-border)', borderRadius: '16px', padding: '24px' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>Pending Merchant Payables</span>
+                  <div className="mono" style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--fp-benefit)', marginTop: '6px' }}>
+                    ETB {Number(pendingSettlement).toLocaleString()}
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-secondary)', marginTop: '4px', display: 'block' }}>
+                    To be wired at month-end payroll
+                  </span>
                 </div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-secondary)', marginTop: '4px', display: 'block' }}>
-                  To be wired at month-end payroll
-                </span>
-              </div>
 
-              <div style={{ background: 'var(--fp-surface-1)', border: '1px solid var(--fp-border)', borderRadius: '16px', padding: '24px' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>Active Workforce</span>
-                <div className="mono" style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '6px' }}>
-                  {employees.length}
+                <div style={{ background: 'var(--fp-surface-1)', border: '1px solid var(--fp-border)', borderRadius: '16px', padding: '24px' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>Active Workforce</span>
+                  <div className="mono" style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '6px' }}>
+                    {employees.length}
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--fp-benefit)', marginTop: '4px', display: 'block' }}>
+                    100% Luhn-verified FP-IDs
+                  </span>
                 </div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--fp-benefit)', marginTop: '4px', display: 'block' }}>
-                  100% Luhn-verified FP-IDs
-                </span>
               </div>
-            </div>
+            )}
 
             {/* Quick Actions & Recent Summary */}
             <div
@@ -372,6 +470,77 @@ export default function OrgDashboard() {
                 </button>
               </div>
             </div>
+
+            {/* Overview Workforce Preview */}
+            <div
+              style={{
+                background: 'var(--fp-surface-1)',
+                border: '1px solid var(--fp-border)',
+                borderRadius: '20px',
+                padding: '28px',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <div>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0 }}>Workforce Allocation Snapshot</h3>
+                  <p style={{ color: 'var(--fp-text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>
+                    Live status of enrolled employee benefits and credit lines.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setActiveTab('employees')}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid var(--fp-border)',
+                    borderRadius: '8px',
+                    padding: '8px 14px',
+                    color: 'var(--fp-benefit)',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                  }}
+                >
+                  View All Staff →
+                </button>
+              </div>
+
+              {loading && employees.length === 0 ? (
+                <TableSkeleton rows={4} />
+              ) : employees.length === 0 ? (
+                <p style={{ textAlign: 'center', padding: '32px', color: 'var(--fp-text-muted)' }}>
+                  No employees onboarded yet. Click "Add Employee" to issue your first credit allowance.
+                </p>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--fp-border)', color: 'var(--fp-text-muted)', textAlign: 'left' }}>
+                        <th style={{ padding: '12px 14px' }}>Employee</th>
+                        <th style={{ padding: '12px 14px' }}>FP-ID</th>
+                        <th style={{ padding: '12px 14px' }}>Credit Limit</th>
+                        <th style={{ padding: '12px 14px' }}>Available Balance</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {employees.slice(0, 5).map((emp) => (
+                        <tr key={emp.id} style={{ borderBottom: '1px solid var(--fp-border-subtle)' }}>
+                          <td style={{ padding: '14px', fontWeight: 600 }}>{emp.full_name || emp.fullName}</td>
+                          <td className="mono" style={{ padding: '14px', color: 'var(--fp-benefit)' }}>
+                            {emp.fp_employee_id || emp.fpEmployeeId}
+                          </td>
+                          <td className="mono" style={{ padding: '14px', fontWeight: 700 }}>
+                            ETB {Number(emp.credit_limit || emp.creditLimit).toLocaleString()}
+                          </td>
+                          <td className="mono" style={{ padding: '14px', color: 'var(--fp-benefit)' }}>
+                            ETB {Number(emp.available_credit ?? emp.availableCredit).toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -434,7 +603,9 @@ export default function OrgDashboard() {
               </button>
             </div>
 
-            {filteredEmployees.length === 0 ? (
+            {loading && employees.length === 0 ? (
+              <TableSkeleton rows={6} />
+            ) : filteredEmployees.length === 0 ? (
               <p style={{ textAlign: 'center', padding: '40px', color: 'var(--fp-text-muted)' }}>
                 No employees matching criteria. Click "Add Employee" to onboard your staff.
               </p>

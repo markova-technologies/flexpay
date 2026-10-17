@@ -58,9 +58,11 @@ async function organizationRoutes(fastify, options) {
     { preHandler: [requireRole('ORG_ADMIN', 'ORG_CONTROLLER')] },
     async (request, reply) => {
       const { orgId } = request.user;
-      const employees = await employeeRepo.findByOrgId(orgId, { page: 1, limit: 1000 });
-      const recentTransactions = await txnRepo.listRecentByOrg(orgId, 20);
-      const pendingResets = await employeeRepo.listPasswordResetRequests(orgId, 'PENDING');
+      const [employees, recentTransactions, pendingResets] = await Promise.all([
+        employeeRepo.findByOrgId(orgId, { page: 1, limit: 1000 }),
+        txnRepo.listRecentByOrg(orgId, 20),
+        employeeRepo.listPasswordResetRequests(orgId, 'PENDING'),
+      ]);
 
       let totalCreditExtended = 0;
       let totalAvailableCredit = 0;
@@ -362,6 +364,10 @@ async function organizationRoutes(fastify, options) {
   // --------------------------------------------------------------------------
   const handleResetReview = async (request, reply) => {
     const { id } = request.params;
+    if (!id || id === 'undefined' || id.trim() === '') {
+      return reply.code(400).send({ error: 'Valid password reset request ID is required' });
+    }
+
     const parse = resetReviewSchema.safeParse(request.body);
     if (!parse.success) {
       return reply.code(400).send({ error: 'Validation error', details: parse.error.issues });
@@ -377,12 +383,13 @@ async function organizationRoutes(fastify, options) {
     }
 
     const { action } = parse.data;
+    const reviewerId = request.user.sub || request.user.id || null;
 
     if (action === 'APPROVE') {
       const newPassword = generateCompliantPassword(16);
       const newHash = await hashPassword(newPassword);
 
-      await employeeRepo.approvePasswordReset(id, request.user.sub, newHash);
+      await employeeRepo.approvePasswordReset(id, reviewerId, newHash);
 
       if (resetReq.deliveryMethod === 'SMS' && notificationService && typeof notificationService.sendPasswordResetApprovedSms === 'function') {
         try {
@@ -402,7 +409,7 @@ async function organizationRoutes(fastify, options) {
         deliveryMethod: resetReq.deliveryMethod,
       });
     } else {
-      await employeeRepo.rejectPasswordReset(id, request.user.sub);
+      await employeeRepo.rejectPasswordReset(id, reviewerId);
       return reply.send({
         approved: false,
         message: 'Password reset request was rejected.',

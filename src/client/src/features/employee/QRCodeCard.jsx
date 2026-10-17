@@ -1,20 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { QrCode, DownloadSimple, ShieldCheck, ArrowsClockwise } from '@phosphor-icons/react';
+import { QrCode, DownloadSimple, ArrowsClockwise } from '@phosphor-icons/react';
+import { QRCodeCanvas } from 'qrcode.react';
 import api from '../../services/api';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function QRCodeCard({ employee }) {
+  const toast = useToast();
   const [qrDataUrl, setQrDataUrl] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const qrValue = employee?.fpEmployeeId || '';
 
   const fetchQRCode = async () => {
     setLoading(true);
     setError('');
     try {
       const res = await api.get('/employee/qr-code');
-      setQrDataUrl(res.data.qrCodeDataUrl);
+      const remoteUrl = res.data?.qrCodeDataUrl || res.data?.qrDataUrl;
+      if (remoteUrl) {
+        setQrDataUrl(remoteUrl);
+      }
     } catch (err) {
-      setError('Unable to load cryptographic QR code. Refresh to retry.');
+      // Non-fatal if we have qrValue from props for QRCodeCanvas
+      if (!qrValue) {
+        setError('Unable to load cryptographic QR code. Refresh to retry.');
+      }
     } finally {
       setLoading(false);
     }
@@ -22,17 +33,32 @@ export default function QRCodeCard({ employee }) {
 
   useEffect(() => {
     fetchQRCode();
-  }, []);
+  }, [qrValue]);
 
   const downloadQR = () => {
-    if (!qrDataUrl) return;
-    const link = document.createElement('a');
-    link.href = qrDataUrl;
-    link.download = `FlexPay_${employee?.fpEmployeeId || 'QR'}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      const canvas = document.getElementById('flexpay-qr-canvas');
+      let linkHref = qrDataUrl;
+      if (canvas) {
+        linkHref = canvas.toDataURL('image/png');
+      }
+      if (!linkHref) {
+        toast.error('QR code image is not ready yet.');
+        return;
+      }
+      const link = document.createElement('a');
+      link.href = linkHref;
+      link.download = `FlexPay_${employee?.fpEmployeeId || 'Card'}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success('POS Payment QR Card downloaded successfully.');
+    } catch (err) {
+      toast.error('Failed to download QR code image.');
+    }
   };
+
+  const isReady = Boolean(qrValue || qrDataUrl);
 
   return (
     <div
@@ -72,21 +98,33 @@ export default function QRCodeCard({ employee }) {
           position: 'relative',
         }}
       >
-        {loading ? (
+        {loading && !isReady ? (
           <div style={{ color: '#060A14', fontSize: '0.85rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
             <ArrowsClockwise size={28} className="spin" />
             <span>Generating QR...</span>
           </div>
-        ) : error ? (
+        ) : error && !isReady ? (
           <div style={{ color: '#EF4444', fontSize: '0.8rem', padding: '10px' }}>
             {error}
           </div>
-        ) : (
+        ) : qrValue ? (
+          <QRCodeCanvas
+            id="flexpay-qr-canvas"
+            value={qrValue}
+            size={186}
+            level="H"
+            includeMargin={false}
+            bgColor="#FFFFFF"
+            fgColor="#0A0B0D"
+          />
+        ) : qrDataUrl ? (
           <img
             src={qrDataUrl}
             alt="FlexPay Payment QR Code"
             style={{ width: '100%', height: '100%', objectFit: 'contain' }}
           />
+        ) : (
+          <div style={{ color: '#6B7280', fontSize: '0.8rem' }}>Awaiting FP-ID...</div>
         )}
       </div>
 
@@ -122,17 +160,17 @@ export default function QRCodeCard({ employee }) {
       <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '16px' }}>
         <button
           onClick={downloadQR}
-          disabled={!qrDataUrl || loading}
+          disabled={!isReady}
           style={{
             flex: 1,
             padding: '10px 14px',
             borderRadius: '8px',
-            background: 'var(--fp-surface-2)',
+            background: isReady ? 'var(--fp-surface-2)' : 'rgba(255, 255, 255, 0.05)',
             border: '1px solid var(--fp-border-strong)',
-            color: 'var(--fp-text-primary)',
+            color: isReady ? 'var(--fp-text-primary)' : 'var(--fp-text-muted)',
             fontSize: '0.85rem',
             fontWeight: 600,
-            cursor: !qrDataUrl || loading ? 'not-allowed' : 'pointer',
+            cursor: !isReady ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -145,6 +183,7 @@ export default function QRCodeCard({ employee }) {
         <button
           onClick={fetchQRCode}
           disabled={loading}
+          title="Refresh QR Code"
           style={{
             padding: '10px 14px',
             borderRadius: '8px',
@@ -155,7 +194,7 @@ export default function QRCodeCard({ employee }) {
             cursor: loading ? 'not-allowed' : 'pointer',
           }}
         >
-          <ArrowsClockwise size={18} />
+          <ArrowsClockwise size={18} className={loading ? 'spin' : ''} />
         </button>
       </div>
     </div>

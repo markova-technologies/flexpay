@@ -10,8 +10,10 @@ import {
   ClockAfternoon
 } from '@phosphor-icons/react';
 import api from '../../services/api';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function PayrollPreview() {
+  const toast = useToast();
   const [preview, setPreview] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,9 +43,14 @@ export default function PayrollPreview() {
   }, []);
 
   const handleRunPayroll = async () => {
-    if (!confirm('Execute automated payroll settlement? This will wire M-PESA B2C payouts to all merchants and reset employee credit allowances.')) {
-      return;
-    }
+    const confirmed = await toast.confirm({
+      title: 'Execute Automated Payroll Settlement?',
+      message: 'This will wire M-PESA B2C payouts to all certified merchants and reset employee credit allowances for the billing cycle. This action creates immutable double-entry ledger records.',
+      confirmText: 'Execute Settlement',
+      cancelText: 'Review Balances',
+      variant: 'benefit',
+    });
+    if (!confirmed) return;
 
     setRunningPayroll(true);
     setSuccessMsg('');
@@ -58,10 +65,14 @@ export default function PayrollPreview() {
         settlementDate: today.toISOString(),
       });
       const stlRef = res.data.settlementId || res.data.settlement?.id || 'Ref-OK';
-      setSuccessMsg(`Payroll settlement initiated successfully! Settlement Reference: ${stlRef}. M-PESA B2C wires dispatched.`);
+      const msg = `Payroll settlement initiated successfully! Settlement Reference: ${stlRef}. M-PESA B2C wires dispatched.`;
+      setSuccessMsg(msg);
+      toast.success('Automated payroll settlement executed successfully.');
       await loadData();
     } catch (err) {
-      setErrorMsg(err.response?.data?.message || 'Failed to execute payroll settlement.');
+      const msg = err.response?.data?.message || err.response?.data?.error || 'Failed to execute payroll settlement.';
+      setErrorMsg(msg);
+      toast.error(msg);
     } finally {
       setRunningPayroll(false);
     }

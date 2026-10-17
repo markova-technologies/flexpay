@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Warning, CheckCircle, XCircle, ArrowsClockwise, ShieldCheck } from '@phosphor-icons/react';
 import api from '../../services/api';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function PasswordResetRequests({ onPasswordGenerated }) {
+  const toast = useToast();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState(null);
@@ -26,32 +28,54 @@ export default function PasswordResetRequests({ onPasswordGenerated }) {
   }, []);
 
   const handleApprove = async (req) => {
-    setActionLoadingId(req.id);
+    const targetId = req?.id || req?.requestId;
+    if (!targetId || targetId === 'undefined') {
+      toast.error('Invalid request record identifier. Please refresh the queue.');
+      return;
+    }
+
+    setActionLoadingId(targetId);
     try {
-      const res = await api.post(`/org/password-reset-requests/${req.id}`, {
+      const res = await api.post(`/org/password-reset-requests/${targetId}`, {
         action: 'APPROVE',
       });
 
       // Show the newly generated 16-character password in the PasswordDisplay modal!
       onPasswordGenerated(req.full_name || req.fullName || 'Employee', req.fp_employee_id || req.fpEmployeeId, res.data.newPassword);
+      toast.success('Password reset approved. Temporary credentials generated.');
       await fetchRequests();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to approve password reset.');
+      toast.error(err.response?.data?.message || err.response?.data?.error || 'Failed to approve password reset.');
     } finally {
       setActionLoadingId(null);
     }
   };
 
   const handleReject = async (req) => {
-    if (!confirm('Are you sure you want to reject this password reset request?')) return;
-    setActionLoadingId(req.id);
+    const targetId = req?.id || req?.requestId;
+    if (!targetId || targetId === 'undefined') {
+      toast.error('Invalid request record identifier. Please refresh the queue.');
+      return;
+    }
+
+    const confirmed = await toast.confirm({
+      title: 'Reject Password Reset Request?',
+      message: `Are you sure you want to decline the password reset request for ${req.full_name || req.fullName || 'this employee'}? They will need to submit a new request if they still need assistance.`,
+      confirmText: 'Reject Request',
+      cancelText: 'Keep Request',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
+    setActionLoadingId(targetId);
     try {
-      await api.post(`/org/password-reset-requests/${req.id}`, {
+      await api.post(`/org/password-reset-requests/${targetId}`, {
         action: 'REJECT',
       });
+      toast.info('Password reset request has been declined.');
       await fetchRequests();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to reject reset request.');
+      toast.error(err.response?.data?.message || err.response?.data?.error || 'Failed to reject reset request.');
     } finally {
       setActionLoadingId(null);
     }
@@ -129,85 +153,88 @@ export default function PasswordResetRequests({ onPasswordGenerated }) {
               </tr>
             </thead>
             <tbody>
-              {requests.map((req) => (
-                <tr key={req.id} style={{ borderBottom: '1px solid var(--fp-border-subtle)' }}>
-                  <td style={{ padding: '14px', fontWeight: 600 }}>
-                    {req.full_name || req.fullName || 'Employee'}
-                  </td>
-                  <td className="mono" style={{ padding: '14px', color: 'var(--fp-benefit)' }}>
-                    {req.fp_employee_id || req.fpEmployeeId}
-                  </td>
-                  <td className="mono" style={{ padding: '14px' }}>
-                    {req.phone_number || req.phoneNumber}
-                  </td>
-                  <td style={{ padding: '14px', color: 'var(--fp-text-secondary)', maxWidth: '200px' }}>
-                    {req.reason || 'Password reset request'}
-                  </td>
-                  <td style={{ padding: '14px' }}>
-                    <span
-                      style={{
-                        padding: '3px 8px',
-                        borderRadius: '4px',
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        background:
-                          req.status === 'PENDING'
-                            ? 'rgba(245, 158, 11, 0.15)'
-                            : req.status === 'APPROVED'
-                            ? 'rgba(16, 185, 129, 0.15)'
-                            : 'rgba(239, 68, 68, 0.15)',
-                        color:
-                          req.status === 'PENDING'
-                            ? 'var(--fp-salary)'
-                            : req.status === 'APPROVED'
-                            ? 'var(--fp-benefit)'
-                            : '#EF4444',
-                      }}
-                    >
-                      {req.status}
-                    </span>
-                  </td>
-                  <td style={{ padding: '14px', textAlign: 'right' }}>
-                    {req.status === 'PENDING' ? (
-                      <div style={{ display: 'inline-flex', gap: '8px' }}>
-                        <button
-                          onClick={() => handleApprove(req)}
-                          disabled={actionLoadingId === req.id}
-                          style={{
-                            padding: '6px 14px',
-                            borderRadius: '6px',
-                            background: 'var(--fp-benefit)',
-                            color: '#060A14',
-                            fontWeight: 700,
-                            fontSize: '0.8rem',
-                            border: 'none',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          {actionLoadingId === req.id ? 'Generating...' : 'Approve & Issue'}
-                        </button>
-                        <button
-                          onClick={() => handleReject(req)}
-                          disabled={actionLoadingId === req.id}
-                          style={{
-                            padding: '6px 10px',
-                            borderRadius: '6px',
-                            background: 'transparent',
-                            border: '1px solid rgba(239, 68, 68, 0.3)',
-                            color: '#EF4444',
-                            fontSize: '0.8rem',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          Reject
-                        </button>
-                      </div>
-                    ) : (
-                      <span style={{ fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>Resolved</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {requests.map((req) => {
+                const reqId = req.id || req.requestId;
+                return (
+                  <tr key={reqId} style={{ borderBottom: '1px solid var(--fp-border-subtle)' }}>
+                    <td style={{ padding: '14px', fontWeight: 600 }}>
+                      {req.full_name || req.fullName || 'Employee'}
+                    </td>
+                    <td className="mono" style={{ padding: '14px', color: 'var(--fp-benefit)' }}>
+                      {req.fp_employee_id || req.fpEmployeeId}
+                    </td>
+                    <td className="mono" style={{ padding: '14px' }}>
+                      {req.phone_number || req.phoneNumber}
+                    </td>
+                    <td style={{ padding: '14px', color: 'var(--fp-text-secondary)', maxWidth: '200px' }}>
+                      {req.reason || 'Password reset request'}
+                    </td>
+                    <td style={{ padding: '14px' }}>
+                      <span
+                        style={{
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          background:
+                            req.status === 'PENDING'
+                              ? 'rgba(245, 158, 11, 0.15)'
+                              : req.status === 'APPROVED'
+                              ? 'rgba(16, 185, 129, 0.15)'
+                              : 'rgba(239, 68, 68, 0.15)',
+                          color:
+                            req.status === 'PENDING'
+                              ? 'var(--fp-salary)'
+                              : req.status === 'APPROVED'
+                              ? 'var(--fp-benefit)'
+                              : '#EF4444',
+                        }}
+                      >
+                        {req.status}
+                      </span>
+                    </td>
+                    <td style={{ padding: '14px', textAlign: 'right' }}>
+                      {req.status === 'PENDING' ? (
+                        <div style={{ display: 'inline-flex', gap: '8px' }}>
+                          <button
+                            onClick={() => handleApprove(req)}
+                            disabled={actionLoadingId === reqId}
+                            style={{
+                              padding: '6px 14px',
+                              borderRadius: '6px',
+                              background: 'var(--fp-benefit)',
+                              color: '#060A14',
+                              fontWeight: 700,
+                              fontSize: '0.8rem',
+                              border: 'none',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {actionLoadingId === reqId ? 'Generating...' : 'Approve & Issue'}
+                          </button>
+                          <button
+                            onClick={() => handleReject(req)}
+                            disabled={actionLoadingId === reqId}
+                            style={{
+                              padding: '6px 10px',
+                              borderRadius: '6px',
+                              background: 'transparent',
+                              border: '1px solid rgba(239, 68, 68, 0.3)',
+                              color: '#EF4444',
+                              fontSize: '0.8rem',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>Resolved</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

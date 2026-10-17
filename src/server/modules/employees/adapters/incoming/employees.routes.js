@@ -96,6 +96,7 @@ async function employeeRoutes(fastify, options) {
         fpEmployeeId,
         fullName: employeeRaw.full_name,
         qrDataUrl,
+        qrCodeDataUrl: qrDataUrl,
       });
     }
   );

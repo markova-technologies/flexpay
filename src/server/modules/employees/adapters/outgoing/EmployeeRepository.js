@@ -182,6 +182,7 @@ class EmployeeRepository {
       .selectFrom('password_reset_requests')
       .innerJoin('employees', 'employees.id', 'password_reset_requests.employee_id')
       .select([
+        'password_reset_requests.id as id',
         'password_reset_requests.id as requestId',
         'password_reset_requests.status as status',
         'password_reset_requests.delivery_method as deliveryMethod',
@@ -203,6 +204,7 @@ class EmployeeRepository {
       .selectFrom('password_reset_requests')
       .innerJoin('employees', 'employees.id', 'password_reset_requests.employee_id')
       .select([
+        'password_reset_requests.id as id',
         'password_reset_requests.id as requestId',
         'password_reset_requests.status as status',
         'password_reset_requests.delivery_method as deliveryMethod',
