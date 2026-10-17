@@ -19,18 +19,22 @@ class EmployeeRepository {
   async findByFpId(fpEmployeeId) {
     return this.db
       .selectFrom('employees')
-      .selectAll()
-      .where('fp_employee_id', '=', fpEmployeeId)
-      .where('deleted_at', 'is', null)
+      .leftJoin('organizations', 'organizations.id', 'employees.organization_id')
+      .selectAll('employees')
+      .select('organizations.name as organization_name')
+      .where('employees.fp_employee_id', '=', fpEmployeeId)
+      .where('employees.deleted_at', 'is', null)
       .executeTakeFirst();
   }
 
   async findById(employeeId) {
     return this.db
       .selectFrom('employees')
-      .selectAll()
-      .where('id', '=', employeeId)
-      .where('deleted_at', 'is', null)
+      .leftJoin('organizations', 'organizations.id', 'employees.organization_id')
+      .selectAll('employees')
+      .select('organizations.name as organization_name')
+      .where('employees.id', '=', employeeId)
+      .where('employees.deleted_at', 'is', null)
       .executeTakeFirst();
   }
 

@@ -83,11 +83,14 @@ class CreateTransactionUseCase {
     const fpTxnRef = `FP-TXN-${Date.now()}-${suffix}`;
 
     // 8. Generate double-entry ledger entries for credit portion
+    const merchantMpesaNumber = merchant.mpesa_number || merchant.short_code || '251900000000';
+    const employeeFpId = employee.fp_employee_id || employee.fp_id || fpEmployeeId;
+
     const journalEntries = LedgerEngine.generateCreditEntries(
       fpTxnRef,
       split.creditPortion,
-      merchant.mpesa_number,
-      employee.fp_employee_id
+      merchantMpesaNumber,
+      employeeFpId
     );
 
     // Initial status
@@ -99,14 +102,14 @@ class CreateTransactionUseCase {
         fp_transaction_ref: fpTxnRef,
         employee_id: employee.id,
         merchant_id: merchant.id,
-        organization_id: employee.organization_id,
-        employee_fp_id_snapshot: employee.fp_employee_id,
-        employee_name_snapshot: employee.full_name,
-        employee_phone_snapshot: employee.phone_number,
-        org_name_snapshot: employee.organization_name || 'Organization',
-        merchant_name_snapshot: merchant.business_name,
-        merchant_mpesa_snapshot: merchant.mpesa_number,
-        category_snapshot: merchant.category,
+        organization_id: employee.organization_id || employee.employer_id,
+        employee_fp_id_snapshot: employeeFpId,
+        employee_name_snapshot: employee.full_name || employee.name || 'Verified Employee',
+        employee_phone_snapshot: employee.phone_number || employee.phone || '251900000000',
+        org_name_snapshot: employee.organization_name || employee.employer_name || 'Organization',
+        merchant_name_snapshot: merchant.business_name || merchant.name || 'Merchant',
+        merchant_mpesa_snapshot: merchantMpesaNumber,
+        category_snapshot: merchant.category || 'RETAIL',
         total_amount: split.totalAmount,
         credit_portion: split.creditPortion,
         copay_portion: split.copayPortion,

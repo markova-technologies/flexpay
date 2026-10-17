@@ -38,6 +38,20 @@ class TransactionRepository {
           .execute();
       }
 
+      // Ensure organization_id is resolved and never null
+      let organizationId = transactionData.organization_id || employee.organization_id;
+      if (!organizationId) {
+        const firstOrg = await trx.selectFrom('organizations').select('id').limit(1).executeTakeFirst();
+        if (firstOrg) {
+          organizationId = firstOrg.id;
+          await trx
+            .updateTable('employees')
+            .set({ organization_id: organizationId, updated_at: new Date() })
+            .where('id', '=', transactionData.employee_id)
+            .execute();
+        }
+      }
+
       // 3. Insert transaction record
       const txn = await trx
         .insertInto('transactions')
@@ -45,7 +59,7 @@ class TransactionRepository {
           fp_transaction_ref: transactionData.fp_transaction_ref,
           employee_id: transactionData.employee_id,
           merchant_id: transactionData.merchant_id,
-          organization_id: transactionData.organization_id,
+          organization_id: organizationId,
           employee_fp_id_snapshot: transactionData.employee_fp_id_snapshot,
           employee_name_snapshot: transactionData.employee_name_snapshot,
           employee_phone_snapshot: transactionData.employee_phone_snapshot,

@@ -16,10 +16,12 @@ import {
 } from '@phosphor-icons/react';
 import api from '../../services/api';
 import { useAuthStore } from '../../stores/authStore';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function MerchantPOS() {
   const navigate = useNavigate();
   const { user, clearAuth } = useAuthStore();
+  const toast = useToast();
 
   const [step, setStep] = useState(1); // 1 = Verify Employee, 2 = Enter Amount & Authorize, 3 = Receipt
   const [fpIdInput, setFpIdInput] = useState('');
@@ -76,11 +78,13 @@ export default function MerchantPOS() {
 
       if (res.data.eligible === false) {
         setVerifyError(res.data.ineligibilityReason || 'Customer is not eligible for purchases at this merchant category.');
+        toast.warning(res.data.ineligibilityReason || 'Customer is not eligible for purchases at this merchant category.');
         return;
       }
 
       setVerifiedEmployee(normalizedEmployee);
       setStep(2);
+      toast.success(`Customer verified: ${normalizedEmployee.employeeName}`);
     } catch (err) {
       const msg =
         err.response?.data?.details?.[0]?.message ||
@@ -88,6 +92,7 @@ export default function MerchantPOS() {
         err.response?.data?.message ||
         'Employee verification failed. Check FP-ID.';
       setVerifyError(msg);
+      toast.error(msg);
     } finally {
       setVerifying(false);
     }
@@ -118,14 +123,21 @@ export default function MerchantPOS() {
 
       setCompletedTxn(res.data);
       setStep(3);
+      toast.success(
+        res.data.requiresStkPush
+          ? 'Transaction initiated. M-PESA STK Push prompt dispatched!'
+          : 'Payment authorized successfully!'
+      );
       fetchMerchantDashboard();
     } catch (err) {
       const msg =
         err.response?.data?.details?.[0]?.message ||
         err.response?.data?.error ||
         err.response?.data?.message ||
+        err.message ||
         'Transaction authorization failed.';
       setAuthError(msg);
+      toast.error(msg);
     } finally {
       setAuthorizing(false);
     }

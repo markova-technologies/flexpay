@@ -78,6 +78,7 @@ async function merchantRoutes(fastify, options) {
       const availableCredit = Number(employee.available_credit);
       const creditLimit = Number(employee.credit_limit);
       const fullName = employee.full_name;
+      const orgName = employee.organization_name || 'Corporate Partner';
 
       return reply.send({
         eligible,
@@ -87,6 +88,7 @@ async function merchantRoutes(fastify, options) {
         fpEmployeeId: employee.fp_employee_id,
         availableCredit,
         creditLimit,
+        organizationName: orgName,
         employee: {
           fullName,
           employeeName: fullName,
@@ -94,9 +96,10 @@ async function merchantRoutes(fastify, options) {
           availableCredit,
           creditLimit,
           organizationId: employee.organization_id,
+          organizationName: orgName,
         },
         merchant: {
-          name: merchant.business_name,
+          name: merchant.business_name || merchant.name,
           category: merchant.category,
         },
       });
@@ -117,26 +120,35 @@ async function merchantRoutes(fastify, options) {
 
       const { fpEmployeeId, totalAmount } = parse.data;
 
-      const result = await createTxnUseCase.execute({
-        merchantId: request.user.merchantId,
-        fpEmployeeId,
-        totalAmount,
-      });
+      try {
+        const result = await createTxnUseCase.execute({
+          merchantId: request.user.merchantId,
+          fpEmployeeId,
+          totalAmount,
+        });
 
-      return reply.code(201).send({
-        message: result.requiresStkPush
-          ? 'Transaction initiated. M-PESA STK Push prompt sent to employee mobile device for co-pay portion.'
-          : 'Transaction completed successfully with 100% FlexPay benefit credit.',
-        transaction: result.transaction,
-        fpTransactionRef: result.fpTransactionRef,
-        totalAmount: result.totalAmount,
-        creditPortion: result.creditPortion,
-        copayPortion: result.copayPortion,
-        requiresStkPush: result.requiresStkPush,
-        stkPushInitiated: result.stkPushInitiated,
-        checkoutRequestId: result.checkoutRequestId,
-        status: result.status,
-      });
+        return reply.code(201).send({
+          message: result.requiresStkPush
+            ? 'Transaction initiated. M-PESA STK Push prompt sent to employee mobile device for co-pay portion.'
+            : 'Transaction completed successfully with 100% FlexPay benefit credit.',
+          transaction: result.transaction,
+          fpTransactionRef: result.fpTransactionRef,
+          totalAmount: result.totalAmount,
+          creditPortion: result.creditPortion,
+          copayPortion: result.copayPortion,
+          requiresStkPush: result.requiresStkPush,
+          stkPushInitiated: result.stkPushInitiated,
+          checkoutRequestId: result.checkoutRequestId,
+          status: result.status,
+        });
+      } catch (err) {
+        request.log.error(err, `[Merchant POS] Failed to process transaction for FP-ID ${fpEmployeeId}`);
+        const statusCode = err.statusCode || (err.name === 'ValidationError' ? 400 : 500);
+        return reply.code(statusCode).send({
+          error: err.message || 'Transaction authorization failed',
+          message: err.message || 'Transaction authorization failed',
+        });
+      }
     }
   );
 

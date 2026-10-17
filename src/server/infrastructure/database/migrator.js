@@ -29,6 +29,16 @@ async function ensureSchema() {
       END $$;
 
       DO $$ BEGIN
+        ALTER TYPE merchant_category ADD VALUE IF NOT EXISTS 'FOOD';
+        ALTER TYPE merchant_category ADD VALUE IF NOT EXISTS 'TRANSPORT';
+        ALTER TYPE merchant_category ADD VALUE IF NOT EXISTS 'HEALTH';
+        ALTER TYPE merchant_category ADD VALUE IF NOT EXISTS 'GROCERY';
+        ALTER TYPE merchant_category ADD VALUE IF NOT EXISTS 'FUEL';
+        ALTER TYPE merchant_category ADD VALUE IF NOT EXISTS 'EDUCATION';
+      EXCEPTION WHEN OTHERS THEN NULL;
+      END $$;
+
+      DO $$ BEGIN
         CREATE TYPE merchant_status AS ENUM (
           'PENDING_VERIFICATION', 'ACTIVE', 'SUSPENDED'
         );
@@ -47,6 +57,16 @@ async function ensureSchema() {
           'PENDING', 'CREDIT_RESERVED', 'STK_SENT', 'COMPLETED', 'FAILED', 'REFUNDED'
         );
       EXCEPTION WHEN duplicate_object THEN NULL;
+      END $$;
+
+      DO $$ BEGIN
+        ALTER TYPE transaction_status ADD VALUE IF NOT EXISTS 'PENDING';
+        ALTER TYPE transaction_status ADD VALUE IF NOT EXISTS 'CREDIT_RESERVED';
+        ALTER TYPE transaction_status ADD VALUE IF NOT EXISTS 'STK_SENT';
+        ALTER TYPE transaction_status ADD VALUE IF NOT EXISTS 'COMPLETED';
+        ALTER TYPE transaction_status ADD VALUE IF NOT EXISTS 'FAILED';
+        ALTER TYPE transaction_status ADD VALUE IF NOT EXISTS 'REFUNDED';
+      EXCEPTION WHEN OTHERS THEN NULL;
       END $$;
 
       DO $$ BEGIN
@@ -115,6 +135,17 @@ async function ensureSchema() {
             IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'employees' AND column_name = 'phone') THEN
               UPDATE employees SET phone_number = phone WHERE phone_number IS NULL;
             END IF;
+            IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'employees' AND column_name = 'employer_id') THEN
+              UPDATE employees SET organization_id = employer_id::uuid WHERE organization_id IS NULL AND employer_id IS NOT NULL;
+            END IF;
+          EXCEPTION WHEN OTHERS THEN NULL;
+          END;
+
+          -- Ensure all active employees are associated with an organization if organizations exist
+          BEGIN
+            UPDATE employees 
+            SET organization_id = (SELECT id FROM organizations ORDER BY created_at ASC LIMIT 1)
+            WHERE organization_id IS NULL AND EXISTS (SELECT 1 FROM organizations);
           EXCEPTION WHEN OTHERS THEN NULL;
           END;
 
@@ -253,8 +284,27 @@ async function ensureSchema() {
         -- F. Merchants Table
         -- --------------------------------------------------------------------
         IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'merchants') THEN
+          ALTER TABLE merchants ADD COLUMN IF NOT EXISTS business_name TEXT;
+          ALTER TABLE merchants ADD COLUMN IF NOT EXISTS mpesa_number TEXT;
+          ALTER TABLE merchants ADD COLUMN IF NOT EXISTS category merchant_category DEFAULT 'RETAIL';
+          ALTER TABLE merchants ADD COLUMN IF NOT EXISTS contact_phone TEXT;
           ALTER TABLE merchants ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
           ALTER TABLE merchants ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+          -- Data migration from legacy v1 columns
+          BEGIN
+            IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'merchants' AND column_name = 'name') THEN
+              UPDATE merchants SET business_name = name WHERE business_name IS NULL AND name IS NOT NULL;
+            END IF;
+            IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'merchants' AND column_name = 'short_code') THEN
+              UPDATE merchants SET mpesa_number = short_code WHERE mpesa_number IS NULL AND short_code IS NOT NULL;
+            END IF;
+            IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'merchants' AND column_name = 'phone') THEN
+              UPDATE merchants SET contact_phone = phone WHERE contact_phone IS NULL AND phone IS NOT NULL;
+            END IF;
+          EXCEPTION WHEN OTHERS THEN NULL;
+          END;
+
           BEGIN
             ALTER TABLE merchants ALTER COLUMN status SET DEFAULT 'ACTIVE'::merchant_status;
           EXCEPTION WHEN OTHERS THEN NULL;
@@ -313,18 +363,131 @@ async function ensureSchema() {
         END IF;
 
         -- --------------------------------------------------------------------
-        -- I. Transactions & Ledger
+        -- I. Transactions Table
         -- --------------------------------------------------------------------
         IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'transactions') THEN
-          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS mpesa_checkout_request_id TEXT;
-          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS mpesa_receipt_number TEXT;
-          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS copay_amount NUMERIC(14,2) NOT NULL DEFAULT 0;
-          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS credit_amount NUMERIC(14,2) NOT NULL DEFAULT 0;
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS fp_transaction_ref TEXT;
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS employee_id UUID;
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS merchant_id UUID;
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS organization_id UUID;
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS employee_fp_id_snapshot TEXT;
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS employee_name_snapshot TEXT;
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS employee_phone_snapshot TEXT;
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS org_name_snapshot TEXT;
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS merchant_name_snapshot TEXT;
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS merchant_mpesa_snapshot TEXT;
           ALTER TABLE transactions ADD COLUMN IF NOT EXISTS category_snapshot TEXT;
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS total_amount NUMERIC(14,2);
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS credit_portion NUMERIC(14,2) NOT NULL DEFAULT 0;
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS copay_portion NUMERIC(14,2) NOT NULL DEFAULT 0;
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS stk_checkout_request_id TEXT;
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS mpesa_receipt TEXT;
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS status transaction_status NOT NULL DEFAULT 'PENDING';
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+          -- Sync from legacy column aliases if present
+          BEGIN
+            IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'transactions' AND column_name = 'credit_amount') THEN
+              UPDATE transactions SET credit_portion = credit_amount WHERE credit_portion = 0 AND credit_amount > 0;
+            END IF;
+            IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'transactions' AND column_name = 'copay_amount') THEN
+              UPDATE transactions SET copay_portion = copay_amount WHERE copay_portion = 0 AND copay_amount > 0;
+            END IF;
+            IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'transactions' AND column_name = 'mpesa_checkout_request_id') THEN
+              UPDATE transactions SET stk_checkout_request_id = mpesa_checkout_request_id WHERE stk_checkout_request_id IS NULL AND mpesa_checkout_request_id IS NOT NULL;
+            END IF;
+            IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'transactions' AND column_name = 'mpesa_receipt_number') THEN
+              UPDATE transactions SET mpesa_receipt = mpesa_receipt_number WHERE mpesa_receipt IS NULL AND mpesa_receipt_number IS NOT NULL;
+            END IF;
+          EXCEPTION WHEN OTHERS THEN NULL;
+          END;
+
           BEGIN
             ALTER TABLE transactions ALTER COLUMN id SET DEFAULT gen_random_uuid();
           EXCEPTION WHEN OTHERS THEN NULL;
           END;
+
+          -- Drop NOT NULL on any legacy columns that are not part of v2 schema
+          allowed_cols := ARRAY[
+            'id', 'fp_transaction_ref', 'employee_id', 'merchant_id', 'organization_id',
+            'employee_fp_id_snapshot', 'employee_name_snapshot', 'employee_phone_snapshot',
+            'org_name_snapshot', 'merchant_name_snapshot', 'merchant_mpesa_snapshot',
+            'category_snapshot', 'total_amount', 'credit_portion', 'copay_portion',
+            'stk_checkout_request_id', 'mpesa_receipt', 'status', 'created_at', 'updated_at'
+          ];
+          FOR col IN (
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'transactions' 
+              AND is_nullable = 'NO'
+              AND column_name != ALL(allowed_cols)
+          ) LOOP
+            BEGIN
+              EXECUTE 'ALTER TABLE transactions ALTER COLUMN ' || quote_ident(col) || ' DROP NOT NULL';
+              EXECUTE 'ALTER TABLE transactions ALTER COLUMN ' || quote_ident(col) || ' SET DEFAULT NULL';
+            EXCEPTION WHEN OTHERS THEN NULL;
+            END;
+          END LOOP;
+        END IF;
+
+        -- --------------------------------------------------------------------
+        -- J. Journal Entries Table
+        -- --------------------------------------------------------------------
+        IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'journal_entries') THEN
+          ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS transaction_id UUID;
+          ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS account_type TEXT;
+          ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS debit_amount NUMERIC(14,2) NOT NULL DEFAULT 0;
+          ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS credit_amount NUMERIC(14,2) NOT NULL DEFAULT 0;
+          ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS description TEXT;
+          ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
+
+          -- Data migration from legacy v1 columns
+          BEGIN
+            IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'journal_entries' AND column_name = 'debit_etb') THEN
+              UPDATE journal_entries SET debit_amount = debit_etb::numeric WHERE debit_amount = 0 AND debit_etb > 0;
+            END IF;
+            IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'journal_entries' AND column_name = 'credit_etb') THEN
+              UPDATE journal_entries SET credit_amount = credit_etb::numeric WHERE credit_amount = 0 AND credit_etb > 0;
+            END IF;
+            IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'journal_entries' AND column_name = 'label') THEN
+              UPDATE journal_entries SET description = label WHERE description IS NULL AND label IS NOT NULL;
+            END IF;
+          EXCEPTION WHEN OTHERS THEN NULL;
+          END;
+
+          BEGIN
+            ALTER TABLE journal_entries ALTER COLUMN id SET DEFAULT gen_random_uuid();
+          EXCEPTION WHEN OTHERS THEN NULL;
+          END;
+
+          -- Drop NOT NULL and defaults from legacy columns like payment_id and label
+          BEGIN
+            ALTER TABLE journal_entries ALTER COLUMN payment_id DROP NOT NULL;
+            ALTER TABLE journal_entries ALTER COLUMN payment_id SET DEFAULT NULL;
+          EXCEPTION WHEN OTHERS THEN NULL;
+          END;
+
+          BEGIN
+            ALTER TABLE journal_entries ALTER COLUMN label DROP NOT NULL;
+            ALTER TABLE journal_entries ALTER COLUMN label SET DEFAULT NULL;
+          EXCEPTION WHEN OTHERS THEN NULL;
+          END;
+
+          allowed_cols := ARRAY['id', 'transaction_id', 'account_type', 'debit_amount', 'credit_amount', 'description', 'created_at'];
+          FOR col IN (
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'journal_entries' 
+              AND is_nullable = 'NO'
+              AND column_name != ALL(allowed_cols)
+          ) LOOP
+            BEGIN
+              EXECUTE 'ALTER TABLE journal_entries ALTER COLUMN ' || quote_ident(col) || ' DROP NOT NULL';
+              EXECUTE 'ALTER TABLE journal_entries ALTER COLUMN ' || quote_ident(col) || ' SET DEFAULT NULL';
+            EXCEPTION WHEN OTHERS THEN NULL;
+            END;
+          END LOOP;
         END IF;
       END $$;
     `);
