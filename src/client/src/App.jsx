@@ -10,7 +10,6 @@ import MerchantAuthPage from './features/auth/MerchantAuthPage';
 import EmployeeLoginPage from './features/auth/EmployeeLoginPage';
 import OrgDashboard from './features/organization/OrgDashboard';
 import EmployeeDashboard from './features/employee/EmployeeDashboard';
-import MerchantPOS from './features/merchant/MerchantPOS';
 import MerchantLayout from './features/merchant/MerchantLayout';
 
 class ErrorBoundary extends Component {

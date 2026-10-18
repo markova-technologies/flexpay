@@ -64,7 +64,7 @@ async function merchantRoutes(fastify, options) {
           merchantId: request.user.merchantId,
         });
         if (!qrResult.verified) {
-          return reply.code(400).send({ error: qrResult.error, verified: false });
+          return reply.code(400).send({ error: qrResult.error, verified: false, eligible: false });
         }
         return reply.send({
           verified: true,
@@ -76,22 +76,22 @@ async function merchantRoutes(fastify, options) {
 
       const fpEmployeeId = parse.data.fpEmployeeId || parse.data.fpId;
       if (!fpEmployeeId) {
-        return reply.code(400).send({ error: 'Either qrPayload or fpEmployeeId/fpId is required', verified: false });
+        return reply.code(400).send({ error: 'Either qrPayload or fpEmployeeId/fpId is required', verified: false, eligible: false });
       }
 
       const validation = validateEmployeeId(fpEmployeeId);
       if (!validation.valid) {
-        return reply.code(400).send({ error: 'Invalid Employee ID checksum or format', verified: false });
+        return reply.code(400).send({ error: 'Invalid Employee ID checksum or format', verified: false, eligible: false });
       }
 
       const employee = await employeeRepo.findByFpId(fpEmployeeId);
       if (!employee || employee.status !== 'ACTIVE') {
-        return reply.code(404).send({ error: 'Employee not found or inactive', verified: false });
+        return reply.code(404).send({ error: 'Employee not found or inactive', verified: false, eligible: false });
       }
 
       const merchant = await merchantRepo.findById(request.user.merchantId);
       if (!merchant || merchant.status !== 'ACTIVE') {
-        return reply.code(403).send({ error: 'Merchant terminal is inactive' });
+        return reply.code(403).send({ error: 'Merchant terminal is inactive', verified: false, eligible: false });
       }
 
       // Check organization credit policy for merchant category eligibility
@@ -106,14 +106,23 @@ async function merchantRoutes(fastify, options) {
         }
       }
 
+      if (!eligible) {
+        return reply.code(403).send({
+          verified: false,
+          eligible: false,
+          error: ineligibilityReason,
+          ineligibilityReason,
+        });
+      }
+
       const availableCredit = Number(employee.available_credit);
       const creditLimit = Number(employee.credit_limit);
       const fullName = employee.full_name;
       const orgName = employee.organization_name || 'Corporate Partner';
 
       return reply.send({
-        eligible,
-        ineligibilityReason,
+        verified: true,
+        eligible: true,
         fullName,
         employeeName: fullName,
         fpEmployeeId: employee.fp_employee_id,

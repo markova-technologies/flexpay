@@ -18,31 +18,62 @@ export function MerchantPOS() {
 
   useEffect(() => {
     if (!scanning) return;
+
+    let isMounted = true;
     try {
-      const scanner = new Html5QrcodeScanner('qr-reader', { fps: 10, qrbox: 250 }, false);
+      const scanner = new Html5QrcodeScanner(
+        'qr-reader',
+        {
+          fps: 10,
+          qrbox: (viewfinderWidth, viewfinderHeight) => {
+            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+            const size = Math.max(160, Math.floor(minEdge * 0.75));
+            return { width: size, height: size };
+          },
+          rememberLastUsedCamera: true,
+          aspectRatio: 1.0,
+          showTorchButtonIfSupported: true,
+        },
+        /* verbose= */ false
+      );
+
       scannerRef.current = scanner;
+
       scanner.render(
-        async (decoded) => {
+        async (decodedText) => {
+          if (!isMounted) return;
+          const payload = decodedText ? String(decodedText).trim() : '';
+          if (!payload) return;
+
           try {
-            await scanner.clear();
+            if (scannerRef.current) {
+              await scannerRef.current.clear();
+            }
           } catch {}
           setScanning(false);
+
           try {
-            const { data } = await api.post('/merchant/verify-employee', { qrPayload: decoded });
-            if (data.verified) {
+            const { data } = await api.post('/merchant/verify-employee', { qrPayload: payload });
+            if (data.verified || data.eligible) {
+              const emp = data.employee || data;
               setVerified({
-                ...data.employee,
-                name: data.employee?.fullName || data.employee?.name || 'Verified Employee',
-                fpId: data.employee?.fpEmployeeId || data.employee?.fpId || 'FP-ETH',
-                availableCredit: Number(data.employee?.availableCredit || 0),
-                orgName: data.employee?.organizationName || data.employee?.orgName || 'Employer',
+                ...emp,
+                name: emp.fullName || emp.employeeName || emp.name || 'Verified Employee',
+                fpId: emp.fpEmployeeId || emp.fpId || 'FP-ETH',
+                availableCredit: Number(emp.availableCredit || 0),
+                creditLimit: Number(emp.creditLimit || 0),
+                orgName: emp.organizationName || emp.orgName || 'Employer',
               });
-              toast.success(`Verified: ${data.employee?.fullName || data.employee?.name}`);
+              toast.success(`Verified: ${emp.fullName || emp.employeeName || emp.name}`);
             } else {
-              toast.error(data.error || 'QR Verification failed');
+              toast.error(data.error || data.ineligibilityReason || 'QR Verification failed');
             }
           } catch (err) {
-            toast.error('Could not verify QR code. Please try manual entry.');
+            toast.error(
+              err.response?.data?.error ||
+              err.response?.data?.message ||
+              'Could not verify QR code. Please try manual entry.'
+            );
           }
         },
         (err) => {
@@ -55,6 +86,7 @@ export function MerchantPOS() {
     }
 
     return () => {
+      isMounted = false;
       if (scannerRef.current) {
         scannerRef.current.clear().catch(() => {});
       }
@@ -62,26 +94,29 @@ export function MerchantPOS() {
   }, [scanning]);
 
   const verifyManual = async () => {
-    if (!fpIdInput.trim()) {
+    const cleanId = fpIdInput.trim().toUpperCase();
+    if (!cleanId) {
       toast.warning('Please enter an FP Employee ID');
       return;
     }
     try {
-      const { data } = await api.post('/merchant/verify-employee', { fpId: fpIdInput.trim().toUpperCase() });
-      if (data.verified) {
+      const { data } = await api.post('/merchant/verify-employee', { fpId: cleanId });
+      if (data.verified || data.eligible) {
+        const emp = data.employee || data;
         setVerified({
-          ...data.employee,
-          name: data.employee?.fullName || data.employee?.name || 'Verified Employee',
-          fpId: data.employee?.fpEmployeeId || data.employee?.fpId || fpIdInput.trim().toUpperCase(),
-          availableCredit: Number(data.employee?.availableCredit || 0),
-          orgName: data.employee?.organizationName || data.employee?.orgName || 'Employer',
+          ...emp,
+          name: emp.fullName || emp.employeeName || emp.name || 'Verified Employee',
+          fpId: emp.fpEmployeeId || emp.fpId || cleanId,
+          availableCredit: Number(emp.availableCredit || 0),
+          creditLimit: Number(emp.creditLimit || 0),
+          orgName: emp.organizationName || emp.orgName || 'Employer',
         });
-        toast.success(`Verified: ${data.employee?.fullName || data.employee?.name}`);
+        toast.success(`Verified: ${emp.fullName || emp.employeeName || emp.name}`);
       } else {
-        toast.error(data.error || 'Employee verification failed');
+        toast.error(data.error || data.ineligibilityReason || 'Employee verification failed');
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || err.response?.data?.error || 'Verification failed. Check the FP-ID.');
+      toast.error(err.response?.data?.error || err.response?.data?.message || 'Verification failed. Check the FP-ID.');
     }
   };
 
@@ -99,10 +134,10 @@ export function MerchantPOS() {
     setProcessing(true);
     try {
       const { data } = await api.post('/merchant/transaction', {
-        fpId: verified.fpId,
+        fpId: verified.fpId || verified.fpEmployeeId,
         amount: Number(amount),
       });
-      toast.success(`Payment authorized! Reference: ${data.fpRef || data.id}`);
+      toast.success(`Payment authorized! Reference: ${data.fpRef || data.fpTransactionRef || data.id}`);
       setVerified(null);
       setAmount('');
       setFpIdInput('');
@@ -142,23 +177,36 @@ export function MerchantPOS() {
       {!verified && mode === 'qr' && (
         <div className="pos__scanner">
           {!scanning ? (
-            <button
-              type="button"
-              className="btn btn--primary btn--lg"
-              onClick={() => setScanning(true)}
-            >
-              Start Camera Scan
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px', textAlign: 'center' }}>
+              <div style={{ fontSize: '2.5rem' }}>📷</div>
+              <h3 style={{ margin: 0, color: 'var(--text-primary, #F8FAFC)', fontSize: '1.15rem' }}>
+                Camera QR Code Verification
+              </h3>
+              <p style={{ margin: 0, color: 'var(--text-secondary, #94A3B8)', fontSize: '0.875rem', maxWidth: '360px' }}>
+                Point the camera at the employee&apos;s FlexPay dynamic QR code or POS Payment Card to instantly verify pre-salary credit.
+              </p>
+              <button
+                type="button"
+                className="btn btn--primary btn--lg"
+                style={{ marginTop: '6px' }}
+                onClick={() => setScanning(true)}
+              >
+                Start Camera Scan
+              </button>
+            </div>
           ) : (
             <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <p style={{ color: 'var(--text-secondary, #94A3B8)', fontSize: '0.85rem', marginBottom: '12px' }}>
+                Position the employee&apos;s QR code inside the camera box below:
+              </p>
               <div id="qr-reader" />
               <button
                 type="button"
                 className="btn btn--ghost"
-                style={{ marginTop: '12px' }}
+                style={{ marginTop: '14px' }}
                 onClick={() => setScanning(false)}
               >
-                Stop Scanner
+                ✕ Close Scanner
               </button>
             </div>
           )}
@@ -167,7 +215,7 @@ export function MerchantPOS() {
 
       {!verified && mode === 'manual' && (
         <div className="pos__manual">
-          <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary, #94A3B8)' }}>
+          <label style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-secondary, #94A3B8)' }}>
             Enter Employee FlexPay ID
           </label>
           <input
@@ -175,6 +223,9 @@ export function MerchantPOS() {
             placeholder="FP-ETH-2026-XXXXX-X"
             value={fpIdInput}
             onChange={(e) => setFpIdInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') verifyManual();
+            }}
           />
           <button type="button" className="btn btn--primary" onClick={verifyManual}>
             Verify Employee

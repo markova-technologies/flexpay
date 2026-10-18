@@ -2266,3 +2266,42 @@ Pushed all local commits to remote GitHub repository (`https://github.com/markov
    - Working tree clean.
 
 ---
+
+#### Turn 8 (Step 8)
+##### 👤 User Prompt:
+```text
+On the merchant's dashboard the manual pos doesn't work and also the scanner doesn't work. And also the reciept, you must do a real designing and also there are txts that can't see (so whitish txt)
+```
+
+##### 🤖 Agent Response:
+Diagnosed and resolved all issues identified in the Merchant POS verification and PDF receipt generator:
+
+1. **Root Cause Analysis & Fix for Manual POS Verification**:
+   - In `src/server/modules/merchants/adapters/incoming/merchants.routes.js`, the manual verification branch (`fpId` / `fpEmployeeId`) returned `{ eligible: true, employee: ... }` but omitted `verified: true`.
+   - In `src/client/src/features/merchant/pos/MerchantPOS.jsx`, the client strictly checked `if (data.verified)`. Because `verified` was undefined, it triggered the error branch displaying `Employee verification failed` despite a valid FP-ID.
+   - Updated `merchants.routes.js` to return `verified: true` and `eligible: true` on successful verification, or 403 with `ineligibilityReason` if policy fails.
+   - Updated `MerchantPOS.jsx` to check `if (data.verified || data.eligible)` and extract normalized employee data.
+
+2. **Root Cause Analysis & Fix for POS QR Code Scanner**:
+   - In `employees.routes.js`, the `/employee/qr-code` endpoint was returning raw FP-ID text rather than a signed HMAC-SHA256 payload.
+   - In `VerifyEmployeeQRUseCase.js`, the verification logic failed with `Malformed QR payload` when receiving a direct FP-ID string.
+   - Updated `employees.routes.js` to sign the QR payload with `generateQRPayload` and return `qrPayload`.
+   - Updated `QRCodeCard.jsx` to prioritize the cryptographic `qrDataUrl` and store `qrPayload` for dynamic rendering.
+   - Updated `VerifyEmployeeQRUseCase.js` to support both signed dynamic HMAC payloads (with 300s TTL) and direct FP-ID string scans, with full Luhn checksum verification and org credit policy category checks.
+   - Enhanced `MerchantPOS.jsx` and `MerchantPOS.css` with dynamic viewfinder sizing and dark-mode styling for `html5-qrcode` UI controls.
+
+3. **High-End PDF Receipt Redesign (Eliminated Whitish Text)**:
+   - In `ReceiptEngine.js`, values were previously rendered with `color = '#f0f0f5'` (near-white text) on white paper, making transaction reference, dates, and amounts completely unreadable.
+   - Completely redesigned `ReceiptEngine.js` into a premium fintech receipt:
+     - 100% high-contrast typography: `#0F172A` (deep slate for titles and values) and `#475569` (for field labels).
+     - Top emerald accent bar (`#059669`) and FlexPay wordmark.
+     - Completed status pill badge (`#ECFDF5`, `#10B981`, `#065F46`).
+     - Dedicated hero amount callout card (`#F8FAFC`, `#E2E8F0`) with credit portion and M-PESA co-pay indicators.
+     - Embedded scannable QR verification code in the footer with cryptographic audit trail statement.
+   - Updated `StatementEngine.js` to eliminate `#f0f0f5` whitish text, replacing all data values with `#0F172A` / `#475569`.
+
+4. **Testing & Quality Assurance**:
+   - All 75 unit tests pass across 31 test suites (`npm run test:unit`) with 0 failures.
+   - Vite client production bundle compiles cleanly (`npm --prefix src/client run build`).
+
+---

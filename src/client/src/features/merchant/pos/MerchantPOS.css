@@ -49,14 +49,63 @@
 
 #qr-reader {
   width: 100%;
-  max-width: 400px;
-  border: none !important;
-  border-radius: 12px;
+  max-width: 420px;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1)) !important;
+  border-radius: 14px;
   overflow: hidden;
+  background: var(--bg-elevated, #121C32);
+  padding: 12px;
+  color: var(--text-primary, #F8FAFC);
+}
+
+#qr-reader video {
+  border-radius: 10px;
+  width: 100% !important;
 }
 
 #qr-reader img {
   display: none;
+}
+
+#qr-reader button {
+  background: var(--accent-primary, #10B981) !important;
+  color: #060A14 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 8px 16px !important;
+  font-weight: 700 !important;
+  font-size: 0.85rem !important;
+  cursor: pointer !important;
+  margin: 6px 4px !important;
+  display: inline-block !important;
+  transition: opacity 0.2s;
+}
+
+#qr-reader button:hover {
+  opacity: 0.9;
+}
+
+#qr-reader a {
+  color: var(--accent-primary, #10B981) !important;
+  font-size: 0.85rem !important;
+  text-decoration: underline !important;
+  margin: 6px 0 !important;
+  display: inline-block !important;
+}
+
+#qr-reader select {
+  background: var(--bg-surface, #0C1322) !important;
+  color: var(--text-primary, #F8FAFC) !important;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.2)) !important;
+  border-radius: 6px !important;
+  padding: 6px 12px !important;
+  font-size: 0.85rem !important;
+  margin: 4px !important;
+}
+
+#qr-reader span {
+  color: var(--text-secondary, #94A3B8) !important;
+  font-size: 0.85rem !important;
 }
 
 .pos__manual {

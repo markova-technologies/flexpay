@@ -2,102 +2,146 @@ const PDFDocument = require('pdfkit');
 
 /**
  * Generates a branded FlexPay PDF Statement for an Organization's Merchant transactions.
+ * Enforces crisp high-contrast typography (zero whitish text on white paper).
  * Returns a Promise<Buffer>.
  */
 async function generateStatement({ merchant, summary, transactions, byEmployee }) {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: 'A4', margin: 40 });
-    const chunks = [];
-    doc.on('data', (c) => chunks.push(c));
-    doc.on('end', () => resolve(Buffer.concat(chunks)));
-    doc.on('error', reject);
+    try {
+      const doc = new PDFDocument({ size: 'A4', margin: 40 });
+      const chunks = [];
+      doc.on('data', (c) => chunks.push(c));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
 
-    // Header
-    doc.fontSize(22).fillColor('#00c896').text('FlexPay', { continued: true });
-    doc.fontSize(12).fillColor('#8b8b9a').text('  |  Merchant Credit Settlement Statement', { align: 'right' });
-    doc.moveDown(0.5);
-    doc.moveTo(40, doc.y).lineTo(555, doc.y).stroke('#2a2a3a');
-    doc.moveDown(1);
+      // Top Brand Accent Bar
+      doc.rect(0, 0, 595.28, 6).fill('#059669');
 
-    // Merchant & Statement Info
-    doc.fontSize(10).fillColor('#8b8b9a').text('Merchant Partner:', { continued: true });
-    doc.fillColor('#f0f0f5').text(`  ${merchant.business_name || merchant.businessName || 'Merchant'}`);
-    doc.fontSize(10).fillColor('#8b8b9a').text('Category:', { continued: true });
-    doc.fillColor('#f0f0f5').text(`  ${merchant.category || 'RETAIL'}`);
-    doc.fontSize(10).fillColor('#8b8b9a').text('M-PESA Payout Till / Phone:', { continued: true });
-    doc.fillColor('#f0f0f5').text(`  ${merchant.mpesa_phone_number || merchant.mpesaPhoneNumber || 'N/A'}`);
-    doc.fontSize(10).fillColor('#8b8b9a').text('Statement Date:', { continued: true });
-    doc.fillColor('#f0f0f5').text(`  ${new Date().toLocaleDateString('en-ET')}`);
-    doc.moveDown(1);
+      // Header
+      doc.y = 40;
+      doc.font('Helvetica-Bold').fontSize(22).fillColor('#0F172A').text('FlexPay', 40, doc.y, { continued: true });
+      doc.font('Helvetica-Bold').fontSize(22).fillColor('#059669').text(' •');
+      doc.font('Helvetica-Bold').fontSize(11).fillColor('#64748B').text('Merchant Credit Settlement Statement', { align: 'right' });
+      doc.moveDown(0.5);
+      doc.moveTo(40, doc.y).lineTo(555, doc.y).stroke('#CBD5E1');
+      doc.moveDown(0.8);
 
-    // Summary Box
-    doc.rect(40, doc.y, 515, 60).fill('#12121a').stroke('#2a2a3a');
-    const boxY = doc.y + 15;
-    doc.fillColor('#8b8b9a').fontSize(9).text('TOTAL CREDIT USED', 60, boxY);
-    doc.fillColor('#00c896').fontSize(16).text(`ETB ${Number(summary.totalCredit || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 60, boxY + 16);
+      // Merchant & Statement Info Box
+      const infoY = doc.y;
+      doc.roundedRect(40, infoY, 515, 68, 6).fillAndStroke('#F8FAFC', '#E2E8F0');
 
-    doc.fillColor('#8b8b9a').fontSize(9).text('EMPLOYEE COUNT', 250, boxY);
-    doc.fillColor('#f0f0f5').fontSize(16).text(String(summary.employeeCount || 0), 250, boxY + 16);
+      const col1X = 56;
+      const col2X = 310;
+      let rowY = infoY + 12;
 
-    doc.fillColor('#8b8b9a').fontSize(9).text('TRANSACTIONS', 420, boxY);
-    doc.fillColor('#f0f0f5').fontSize(16).text(String(summary.transactionCount || 0), 420, boxY + 16);
+      doc.font('Helvetica').fontSize(9).fillColor('#64748B').text('Merchant Partner:', col1X, rowY);
+      doc.font('Helvetica-Bold').fontSize(9).fillColor('#0F172A').text(merchant.business_name || merchant.businessName || 'Merchant', col1X + 95, rowY);
 
-    doc.y = boxY + 60;
-    doc.moveDown(1.5);
+      doc.font('Helvetica').fontSize(9).fillColor('#64748B').text('Category:', col2X, rowY);
+      doc.font('Helvetica-Bold').fontSize(9).fillColor('#0F172A').text(merchant.category || 'RETAIL', col2X + 65, rowY);
 
-    // Employee Breakdown Header
-    doc.fillColor('#00c896').fontSize(12).text('Spending Breakdown by Employee');
-    doc.moveDown(0.5);
-    doc.moveTo(40, doc.y).lineTo(555, doc.y).stroke('#2a2a3a');
-    doc.moveDown(0.5);
+      rowY += 18;
+      doc.font('Helvetica').fontSize(9).fillColor('#64748B').text('M-PESA Payout:', col1X, rowY);
+      doc.font('Helvetica-Bold').fontSize(9).fillColor('#0F172A').text(merchant.mpesa_phone_number || merchant.mpesaPhoneNumber || merchant.mpesa_number || 'N/A', col1X + 95, rowY);
 
-    doc.fontSize(8).fillColor('#8b8b9a');
-    doc.text('FP-ID', 45, doc.y, { width: 120, continued: true });
-    doc.text('Employee Name', 165, doc.y, { width: 160, continued: true });
-    doc.text('Total Spent', 325, doc.y, { width: 100, align: 'right', continued: true });
-    doc.text('Last Visit', 435, doc.y, { width: 100, align: 'right' });
-    doc.moveDown(0.5);
+      doc.font('Helvetica').fontSize(9).fillColor('#64748B').text('Statement Date:', col2X, rowY);
+      doc.font('Helvetica-Bold').fontSize(9).fillColor('#0F172A').text(new Date().toLocaleDateString('en-ET', { timeZone: 'Africa/Addis_Ababa' }), col2X + 85, rowY);
 
-    (byEmployee || []).slice(0, 15).forEach((emp) => {
-      doc.fontSize(8).fillColor('#f0f0f5');
-      doc.text(emp.fp_employee_id || emp.employee_id || 'N/A', 45, doc.y, { width: 120, continued: true });
-      doc.text(emp.full_name || 'N/A', 165, doc.y, { width: 160, continued: true });
-      doc.text(`ETB ${Number(emp.total_spent || 0).toFixed(2)}`, 325, doc.y, { width: 100, align: 'right', continued: true });
-      doc.text(emp.last_visit ? new Date(emp.last_visit).toLocaleDateString() : 'N/A', 435, doc.y, { width: 100, align: 'right' });
+      doc.y = infoY + 80;
+
+      // Summary KPI Metrics Row
+      const kpiY = doc.y;
+      const cardW = 165;
+      const cardH = 50;
+
+      // KPI 1: Total Credit
+      doc.roundedRect(40, kpiY, cardW, cardH, 6).fillAndStroke('#ECFDF5', '#10B981');
+      doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#065F46').text('TOTAL BENEFIT CREDIT USED', 50, kpiY + 8);
+      doc.font('Helvetica-Bold').fontSize(14).fillColor('#047857').text(`ETB ${Number(summary.totalCredit || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 50, kpiY + 22);
+
+      // KPI 2: Employee Count
+      doc.roundedRect(215, kpiY, cardW, cardH, 6).fillAndStroke('#F8FAFC', '#CBD5E1');
+      doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#64748B').text('UNIQUE EMPLOYEES', 225, kpiY + 8);
+      doc.font('Helvetica-Bold').fontSize(14).fillColor('#0F172A').text(String(summary.employeeCount || 0), 225, kpiY + 22);
+
+      // KPI 3: Total Transactions
+      doc.roundedRect(390, kpiY, cardW, cardH, 6).fillAndStroke('#F8FAFC', '#CBD5E1');
+      doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#64748B').text('TOTAL TRANSACTIONS', 400, kpiY + 8);
+      doc.font('Helvetica-Bold').fontSize(14).fillColor('#0F172A').text(String(summary.transactionCount || 0), 400, kpiY + 22);
+
+      doc.y = kpiY + cardH + 16;
+
+      // Table 1: Spending Breakdown by Employee
+      doc.font('Helvetica-Bold').fontSize(10.5).fillColor('#0F172A').text('Spending Breakdown by Employee');
       doc.moveDown(0.3);
-    });
+      doc.moveTo(40, doc.y).lineTo(555, doc.y).stroke('#CBD5E1');
+      doc.moveDown(0.4);
 
-    doc.moveDown(1);
+      let tableY = doc.y;
+      doc.rect(40, tableY, 515, 18).fill('#F1F5F9');
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#475569');
+      doc.text('FP-ID', 48, tableY + 5, { width: 130 });
+      doc.text('Employee Name', 180, tableY + 5, { width: 160 });
+      doc.text('Total Spent (ETB)', 340, tableY + 5, { width: 100, align: 'right' });
+      doc.text('Last Visit', 450, tableY + 5, { width: 95, align: 'right' });
 
-    // Recent Transactions Header
-    doc.fillColor('#00c896').fontSize(12).text('Recent Transactions');
-    doc.moveDown(0.5);
-    doc.moveTo(40, doc.y).lineTo(555, doc.y).stroke('#2a2a3a');
-    doc.moveDown(0.5);
+      tableY += 20;
 
-    doc.fontSize(8).fillColor('#8b8b9a');
-    doc.text('Date', 45, doc.y, { width: 80, continued: true });
-    doc.text('Reference', 125, doc.y, { width: 130, continued: true });
-    doc.text('Employee', 255, doc.y, { width: 120, continued: true });
-    doc.text('Credit Portion', 375, doc.y, { width: 80, align: 'right', continued: true });
-    doc.text('Total', 465, doc.y, { width: 80, align: 'right' });
-    doc.moveDown(0.5);
+      (byEmployee || []).slice(0, 10).forEach((emp, i) => {
+        if (i % 2 === 1) {
+          doc.rect(40, tableY - 2, 515, 16).fill('#F8FAFC');
+        }
+        doc.font('Courier-Bold').fontSize(8).fillColor('#059669').text(emp.fp_employee_id || emp.employee_id || 'N/A', 48, tableY, { width: 130 });
+        doc.font('Helvetica-Bold').fontSize(8).fillColor('#0F172A').text(emp.full_name || 'N/A', 180, tableY, { width: 160 });
+        doc.font('Helvetica-Bold').fontSize(8).fillColor('#0F172A').text(Number(emp.total_spent || 0).toFixed(2), 340, tableY, { width: 100, align: 'right' });
+        doc.font('Helvetica').fontSize(8).fillColor('#64748B').text(emp.last_visit ? new Date(emp.last_visit).toLocaleDateString() : 'N/A', 450, tableY, { width: 95, align: 'right' });
+        tableY += 16;
+      });
 
-    (transactions || []).slice(0, 20).forEach((txn) => {
-      doc.fontSize(8).fillColor('#f0f0f5');
-      doc.text(new Date(txn.created_at).toLocaleDateString(), 45, doc.y, { width: 80, continued: true });
-      doc.text(txn.fp_transaction_ref || txn.id.slice(0, 8), 125, doc.y, { width: 130, continued: true });
-      doc.text(txn.employee_name_snapshot || 'N/A', 255, doc.y, { width: 120, continued: true });
-      doc.text(`ETB ${Number(txn.credit_portion || 0).toFixed(2)}`, 375, doc.y, { width: 80, align: 'right', continued: true });
-      doc.text(`ETB ${Number(txn.total_amount || 0).toFixed(2)}`, 465, doc.y, { width: 80, align: 'right' });
+      doc.y = tableY + 12;
+
+      // Table 2: Recent Transactions
+      doc.font('Helvetica-Bold').fontSize(10.5).fillColor('#0F172A').text('Recent Benefit Transactions');
       doc.moveDown(0.3);
-    });
+      doc.moveTo(40, doc.y).lineTo(555, doc.y).stroke('#CBD5E1');
+      doc.moveDown(0.4);
 
-    // Footer
-    doc.moveDown(2);
-    doc.fontSize(7).fillColor('#8b8b9a').text('FlexPay v3.0 — Earned Wage Access & Pre-Salary Credit Platform — Addis Ababa, Ethiopia', { align: 'center' });
+      let txnTableY = doc.y;
+      doc.rect(40, txnTableY, 515, 18).fill('#F1F5F9');
+      doc.font('Helvetica-Bold').fontSize(8).fillColor('#475569');
+      doc.text('Date', 48, txnTableY + 5, { width: 75 });
+      doc.text('Reference', 125, txnTableY + 5, { width: 140 });
+      doc.text('Employee', 270, txnTableY + 5, { width: 130 });
+      doc.text('Credit Portion', 400, txnTableY + 5, { width: 75, align: 'right' });
+      doc.text('Total Amount', 480, txnTableY + 5, { width: 65, align: 'right' });
 
-    doc.end();
+      txnTableY += 20;
+
+      (transactions || []).slice(0, 12).forEach((txn, i) => {
+        if (i % 2 === 1) {
+          doc.rect(40, txnTableY - 2, 515, 16).fill('#F8FAFC');
+        }
+        doc.font('Helvetica').fontSize(8).fillColor('#64748B').text(new Date(txn.created_at).toLocaleDateString(), 48, txnTableY, { width: 75 });
+        doc.font('Courier').fontSize(8).fillColor('#0F172A').text(txn.fp_transaction_ref || (txn.id && txn.id.slice(0, 10)) || 'N/A', 125, txnTableY, { width: 140 });
+        doc.font('Helvetica').fontSize(8).fillColor('#0F172A').text(txn.employee_name_snapshot || 'N/A', 270, txnTableY, { width: 130 });
+        doc.font('Helvetica-Bold').fontSize(8).fillColor('#059669').text(`ETB ${Number(txn.credit_portion || 0).toFixed(2)}`, 400, txnTableY, { width: 75, align: 'right' });
+        doc.font('Helvetica-Bold').fontSize(8).fillColor('#0F172A').text(`ETB ${Number(txn.total_amount || 0).toFixed(2)}`, 480, txnTableY, { width: 65, align: 'right' });
+        txnTableY += 16;
+      });
+
+      // Footer
+      doc.y = Math.max(txnTableY + 16, 750);
+      doc.dash(3, { space: 3 }).moveTo(40, doc.y).lineTo(555, doc.y).stroke('#CBD5E1').undash();
+      doc.moveDown(0.6);
+      doc.font('Helvetica').fontSize(7.5).fillColor('#94A3B8').text(
+        'FlexPay v3.0 • Earned Wage Access & Pre-Salary Benefit Platform • Certified Settlement Audit Record',
+        { align: 'center' }
+      );
+
+      doc.end();
+    } catch (err) {
+      reject(err);
+    }
   });
 }
 

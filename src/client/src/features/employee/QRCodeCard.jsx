@@ -9,6 +9,7 @@ const REFRESH_MS = 4 * 60 * 1000; // 4 minutes auto-refresh (payload valid for 5
 export function QRCodeCard({ employee }) {
   const toast = useToast();
   const [qrDataUrl, setQrDataUrl] = useState('');
+  const [qrPayload, setQrPayload] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -22,6 +23,9 @@ export function QRCodeCard({ employee }) {
       const remoteUrl = res.data?.qrCodeDataUrl || res.data?.qrDataUrl;
       if (remoteUrl) {
         setQrDataUrl(remoteUrl);
+      }
+      if (res.data?.qrPayload) {
+        setQrPayload(res.data.qrPayload);
       }
     } catch (err) {
       // Non-fatal if we have qrValue from props for QRCodeCanvas
@@ -43,7 +47,7 @@ export function QRCodeCard({ employee }) {
     try {
       const canvas = document.getElementById('flexpay-qr-canvas');
       let linkHref = qrDataUrl;
-      if (canvas) {
+      if (canvas && !linkHref) {
         linkHref = canvas.toDataURL('image/png');
       }
       if (!linkHref) {
@@ -62,7 +66,7 @@ export function QRCodeCard({ employee }) {
     }
   };
 
-  const isReady = Boolean(qrValue || qrDataUrl);
+  const isReady = Boolean(qrDataUrl || qrPayload || qrValue);
 
   return (
     <div
@@ -111,21 +115,21 @@ export function QRCodeCard({ employee }) {
           <div style={{ color: '#EF4444', fontSize: '0.8rem', padding: '10px' }}>
             {error}
           </div>
-        ) : qrValue ? (
-          <QRCodeCanvas
-            id="flexpay-qr-canvas"
-            value={qrValue}
-            size={186}
-            level="H"
-            includeMargin={false}
-            bgColor="#FFFFFF"
-            fgColor="#0A0B0D"
-          />
         ) : qrDataUrl ? (
           <img
             src={qrDataUrl}
             alt="FlexPay Payment QR Code"
             style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+          />
+        ) : (qrPayload || qrValue) ? (
+          <QRCodeCanvas
+            id="flexpay-qr-canvas"
+            value={qrPayload || qrValue}
+            size={186}
+            level="H"
+            includeMargin={false}
+            bgColor="#FFFFFF"
+            fgColor="#0A0B0D"
           />
         ) : (
           <div style={{ color: '#6B7280', fontSize: '0.8rem' }}>Awaiting FP-ID...</div>

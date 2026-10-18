@@ -3,6 +3,8 @@ const { requireRole } = require('../../../../shared/middleware/requireRole');
 const { EmployeeRepository } = require('../outgoing/EmployeeRepository');
 const { TransactionRepository } = require('../../../transactions/adapters/outgoing/TransactionRepository');
 const { Employee } = require('../../domain/Employee');
+const { generateQRPayload } = require('../../../../shared/crypto/employeeIdGenerator');
+const { loadConfig } = require('../../../../config');
 const QRCode = require('qrcode');
 
 async function employeeRoutes(fastify, options) {
@@ -81,8 +83,16 @@ async function employeeRoutes(fastify, options) {
         return reply.code(404).send({ error: 'Employee account not found' });
       }
 
+      const config = loadConfig();
       const fpEmployeeId = employeeRaw.fp_employee_id;
-      const qrDataUrl = await QRCode.toDataURL(fpEmployeeId, {
+      const qrPayload = generateQRPayload(
+        fpEmployeeId,
+        employeeRaw.id,
+        employeeRaw.organization_id,
+        config.QR_SECRET || 'flexpay-local-secret-32-chars-ok'
+      );
+
+      const qrDataUrl = await QRCode.toDataURL(qrPayload, {
         errorCorrectionLevel: 'H',
         width: 320,
         margin: 2,
@@ -94,6 +104,7 @@ async function employeeRoutes(fastify, options) {
 
       return reply.send({
         fpEmployeeId,
+        qrPayload,
         fullName: employeeRaw.full_name,
         qrDataUrl,
         qrCodeDataUrl: qrDataUrl,
