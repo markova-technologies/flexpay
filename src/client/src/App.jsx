@@ -11,6 +11,7 @@ import EmployeeLoginPage from './features/auth/EmployeeLoginPage';
 import OrgDashboard from './features/organization/OrgDashboard';
 import EmployeeDashboard from './features/employee/EmployeeDashboard';
 import MerchantPOS from './features/merchant/MerchantPOS';
+import MerchantLayout from './features/merchant/MerchantLayout';
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -152,7 +153,7 @@ export default function App() {
           path="/merchant/*"
           element={
             <ProtectedRoute allowedRoles={['MERCHANT_OWNER', 'MERCHANT_STAFF']}>
-              <MerchantPOS />
+              <MerchantLayout />
             </ProtectedRoute>
           }
         />
@@ -160,7 +161,7 @@ export default function App() {
           path="/merchant"
           element={
             <ProtectedRoute allowedRoles={['MERCHANT_OWNER', 'MERCHANT_STAFF']}>
-              <MerchantPOS />
+              <MerchantLayout />
             </ProtectedRoute>
           }
         />

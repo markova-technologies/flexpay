@@ -1,5 +1,6 @@
 const { authenticate } = require('../../../../shared/middleware/authenticate');
 const { requireRole } = require('../../../../shared/middleware/requireRole');
+const { validateUUIDParams } = require('../../../../shared/middleware/validateUUID');
 const { CreateEmployeeUseCase } = require('../../../employees/ports/incoming/CreateEmployeeUseCase');
 const { EmployeeRepository } = require('../../../employees/adapters/outgoing/EmployeeRepository');
 const { TransactionRepository } = require('../../../transactions/adapters/outgoing/TransactionRepository');
@@ -7,12 +8,17 @@ const { Employee } = require('../../../employees/domain/Employee');
 const { generateCompliantPassword } = require('../../../../shared/crypto/passwordGenerator');
 const { hashPassword } = require('../../../../shared/crypto/argon2');
 const { phoneSchema } = require('../../../../shared/validation/schemas/auth.schemas');
+const { GetOrgMerchantDetailUseCase } = require('../../ports/incoming/GetOrgMerchantDetailUseCase');
+const { MerchantRepository } = require('../../../merchants/adapters/outgoing/MerchantRepository');
+const { generateStatement } = require('../../domain/StatementEngine');
 const { z } = require('zod');
 
 const addEmployeeSchema = z.object({
   fullName: z.string().trim().min(2, 'Full name must be at least 2 characters').max(100),
   phoneNumber: phoneSchema,
   department: z.string().trim().max(50).optional(),
+  jobTitle: z.string().trim().max(50).optional(),
+  monthlySalary: z.number().min(0).optional(),
   creditLimitOverride: z.number().min(0).optional(),
   creditLimit: z.number().min(0).optional(),
   sendSms: z.boolean().default(false),
@@ -39,6 +45,7 @@ const mpesaConfigSchema = z.object({
 async function organizationRoutes(fastify, options) {
   const employeeRepo = options.employeeRepo || new EmployeeRepository(options.db);
   const txnRepo = options.transactionRepo || new TransactionRepository(options.db);
+  const merchantRepo = options.merchantRepo || new MerchantRepository(options.db);
   const notificationService = options.notificationService || null;
 
   const createEmployeeUseCase = new CreateEmployeeUseCase({
@@ -153,15 +160,42 @@ async function organizationRoutes(fastify, options) {
         const eKey = t.employee_id;
         const eData = employeeBalanceMap.get(eKey) || {
           employeeId: eKey,
+          employee_id: eKey,
           fpEmployeeId: t.employee_fp_id_snapshot,
+          fp_employee_id: t.employee_fp_id_snapshot,
           fullName: t.employee_name_snapshot,
+          full_name: t.employee_name_snapshot,
           totalCreditUsed: 0,
+          credit_used: 0,
           transactionCount: 0,
         };
         eData.totalCreditUsed = Number((eData.totalCreditUsed + credit).toFixed(2));
+        eData.credit_used = eData.totalCreditUsed;
         eData.transactionCount++;
         employeeBalanceMap.set(eKey, eData);
       }
+
+      const orgEmployees = await employeeRepo.findByOrgId(orgId, { limit: 1000 });
+      const employeeLines = (orgEmployees || []).map((emp) => {
+        const bal = employeeBalanceMap.get(emp.id);
+        const creditUsed = bal ? bal.totalCreditUsed : 0;
+        const salary = Number(emp.monthly_salary || emp.monthlySalary || emp.credit_limit || 0);
+        const netToPay = Math.max(0, salary - creditUsed);
+        return {
+          employeeId: emp.id,
+          employee_id: emp.id,
+          fpEmployeeId: emp.fp_employee_id,
+          fp_employee_id: emp.fp_employee_id,
+          fullName: emp.full_name,
+          full_name: emp.full_name,
+          monthlySalary: salary,
+          monthly_salary: salary,
+          creditUsed,
+          credit_used: creditUsed,
+          netToPay,
+          net_to_pay: netToPay,
+        };
+      });
 
       return reply.send({
         period: {
@@ -170,6 +204,7 @@ async function organizationRoutes(fastify, options) {
         },
         merchantDisbursements: Array.from(merchantMap.values()),
         employeeOutstandingBalances: Array.from(employeeBalanceMap.values()),
+        employeeLines,
         totalMerchantDisbursements: Number(totalMerchantDisbursements.toFixed(2)),
         totalCreditUsed: Number(totalMerchantDisbursements.toFixed(2)),
         totalEmployeeSettlements: 0,
@@ -234,7 +269,7 @@ async function organizationRoutes(fastify, options) {
       }
 
       const { orgId } = request.user;
-      const { fullName, phoneNumber, department, creditLimitOverride, creditLimit, sendSms } = parse.data;
+      const { fullName, phoneNumber, department, jobTitle, monthlySalary, creditLimitOverride, creditLimit, sendSms } = parse.data;
       const effectiveLimit = creditLimitOverride !== undefined ? creditLimitOverride : creditLimit;
 
       try {
@@ -243,6 +278,8 @@ async function organizationRoutes(fastify, options) {
           fullName,
           phoneNumber,
           department,
+          jobTitle,
+          monthlySalary,
           creditLimitOverride: effectiveLimit,
           sendSms,
         });
@@ -256,7 +293,9 @@ async function organizationRoutes(fastify, options) {
             phoneNumber: result.employee.phone_number,
             creditLimit: Number(result.employee.credit_limit),
             availableCredit: Number(result.employee.available_credit),
+            monthlySalary: Number(result.employee.monthly_salary || 0),
             department: result.employee.department,
+            jobTitle: result.employee.job_title || null,
             status: result.employee.status,
           },
           fpEmployeeId: result.fpEmployeeId,
@@ -417,8 +456,8 @@ async function organizationRoutes(fastify, options) {
     }
   };
 
-  fastify.patch('/org/password-reset-requests/:id', { preHandler: [requireRole('ORG_ADMIN')] }, handleResetReview);
-  fastify.post('/org/password-reset-requests/:id', { preHandler: [requireRole('ORG_ADMIN')] }, handleResetReview);
+  fastify.patch('/org/password-reset-requests/:id', { preHandler: [requireRole('ORG_ADMIN'), validateUUIDParams(['id'])] }, handleResetReview);
+  fastify.post('/org/password-reset-requests/:id', { preHandler: [requireRole('ORG_ADMIN'), validateUUIDParams(['id'])] }, handleResetReview);
 
   // --------------------------------------------------------------------------
   // 9. Organization Credit Policy (GET / PATCH)
@@ -473,6 +512,58 @@ async function organizationRoutes(fastify, options) {
         message: 'M-PESA shortcode updated successfully',
         mpesaShortcode,
       });
+    }
+  );
+
+  // --------------------------------------------------------------------------
+  // 11. Organization Merchant Detail (for MerchantDetailDrawer)
+  // --------------------------------------------------------------------------
+  const getOrgMerchantDetailUseCase = new GetOrgMerchantDetailUseCase(txnRepo);
+
+  fastify.get(
+    '/org/merchants/:merchantId',
+    { preHandler: [requireRole('ORG_ADMIN', 'ORG_CONTROLLER'), validateUUIDParams(['merchantId'])] },
+    async (request, reply) => {
+      const { orgId } = request.user;
+      const { merchantId } = request.params;
+      const { page, limit } = request.query;
+
+      const result = await getOrgMerchantDetailUseCase.execute({
+        orgId,
+        merchantId,
+        page: page ? Number(page) : 1,
+        limit: limit ? Number(limit) : 20,
+      });
+
+      return reply.send(result);
+    }
+  );
+
+  fastify.get(
+    '/org/merchants/:merchantId/statement',
+    { preHandler: [requireRole('ORG_ADMIN', 'ORG_CONTROLLER'), validateUUIDParams(['merchantId'])] },
+    async (request, reply) => {
+      const { orgId } = request.user;
+      const { merchantId } = request.params;
+
+      const detail = await getOrgMerchantDetailUseCase.execute({
+        orgId,
+        merchantId,
+        limit: 100,
+      });
+
+      const merchant = (await merchantRepo.findById(merchantId)) || { id: merchantId, business_name: 'Merchant' };
+
+      const pdfBuffer = await generateStatement({
+        merchant,
+        summary: detail.summary,
+        transactions: detail.transactions,
+        byEmployee: detail.byEmployee,
+      });
+
+      reply.header('Content-Type', 'application/pdf');
+      reply.header('Content-Disposition', `attachment; filename="flexpay-statement-${merchant.business_name || merchantId}.pdf"`);
+      return reply.send(pdfBuffer);
     }
   );
 }

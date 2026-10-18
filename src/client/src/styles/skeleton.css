@@ -1,0 +1,22 @@
+@keyframes skeleton-pulse {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg,
+    var(--bg-surface, var(--fp-surface-1, #12121a)) 25%,
+    var(--bg-elevated, var(--fp-surface-2, #1a1a26)) 50%,
+    var(--bg-surface, var(--fp-surface-1, #12121a)) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  border-radius: var(--radius-sm, 4px);
+}
+
+.skeleton-text   { height: 14px; width: 100%; }
+.skeleton-title  { height: 20px; width: 60%; }
+.skeleton-avatar { height: 40px; width: 40px; border-radius: 50%; }
+.skeleton-stat   { height: 80px; width: 100%; border-radius: var(--radius-md, 8px); }
+.skeleton-card   { height: 120px; width: 100%; border-radius: var(--radius-md, 8px); }
+.skeleton-qr     { height: 200px; width: 200px; border-radius: var(--radius-md, 8px); }

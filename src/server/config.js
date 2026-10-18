@@ -77,6 +77,7 @@ function loadConfig() {
     MPESA_CALLBACK_BASE: process.env.MPESA_CALLBACK_BASE || 'http://localhost:3001',
     AT_API_KEY: process.env.AT_API_KEY || '',
     AT_USERNAME: process.env.AT_USERNAME || 'sandbox',
+    QR_SECRET: process.env.QR_SECRET || 'a1b2c3d4e5f678901234567890abcdef1234567890abcdef1234567890abcdef',
   };
 
   return cachedConfig;

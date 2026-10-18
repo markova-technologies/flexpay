@@ -5,22 +5,25 @@ import './Modal.css';
 /**
  * Accessible Modal dialog with trap focus and backdrop close.
  */
-export default function Modal({
+export function Modal({
+  open,
   isOpen,
   onClose,
   title,
   children,
+  actions,
   maxWidth = '500px',
 }) {
+  const visible = open !== undefined ? open : isOpen;
   const modalRef = useRef(null);
 
   useEffect(() => {
     function handleKeyDown(e) {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
+      if (e.key === 'Escape' && visible) {
+        onClose?.();
       }
     }
-    if (isOpen) {
+    if (visible) {
       document.body.style.overflow = 'hidden';
       window.addEventListener('keydown', handleKeyDown);
     } else {
@@ -30,9 +33,9 @@ export default function Modal({
       document.body.style.overflow = '';
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [visible, onClose]);
 
-  if (!isOpen) return null;
+  if (!visible) return null;
 
   return (
     <div className="fp-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="modal-title">
@@ -55,7 +58,10 @@ export default function Modal({
           </button>
         </div>
         <div className="fp-modal-card__body">{children}</div>
+        {actions && <div className="fp-modal-card__actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', padding: '12px 16px', borderTop: '1px solid var(--border, var(--fp-border))' }}>{actions}</div>}
       </div>
     </div>
   );
 }
+
+export default Modal;

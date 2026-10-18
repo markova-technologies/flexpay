@@ -1,4 +1,4 @@
-const { randomBytes } = require('node:crypto');
+const { randomBytes, createHmac } = require('node:crypto');
 
 const BASE36 = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'; // 36 characters
 const MAX_VALID = 256 - (256 % 36); // 252 — rejection ceiling
@@ -49,4 +49,23 @@ function validateEmployeeId(id) {
   return { valid: true };
 }
 
-module.exports = { generateEmployeeId, validateEmployeeId, computeChecksum };
+function generateQRPayload(fpId, eid, oid, secret) {
+  const ts = Math.floor(Date.now() / 1000);
+  const data = { id: fpId, eid, oid, ts };
+  const sig = createHmac('sha256', secret).update(JSON.stringify(data)).digest('hex').slice(0, 16);
+  return JSON.stringify({ ...data, sig });
+}
+
+function verifyQRPayload(payloadStr, secret, maxAge = 300) {
+  try {
+    const { sig, ...data } = JSON.parse(payloadStr);
+    if (Math.floor(Date.now() / 1000) - data.ts > maxAge) return { valid: false, error: 'QR expired' };
+    const expected = createHmac('sha256', secret).update(JSON.stringify(data)).digest('hex').slice(0, 16);
+    if (sig !== expected) return { valid: false, error: 'Invalid QR signature' };
+    return { valid: true, fpEmployeeId: data.id, employeeId: data.eid, orgId: data.oid };
+  } catch {
+    return { valid: false, error: 'Malformed QR payload' };
+  }
+}
+
+module.exports = { generateEmployeeId, validateEmployeeId, computeChecksum, generateQRPayload, verifyQRPayload };

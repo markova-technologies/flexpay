@@ -4,7 +4,9 @@ import { QRCodeCanvas } from 'qrcode.react';
 import api from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 
-export default function QRCodeCard({ employee }) {
+const REFRESH_MS = 4 * 60 * 1000; // 4 minutes auto-refresh (payload valid for 5 min)
+
+export function QRCodeCard({ employee }) {
   const toast = useToast();
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,6 +35,8 @@ export default function QRCodeCard({ employee }) {
 
   useEffect(() => {
     fetchQRCode();
+    const interval = setInterval(fetchQRCode, REFRESH_MS);
+    return () => clearInterval(interval);
   }, [qrValue]);
 
   const downloadQR = () => {
@@ -200,3 +204,5 @@ export default function QRCodeCard({ employee }) {
     </div>
   );
 }
+
+export default QRCodeCard;

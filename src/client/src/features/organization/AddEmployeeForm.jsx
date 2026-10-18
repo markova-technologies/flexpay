@@ -2,25 +2,49 @@ import React, { useState } from 'react';
 import { UserPlus, X, CreditCard, Phone, Buildings, User } from '@phosphor-icons/react';
 import api from '../../services/api';
 
-export default function AddEmployeeForm({ onClose, onCreated }) {
+export function AddEmployeeForm({ onClose, onCreated }) {
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('251');
-  const [department, setDepartment] = useState('Engineering');
-  const [creditLimit, setCreditLimit] = useState(10000);
+  const [department, setDepartment] = useState('Operations');
+  const [jobTitle, setJobTitle] = useState('');
+  const [monthlySalary, setMonthlySalary] = useState('');
+  const [creditLimit, setCreditLimit] = useState('');
+  const [isLimitOverridden, setIsLimitOverridden] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const handleSalaryChange = (val) => {
+    setMonthlySalary(val);
+    if (!isLimitOverridden) {
+      setCreditLimit(val);
+    }
+  };
+
+  const handleLimitChange = (val) => {
+    setCreditLimit(val);
+    setIsLimitOverridden(true);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    const salaryNum = parseFloat(monthlySalary);
+    if (isNaN(salaryNum) || salaryNum <= 0) {
+      setError('Monthly Salary is required and must be greater than 0.');
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await api.post('/org/employees', {
         fullName: fullName.trim(),
         phoneNumber: phoneNumber.trim(),
         department: department.trim(),
-        creditLimit: Number(creditLimit),
-        creditLimitOverride: Number(creditLimit),
+        jobTitle: jobTitle.trim() || undefined,
+        monthlySalary: salaryNum,
+        creditLimit: creditLimit ? parseFloat(creditLimit) : salaryNum,
+        creditLimitOverride: creditLimit ? parseFloat(creditLimit) : salaryNum,
       });
 
       // Pass employee data and the one-time generated password to parent
@@ -191,18 +215,43 @@ export default function AddEmployeeForm({ onClose, onCreated }) {
 
             <div>
               <label style={{ display: 'block', fontSize: '0.825rem', color: 'var(--fp-text-secondary)', marginBottom: '6px' }}>
-                Credit Limit (ETB)
+                Job Title
               </label>
               <input
-                type="number"
-                min="500"
-                step="100"
-                required
-                value={creditLimit}
-                onChange={(e) => setCreditLimit(e.target.value)}
+                type="text"
+                value={jobTitle}
+                onChange={(e) => setJobTitle(e.target.value)}
+                placeholder="Senior Accountant"
                 style={{
                   width: '100%',
                   padding: '11px 14px',
+                  borderRadius: '8px',
+                  background: 'var(--fp-surface-2)',
+                  border: '1px solid var(--fp-border)',
+                  color: 'var(--fp-text-primary)',
+                  fontSize: '0.9rem',
+                }}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.825rem', color: 'var(--fp-text-secondary)', marginBottom: '6px' }}>
+              Monthly Salary (ETB) <span style={{ color: 'var(--fp-danger, #EF4444)' }}>*</span>
+            </label>
+            <div style={{ position: 'relative' }}>
+              <CreditCard size={18} color="var(--fp-benefit)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+              <input
+                type="number"
+                min="1"
+                step="0.01"
+                required
+                value={monthlySalary}
+                onChange={(e) => handleSalaryChange(e.target.value)}
+                placeholder="e.g. 15000"
+                style={{
+                  width: '100%',
+                  padding: '11px 14px 11px 38px',
                   borderRadius: '8px',
                   background: 'var(--fp-surface-2)',
                   border: '1px solid var(--fp-border)',
@@ -212,6 +261,33 @@ export default function AddEmployeeForm({ onClose, onCreated }) {
                 }}
               />
             </div>
+            <p style={{ fontSize: '0.75rem', color: 'var(--fp-text-muted)', marginTop: '4px' }}>
+              FlexPay Earned Wage Access baseline: default credit limit = Monthly Salary.
+            </p>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.825rem', color: 'var(--fp-text-secondary)', marginBottom: '6px' }}>
+              Credit Limit (ETB) {isLimitOverridden && <span style={{ color: 'var(--fp-pending, #F59E0B)', fontSize: '0.75rem' }}>(Overridden)</span>}
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={creditLimit}
+              onChange={(e) => handleLimitChange(e.target.value)}
+              placeholder="Defaults to Monthly Salary"
+              style={{
+                width: '100%',
+                padding: '11px 14px',
+                borderRadius: '8px',
+                background: 'var(--fp-surface-2)',
+                border: '1px solid var(--fp-border)',
+                color: 'var(--fp-text-primary)',
+                fontSize: '0.9rem',
+                fontFamily: 'var(--fp-font-mono)',
+              }}
+            />
           </div>
 
           <button
@@ -237,3 +313,5 @@ export default function AddEmployeeForm({ onClose, onCreated }) {
     </div>
   );
 }
+
+export default AddEmployeeForm;

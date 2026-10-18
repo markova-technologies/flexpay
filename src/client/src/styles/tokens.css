@@ -113,6 +113,34 @@
   --fp-nav-w:     260px;
   --fp-nav-w-mob: 0px;
   --fp-content-max: 1140px;
+
+  /* --- v3 Standard Token Aliases --- */
+  --bg-primary:       var(--fp-bg, #060A14);
+  --bg-surface:       var(--fp-surface-1, #0C1322);
+  --bg-elevated:      var(--fp-surface-2, #121C32);
+  --bg-hover:         var(--fp-surface-3, #182542);
+  --accent-primary:   var(--fp-benefit, #10B981);
+  --accent-secondary: #6366f1;
+  --text-primary:     var(--fp-text-primary, #F8FAFC);
+  --text-secondary:   var(--fp-text-secondary, #94A3B8);
+  --text-muted:       var(--fp-text-muted, #64748B);
+  --danger:           var(--fp-danger, #EF4444);
+  --warning:          var(--fp-pending, #F59E0B);
+  --success:          var(--fp-success, #10B981);
+  --border:           var(--fp-border, rgba(255, 255, 255, 0.08));
+  --border-hover:     var(--fp-border-strong, rgba(255, 255, 255, 0.16));
+  --radius-sm:        var(--fp-r-sm, 6px);
+  --radius-md:        var(--fp-r-md, 10px);
+  --radius-lg:        var(--fp-r-lg, 14px);
+  --radius-xl:        var(--fp-r-xl, 20px);
+  --space-1:          var(--fp-sp-1, 4px);
+  --space-2:          var(--fp-sp-2, 8px);
+  --space-3:          var(--fp-sp-3, 12px);
+  --space-4:          var(--fp-sp-4, 16px);
+  --space-6:          var(--fp-sp-6, 24px);
+  --space-8:          var(--fp-sp-8, 32px);
+  --space-12:         var(--fp-sp-12, 48px);
+  --space-16:         var(--fp-sp-16, 64px);
 }
 
 /* Tabular figures for all financial amounts and currency codes */

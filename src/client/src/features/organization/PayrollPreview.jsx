@@ -242,6 +242,44 @@ export default function PayrollPreview() {
         )}
       </div>
 
+      {/* Employee Salary Deductions & Net Payout Table */}
+      <div
+        style={{
+          background: 'var(--fp-surface-1)',
+          border: '1px solid var(--fp-border)',
+          borderRadius: '16px',
+          padding: '24px',
+        }}
+      >
+        <h3 style={{ fontSize: '1.1rem', marginBottom: '16px' }}>Employee Net Pay & Pre-Salary Credit Deductions</h3>
+        {(!preview?.employeeLines || preview.employeeLines.length === 0) ? (
+          <p style={{ color: 'var(--fp-text-muted)', fontSize: '0.9rem' }}>No employee payroll lines recorded.</p>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--fp-border)', color: 'var(--fp-text-muted)', textAlign: 'left' }}>
+                <th style={{ padding: '10px 14px' }}>Employee</th>
+                <th style={{ padding: '10px 14px' }}>FP-ID</th>
+                <th style={{ padding: '10px 14px', textAlign: 'right' }}>Monthly Salary</th>
+                <th style={{ padding: '10px 14px', textAlign: 'right' }}>Credit Used</th>
+                <th style={{ padding: '10px 14px', textAlign: 'right' }}>Net to Pay</th>
+              </tr>
+            </thead>
+            <tbody>
+              {preview.employeeLines.map((line) => (
+                <tr key={line.employee_id} style={{ borderBottom: '1px solid var(--fp-border-subtle)' }}>
+                  <td style={{ padding: '12px 14px', fontWeight: 600 }}>{line.full_name}</td>
+                  <td className="mono" style={{ padding: '12px 14px', color: 'var(--fp-text-muted)' }}>{line.fp_employee_id}</td>
+                  <td className="mono" style={{ padding: '12px 14px', textAlign: 'right' }}>ETB {Number(line.monthly_salary).toFixed(2)}</td>
+                  <td className="mono" style={{ padding: '12px 14px', textAlign: 'right', color: 'var(--fp-benefit)' }}>ETB {Number(line.credit_used).toFixed(2)}</td>
+                  <td className="mono" style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 800 }}>ETB {Number(line.net_to_pay).toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
       {/* Settlement History */}
       {history.length > 0 && (
         <div

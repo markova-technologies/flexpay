@@ -1,0 +1,196 @@
+.merchant-pos {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.pos__mode-toggle {
+  display: flex;
+  background: var(--bg-surface, var(--fp-surface-1, #0C1322));
+  border: 1px solid var(--border, var(--fp-border, rgba(255, 255, 255, 0.08)));
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.pos__mode-toggle button {
+  flex: 1;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-secondary, #94A3B8);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pos__mode-toggle button.active {
+  background: var(--bg-elevated, var(--fp-surface-2, #121C32));
+  color: var(--text-primary, #F8FAFC);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.pos__scanner {
+  background: var(--bg-surface, var(--fp-surface-1, #0C1322));
+  border: 1px solid var(--border, var(--fp-border, rgba(255, 255, 255, 0.08)));
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+}
+
+#qr-reader {
+  width: 100%;
+  max-width: 400px;
+  border: none !important;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+#qr-reader img {
+  display: none;
+}
+
+.pos__manual {
+  background: var(--bg-surface, var(--fp-surface-1, #0C1322));
+  border: 1px solid var(--border, var(--fp-border, rgba(255, 255, 255, 0.08)));
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pos__manual .form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: var(--bg-elevated, var(--fp-surface-2, #121C32));
+  border: 1px solid var(--border, var(--fp-border, rgba(255, 255, 255, 0.08)));
+  color: var(--text-primary, #F8FAFC);
+  font-size: 1rem;
+  font-family: var(--fp-font-mono, monospace);
+  letter-spacing: 0.05em;
+}
+
+.pos__verified {
+  background: var(--bg-surface, var(--fp-surface-1, #0C1322));
+  border: 1px solid var(--accent-primary, var(--fp-benefit, #10B981));
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.verified-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.verified-card__badge {
+  align-self: flex-start;
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--accent-primary, var(--fp-benefit, #10B981));
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.verified-card__name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-primary, #F8FAFC);
+}
+
+.verified-card__meta {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #94A3B8);
+}
+
+.verified-card__credit {
+  background: var(--bg-elevated, var(--fp-surface-2, #121C32));
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.verified-card__credit span {
+  font-size: 0.8rem;
+  color: var(--text-muted, #64748B);
+}
+
+.verified-card__credit strong {
+  font-size: 1.15rem;
+  color: var(--accent-primary, var(--fp-benefit, #10B981));
+  font-family: var(--fp-font-mono, monospace);
+}
+
+.pos__verified .form-input--lg {
+  width: 100%;
+  padding: 14px 18px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  border-radius: 10px;
+  background: var(--bg-elevated, var(--fp-surface-2, #121C32));
+  border: 1px solid var(--border, var(--fp-border));
+  color: var(--text-primary, #F8FAFC);
+  font-family: var(--fp-font-mono, monospace);
+}
+
+.btn {
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn--primary {
+  background: var(--accent-primary, var(--fp-benefit, #10B981));
+  color: #060A14;
+}
+
+.btn--primary:hover {
+  opacity: 0.92;
+}
+
+.btn--outline {
+  background: transparent;
+  border: 1px solid var(--border, var(--fp-border));
+  color: var(--text-primary, #F8FAFC);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--text-secondary, #94A3B8);
+}
+
+.btn--ghost:hover {
+  color: var(--text-primary, #F8FAFC);
+}
+
+.btn--lg {
+  padding: 14px 24px;
+  font-size: 1.05rem;
+}

@@ -201,6 +201,69 @@ class TransactionRepository {
       .limit(limit)
       .execute();
   }
+
+  async getMerchantSummaryForOrg(orgId, merchantId) {
+    const txns = await this.db
+      .selectFrom('transactions')
+      .selectAll()
+      .where('organization_id', '=', orgId)
+      .where('merchant_id', '=', merchantId)
+      .where('status', '=', 'COMPLETED')
+      .execute();
+
+    let totalCredit = 0;
+    const empSet = new Set();
+    for (const t of txns) {
+      totalCredit += Number(t.credit_portion || 0);
+      empSet.add(t.employee_id);
+    }
+
+    return {
+      totalCredit: Number(totalCredit.toFixed(2)),
+      employeeCount: empSet.size,
+      transactionCount: txns.length,
+    };
+  }
+
+  async getTransactionsByOrgAndMerchant(orgId, merchantId, limit = 20, offset = 0) {
+    return this.db
+      .selectFrom('transactions')
+      .selectAll()
+      .where('organization_id', '=', orgId)
+      .where('merchant_id', '=', merchantId)
+      .orderBy('created_at', 'desc')
+      .limit(limit)
+      .offset(offset)
+      .execute();
+  }
+
+  async getTransactionsByEmployeeForMerchant(orgId, merchantId) {
+    const txns = await this.db
+      .selectFrom('transactions')
+      .selectAll()
+      .where('organization_id', '=', orgId)
+      .where('merchant_id', '=', merchantId)
+      .where('status', '=', 'COMPLETED')
+      .execute();
+
+    const empMap = new Map();
+    for (const t of txns) {
+      const eId = t.employee_id;
+      const existing = empMap.get(eId) || {
+        employee_id: eId,
+        fp_employee_id: t.employee_fp_id_snapshot,
+        full_name: t.employee_name_snapshot,
+        total_spent: 0,
+        last_visit: t.created_at,
+      };
+      existing.total_spent = Number((existing.total_spent + Number(t.credit_portion || 0)).toFixed(2));
+      if (new Date(t.created_at) > new Date(existing.last_visit)) {
+        existing.last_visit = t.created_at;
+      }
+      empMap.set(eId, existing);
+    }
+    return Array.from(empMap.values());
+  }
 }
 
 module.exports = { TransactionRepository };

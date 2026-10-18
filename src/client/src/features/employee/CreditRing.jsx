@@ -1,11 +1,18 @@
-import React from 'react';
-
-export default function CreditRing({ limit = 10000, available = 7500, spent = 2500, size = 220 }) {
+export function CreditRing({
+  limit,
+  available,
+  spent,
+  creditLimit = limit || 10000,
+  availableCredit = available !== undefined ? available : 7500,
+  monthlySalary,
+  size = 220,
+}) {
+  const calcSpent = spent !== undefined ? spent : Math.max(0, creditLimit - availableCredit);
   const strokeWidth = 14;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
 
-  const utilizationPercent = limit > 0 ? Math.min(100, Math.round((spent / limit) * 100)) : 0;
+  const utilizationPercent = creditLimit > 0 ? Math.min(100, Math.round((calcSpent / creditLimit) * 100)) : 0;
   const strokeDashoffset = circumference - (utilizationPercent / 100) * circumference;
 
   // Dynamic status color based on utilization
@@ -79,7 +86,7 @@ export default function CreditRing({ limit = 10000, available = 7500, spent = 25
             marginTop: '2px',
           }}
         >
-          ETB {Number(available).toLocaleString()}
+          ETB {Number(availableCredit).toLocaleString()}
         </span>
         <span
           style={{
@@ -94,7 +101,14 @@ export default function CreditRing({ limit = 10000, available = 7500, spent = 25
         >
           {utilizationPercent}% Used
         </span>
+        {monthlySalary && (
+          <span style={{ fontSize: '0.7rem', color: 'var(--fp-text-muted)', marginTop: '4px' }}>
+            Salary: ETB {Number(monthlySalary).toLocaleString()}
+          </span>
+        )}
       </div>
     </div>
   );
 }
+
+export default CreditRing;

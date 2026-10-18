@@ -1,6 +1,8 @@
 const { authenticate } = require('../../../../shared/middleware/authenticate');
 const { requireRole } = require('../../../../shared/middleware/requireRole');
 const { validateEmployeeId } = require('../../../../shared/crypto/employeeIdGenerator');
+const { VerifyEmployeeQRUseCase } = require('../../ports/incoming/VerifyEmployeeQRUseCase');
+const { GetMerchantAnalyticsUseCase } = require('../../ports/incoming/GetMerchantAnalyticsUseCase');
 const { CreateTransactionUseCase } = require('../../../transactions/ports/incoming/CreateTransactionUseCase');
 const { TransactionRepository } = require('../../../transactions/adapters/outgoing/TransactionRepository');
 const { EmployeeRepository } = require('../../../employees/adapters/outgoing/EmployeeRepository');
@@ -8,12 +10,16 @@ const { MerchantRepository } = require('../outgoing/MerchantRepository');
 const { z } = require('zod');
 
 const verifyEmployeeSchema = z.object({
-  fpEmployeeId: z.string().trim().regex(/^FP-[A-Z]{2,4}-\d{4}-[0-9A-Z]{5}-[A-Z]$/, 'Invalid Employee ID format'),
+  qrPayload: z.string().optional(),
+  fpEmployeeId: z.string().trim().optional(),
+  fpId: z.string().trim().optional(),
 });
 
 const createTransactionSchema = z.object({
-  fpEmployeeId: z.string().trim().regex(/^FP-[A-Z]{2,4}-\d{4}-[0-9A-Z]{5}-[A-Z]$/, 'Invalid Employee ID format'),
-  totalAmount: z.number().positive('Total amount must be greater than zero'),
+  fpEmployeeId: z.string().trim().optional(),
+  fpId: z.string().trim().optional(),
+  totalAmount: z.number().positive('Total amount must be greater than zero').optional(),
+  amount: z.number().positive('Amount must be greater than zero').optional(),
   idempotencyKey: z.string().optional(),
 });
 
@@ -32,6 +38,11 @@ async function merchantRoutes(fastify, options) {
     notificationService,
   });
 
+  const verifyEmployeeQRUseCase = new VerifyEmployeeQRUseCase({
+    employeeRepository: employeeRepo,
+    merchantRepository: merchantRepo,
+  });
+
   // Guard all merchant routes
   fastify.addHook('preHandler', authenticate);
 
@@ -47,15 +58,35 @@ async function merchantRoutes(fastify, options) {
         return reply.code(400).send({ error: 'Validation error', details: parse.error.issues });
       }
 
-      const { fpEmployeeId } = parse.data;
+      if (parse.data.qrPayload) {
+        const qrResult = await verifyEmployeeQRUseCase.execute({
+          qrPayload: parse.data.qrPayload,
+          merchantId: request.user.merchantId,
+        });
+        if (!qrResult.verified) {
+          return reply.code(400).send({ error: qrResult.error, verified: false });
+        }
+        return reply.send({
+          verified: true,
+          eligible: true,
+          ...qrResult.employee,
+          employee: qrResult.employee,
+        });
+      }
+
+      const fpEmployeeId = parse.data.fpEmployeeId || parse.data.fpId;
+      if (!fpEmployeeId) {
+        return reply.code(400).send({ error: 'Either qrPayload or fpEmployeeId/fpId is required', verified: false });
+      }
+
       const validation = validateEmployeeId(fpEmployeeId);
       if (!validation.valid) {
-        return reply.code(400).send({ error: 'Invalid Employee ID checksum or format' });
+        return reply.code(400).send({ error: 'Invalid Employee ID checksum or format', verified: false });
       }
 
       const employee = await employeeRepo.findByFpId(fpEmployeeId);
       if (!employee || employee.status !== 'ACTIVE') {
-        return reply.code(404).send({ error: 'Employee not found or inactive' });
+        return reply.code(404).send({ error: 'Employee not found or inactive', verified: false });
       }
 
       const merchant = await merchantRepo.findById(request.user.merchantId);
@@ -118,7 +149,12 @@ async function merchantRoutes(fastify, options) {
         return reply.code(400).send({ error: 'Validation error', details: parse.error.issues });
       }
 
-      const { fpEmployeeId, totalAmount } = parse.data;
+      const fpEmployeeId = parse.data.fpEmployeeId || parse.data.fpId;
+      const totalAmount = parse.data.totalAmount !== undefined ? parse.data.totalAmount : parse.data.amount;
+
+      if (!fpEmployeeId || totalAmount === undefined) {
+        return reply.code(400).send({ error: 'fpEmployeeId (or fpId) and totalAmount (or amount) are required' });
+      }
 
       try {
         const result = await createTxnUseCase.execute({
@@ -133,6 +169,7 @@ async function merchantRoutes(fastify, options) {
             : 'Transaction completed successfully with 100% FlexPay benefit credit.',
           transaction: result.transaction,
           fpTransactionRef: result.fpTransactionRef,
+          fpRef: result.fpTransactionRef,
           totalAmount: result.totalAmount,
           creditPortion: result.creditPortion,
           copayPortion: result.copayPortion,
@@ -191,6 +228,24 @@ async function merchantRoutes(fastify, options) {
         receivablesByOrg: summary.receivablesByOrg,
         recentTransactions,
       });
+    }
+  );
+
+  // --------------------------------------------------------------------------
+  // 5. Merchant Detailed Analytics (for Merchant Analytics Tab)
+  // --------------------------------------------------------------------------
+  const getMerchantAnalyticsUseCase = new GetMerchantAnalyticsUseCase(merchantRepo);
+
+  fastify.get(
+    '/merchant/analytics',
+    { preHandler: [requireRole('MERCHANT_OWNER', 'MERCHANT_STAFF')] },
+    async (request, reply) => {
+      const period = request.query.period || 'month';
+      const analytics = await getMerchantAnalyticsUseCase.execute({
+        merchantId: request.user.merchantId,
+        period,
+      });
+      return reply.send(analytics);
     }
   );
 }

@@ -9,7 +9,7 @@ class CreateEmployeeUseCase {
     this.db = db;
   }
 
-  async execute({ organizationId, fullName, phoneNumber, department, creditLimitOverride, sendSms = false }) {
+  async execute({ organizationId, fullName, phoneNumber, department, jobTitle, monthlySalary, creditLimitOverride, sendSms = false }) {
     if (!organizationId) throw new Error('organizationId is required');
     if (!fullName || !phoneNumber) throw new Error('fullName and phoneNumber are required');
 
@@ -21,11 +21,17 @@ class CreateEmployeeUseCase {
       throw err;
     }
 
-    // 2. Fetch org credit policy for default limit if override not specified
+    // 2. Determine credit limit: default to monthlySalary, with fallback to org policy or 0
+    const effectiveSalary = monthlySalary !== undefined && monthlySalary !== null ? Number(monthlySalary) : null;
     const policy = await this.repo.getOrgCreditPolicy(organizationId);
-    const creditLimit = creditLimitOverride !== undefined && creditLimitOverride !== null
-      ? Number(creditLimitOverride)
-      : (policy ? Number(policy.global_credit_limit) : 0);
+    let creditLimit;
+    if (creditLimitOverride !== undefined && creditLimitOverride !== null) {
+      creditLimit = Number(creditLimitOverride);
+    } else if (effectiveSalary !== null && effectiveSalary > 0) {
+      creditLimit = effectiveSalary;
+    } else {
+      creditLimit = policy ? Number(policy.global_credit_limit) : (effectiveSalary || 0);
+    }
 
     // 3. Generate globally unique FP Employee ID with collision check
     let fpEmployeeId;
@@ -52,7 +58,9 @@ class CreateEmployeeUseCase {
       fullName,
       phoneNumber,
       creditLimit,
-      department,
+      monthlySalary: effectiveSalary !== null ? effectiveSalary : creditLimit,
+      department: department || null,
+      jobTitle: jobTitle || null,
       passwordHash,
     });
 

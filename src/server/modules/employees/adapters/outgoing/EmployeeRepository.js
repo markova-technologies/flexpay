@@ -77,7 +77,9 @@ class EmployeeRepository {
     fullName,
     phoneNumber,
     creditLimit,
+    monthlySalary,
     department,
+    jobTitle,
     passwordHash,
   }) {
     const employeeId = randomUUID();
@@ -94,7 +96,9 @@ class EmployeeRepository {
           phone_number: phoneNumber,
           credit_limit: creditLimit,
           available_credit: creditLimit,
+          monthly_salary: monthlySalary !== undefined && monthlySalary !== null ? monthlySalary : creditLimit,
           department: department || null,
+          job_title: jobTitle || null,
           status: 'ACTIVE',
         })
         .returningAll()

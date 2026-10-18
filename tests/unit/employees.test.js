@@ -1,5 +1,6 @@
 const { test, describe, before, after } = require('node:test');
 const assert = require('node:assert/strict');
+const { randomUUID } = require('node:crypto');
 const { buildServer } = require('../../src/server/index');
 const { Employee } = require('../../src/server/modules/employees/domain/Employee');
 const { CreateEmployeeUseCase } = require('../../src/server/modules/employees/ports/incoming/CreateEmployeeUseCase');
@@ -372,7 +373,7 @@ describe('Phase 4: Organization Module & Employee Management', () => {
     before(async () => {
       // Create a pending password reset request
       const emp = Array.from(employeeRepo.employees.values())[0];
-      const reqId = `rst-${Date.now()}`;
+      const reqId = randomUUID();
       employeeRepo.resetRequests.set(reqId, {
         id: reqId,
         employee_id: emp.id,
