@@ -2456,3 +2456,18 @@ Okay good push it
 Staged all landing page enhancement files, new shadcn/ui components (`liquid-sculpture-hero.tsx` and `glass-folder-cards.tsx`), Vite and JS configuration files, and memory documentation, created a descriptive Git commit, and pushed the branch to `origin/main`.
 
 ---
+
+#### Turn 14 (Step 14)
+##### 👤 User Prompt:
+```text
+I didn't like it just revert the changes
+```
+
+##### 🤖 Agent Response:
+Reverted the landing page changes from commit `3a065a1`:
+1. Restored `LandingPage.jsx` and `vite.config.js` to their prior state (commit `80a3565`).
+2. Removed the added UI components `liquid-sculpture-hero.tsx` and `glass-folder-cards.tsx`, along with `jsconfig.json`.
+3. Verified the client build (`npm --prefix src/client run build`) and unit tests (`npm run test:unit`) both pass cleanly.
+4. Committed and pushed the revert to `origin/main`.
+
+---
