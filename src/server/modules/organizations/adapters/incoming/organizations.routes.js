@@ -130,7 +130,7 @@ async function organizationRoutes(fastify, options) {
       const { periodStart, periodEnd } = request.query;
 
       const transactions = await txnRepo.listRecentByOrg(orgId, 1000);
-      const completedTxns = transactions.filter((t) => t.status === 'COMPLETED');
+      const completedTxns = transactions.filter((t) => t.status === 'COMPLETED' && !t.settlement_id);
 
       const merchantMap = new Map();
       const employeeBalanceMap = new Map();
@@ -149,10 +149,16 @@ async function organizationRoutes(fastify, options) {
           merchantId: mKey,
           merchantName: t.merchant_name_snapshot,
           merchantMpesaNumber: t.merchant_mpesa_snapshot,
+          mpesaPhone: t.merchant_mpesa_snapshot,
           totalOwed: 0,
+          totalPayable: 0,
+          amount: 0,
           transactionCount: 0,
         };
-        mData.totalOwed = Number((mData.totalOwed + credit).toFixed(2));
+        const updatedOwed = Number((mData.totalOwed + credit).toFixed(2));
+        mData.totalOwed = updatedOwed;
+        mData.totalPayable = updatedOwed;
+        mData.amount = updatedOwed;
         mData.transactionCount++;
         merchantMap.set(mKey, mData);
 

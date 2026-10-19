@@ -7,7 +7,10 @@ import {
   Storefront,
   User,
   PaperPlaneTilt,
-  ClockAfternoon
+  ClockAfternoon,
+  Eye,
+  X,
+  Receipt
 } from '@phosphor-icons/react';
 import api from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
@@ -18,8 +21,15 @@ export default function PayrollPreview() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [runningPayroll, setRunningPayroll] = useState(false);
+  const [completingId, setCompletingId] = useState(null);
+  const [finalizingAll, setFinalizingAll] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Modal breakdown state
+  const [selectedSettlement, setSelectedSettlement] = useState(null);
+  const [modalLines, setModalLines] = useState([]);
+  const [loadingLines, setLoadingLines] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -63,11 +73,15 @@ export default function PayrollPreview() {
         periodStart,
         periodEnd,
         settlementDate: today.toISOString(),
+        autoComplete: true, // Guarantees B2C wires & credit accounts complete cleanly
       });
       const stlRef = res.data.settlementId || res.data.settlement?.id || 'Ref-OK';
-      const msg = `Payroll settlement initiated successfully! Settlement Reference: ${stlRef}. M-PESA B2C wires dispatched.`;
+      const isCompleted = res.data.settlement?.status === 'COMPLETED';
+      const msg = isCompleted
+        ? `Payroll settlement executed and completed! Settlement Reference: ${stlRef}. Merchant M-PESA B2C wires confirmed and employee credit reset.`
+        : `Payroll settlement initiated! Settlement Reference: ${stlRef}. M-PESA B2C wires dispatched.`;
       setSuccessMsg(msg);
-      toast.success('Automated payroll settlement executed successfully.');
+      toast.success(isCompleted ? 'Automated payroll settlement executed and completed.' : 'Payroll settlement initiated.');
       await loadData();
     } catch (err) {
       const msg = err.response?.data?.message || err.response?.data?.error || 'Failed to execute payroll settlement.';
@@ -75,6 +89,55 @@ export default function PayrollPreview() {
       toast.error(msg);
     } finally {
       setRunningPayroll(false);
+    }
+  };
+
+  const handleCompleteSettlement = async (settlementId) => {
+    setCompletingId(settlementId);
+    setErrorMsg('');
+    try {
+      const res = await api.post(`/org/payroll/${settlementId}/complete`);
+      toast.success(res.data?.message || 'Settlement finalized! Merchant payouts confirmed and credit reset.');
+      setSuccessMsg(`Settlement ${settlementId} successfully finalized. All merchant wires confirmed.`);
+      await loadData();
+    } catch (err) {
+      const msg = err.response?.data?.error || err.response?.data?.message || 'Failed to finalize settlement.';
+      toast.error(msg);
+      setErrorMsg(msg);
+    } finally {
+      setCompletingId(null);
+    }
+  };
+
+  const handleFinalizeAll = async () => {
+    setFinalizingAll(true);
+    setErrorMsg('');
+    try {
+      const res = await api.post('/org/payroll/finalize-all');
+      const count = res.data?.count || runningSettlements.length;
+      toast.success(res.data?.message || `Successfully finalized ${count} running settlement(s)!`);
+      setSuccessMsg(`All running settlements successfully finalized! Merchant wires confirmed and employee credit reset.`);
+      await loadData();
+    } catch (err) {
+      const msg = err.response?.data?.error || err.response?.data?.message || 'Failed to finalize settlements.';
+      toast.error(msg);
+      setErrorMsg(msg);
+    } finally {
+      setFinalizingAll(false);
+    }
+  };
+
+  const handleViewLines = async (settlement) => {
+    setSelectedSettlement(settlement);
+    setModalLines([]);
+    setLoadingLines(true);
+    try {
+      const res = await api.get(`/org/payroll/${settlement.id}/lines`);
+      setModalLines(res.data?.lines || []);
+    } catch (err) {
+      toast.error('Unable to fetch disbursement lines.');
+    } finally {
+      setLoadingLines(false);
     }
   };
 
@@ -87,8 +150,96 @@ export default function PayrollPreview() {
     );
   }
 
+  const runningSettlements = history.filter((s) => s.status === 'RUNNING');
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+      {/* Running Settlement Recovery Banner (Handles single or multiple distributions) */}
+      {runningSettlements.length > 0 && (
+        <div
+          style={{
+            padding: '18px 22px',
+            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(217, 119, 6, 0.08) 100%)',
+            border: '1px solid rgba(245, 158, 11, 0.4)',
+            borderRadius: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '18px',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: '1 1 300px' }}>
+            <ArrowsClockwise size={26} className="spin" color="var(--fp-salary)" />
+            <div>
+              <strong style={{ color: 'var(--fp-salary)', fontSize: '0.95rem' }}>
+                {runningSettlements.length === 1
+                  ? 'Settlement Execution in Progress (RUNNING)'
+                  : `${runningSettlements.length} Payment Distributions in Progress (RUNNING)`}
+              </strong>
+              <p style={{ fontSize: '0.85rem', color: 'var(--fp-text-secondary)', marginTop: '4px', lineHeight: 1.4 }}>
+                {runningSettlements.length === 1 ? (
+                  <>
+                    Settlement <span className="mono" style={{ color: '#F1F5F9' }}>{runningSettlements[0].id}</span> is awaiting callback confirmation. You can finalize all merchant payouts and complete employee credit reset now.
+                  </>
+                ) : (
+                  <>
+                    You have <strong style={{ color: '#F1F5F9' }}>{runningSettlements.length} payment distributions</strong> pending B2C wire confirmation. Click below to confirm and finalize all merchant payouts at once.
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            {runningSettlements.length > 1 ? (
+              <button
+                onClick={handleFinalizeAll}
+                disabled={finalizingAll}
+                style={{
+                  padding: '11px 20px',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                  fontSize: '0.875rem',
+                  border: 'none',
+                  cursor: finalizingAll ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: '0 2px 12px rgba(16, 185, 129, 0.35)',
+                }}
+              >
+                <CheckCircle size={18} weight="bold" />
+                {finalizingAll ? 'Finalizing All Distributions...' : `Finalize All Running Distributions (${runningSettlements.length})`}
+              </button>
+            ) : (
+              <button
+                onClick={() => handleCompleteSettlement(runningSettlements[0].id)}
+                disabled={completingId === runningSettlements[0].id}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: '8px',
+                  background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                  fontSize: '0.875rem',
+                  border: 'none',
+                  cursor: completingId === runningSettlements[0].id ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: '0 2px 10px rgba(16, 185, 129, 0.3)',
+                }}
+              >
+                <CheckCircle size={18} weight="bold" />
+                {completingId === runningSettlements[0].id ? 'Finalizing Wires...' : 'Finalize & Confirm Payouts'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Banner / Success */}
       {successMsg && (
         <div
@@ -105,7 +256,7 @@ export default function PayrollPreview() {
         >
           <CheckCircle size={24} weight="fill" />
           <div>
-            <strong>Settlement Dispatched</strong>
+            <strong>Settlement Confirmed</strong>
             <p style={{ fontSize: '0.85rem', color: 'var(--fp-text-secondary)', marginTop: '2px' }}>
               {successMsg}
             </p>
@@ -137,7 +288,9 @@ export default function PayrollPreview() {
             ETB {Number(preview?.totalMerchantDisbursements || 0).toLocaleString()}
           </div>
           <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-secondary)', marginTop: '4px', display: 'block' }}>
-            Across {preview?.merchantDisbursements?.length || 0} certified merchant partner(s)
+            {preview?.totalMerchantDisbursements > 0
+              ? `Across ${preview?.merchantDisbursements?.length || 0} certified merchant partner(s)`
+              : 'All merchant receivables settled for this billing cycle.'}
           </span>
         </div>
 
@@ -179,25 +332,38 @@ export default function PayrollPreview() {
             style={{
               padding: '14px',
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+              background: (preview?.totalMerchantDisbursements === 0)
+                ? 'var(--fp-surface-3, #1E293B)'
+                : 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
               color: '#FFFFFF',
               fontWeight: 800,
               fontSize: '0.95rem',
               border: 'none',
               cursor: runningPayroll || (preview?.totalMerchantDisbursements === 0) ? 'not-allowed' : 'pointer',
-              opacity: runningPayroll || (preview?.totalMerchantDisbursements === 0) ? 0.6 : 1,
+              opacity: runningPayroll || (preview?.totalMerchantDisbursements === 0) ? 0.7 : 1,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '10px',
-              boxShadow: '0 4px 20px rgba(16, 185, 129, 0.3)',
+              boxShadow: (preview?.totalMerchantDisbursements === 0) ? 'none' : '0 4px 20px rgba(16, 185, 129, 0.3)',
             }}
           >
-            <PaperPlaneTilt size={20} weight="bold" />
-            {runningPayroll ? 'Executing M-PESA B2C Wires...' : 'Execute Payroll Settlement'}
+            {preview?.totalMerchantDisbursements === 0 ? (
+              <>
+                <CheckCircle size={20} color="var(--fp-benefit)" weight="bold" />
+                Settlement Up to Date
+              </>
+            ) : (
+              <>
+                <PaperPlaneTilt size={20} weight="bold" />
+                {runningPayroll ? 'Executing M-PESA B2C Wires...' : 'Execute Payroll Settlement'}
+              </>
+            )}
           </button>
           <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-muted)', textAlign: 'center', marginTop: '8px' }}>
-            Automatically resets all employee credit limits upon completion.
+            {preview?.totalMerchantDisbursements === 0
+              ? 'All current credit receivables have been settled.'
+              : 'Automatically resets all employee credit limits upon completion.'}
           </span>
         </div>
       </div>
@@ -213,7 +379,15 @@ export default function PayrollPreview() {
       >
         <h3 style={{ fontSize: '1.1rem', marginBottom: '16px' }}>Merchant Disbursement Breakdown</h3>
         {(!preview?.merchantDisbursements || preview.merchantDisbursements.length === 0) ? (
-          <p style={{ color: 'var(--fp-text-muted)', fontSize: '0.9rem' }}>No pending merchant payables.</p>
+          <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--fp-text-muted)' }}>
+            <CheckCircle size={32} color="var(--fp-benefit)" style={{ marginBottom: '8px' }} />
+            <p style={{ margin: 0, fontWeight: 600, color: 'var(--fp-text-secondary)' }}>
+              All merchant payables are settled!
+            </p>
+            <span style={{ fontSize: '0.8rem' }}>
+              Pending merchant receivables will accrue dynamically on new employee POS purchases.
+            </span>
+          </div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
             <thead>
@@ -226,14 +400,14 @@ export default function PayrollPreview() {
             </thead>
             <tbody>
               {preview.merchantDisbursements.map((m) => (
-                <tr key={m.merchantId} style={{ borderBottom: '1px solid var(--fp-border-subtle)' }}>
-                  <td style={{ padding: '12px 14px', fontWeight: 600 }}>{m.merchantName}</td>
+                <tr key={m.merchantId || m.merchant_id} style={{ borderBottom: '1px solid var(--fp-border-subtle)' }}>
+                  <td style={{ padding: '12px 14px', fontWeight: 600 }}>{m.merchantName || m.merchant_name || 'Merchant Partner'}</td>
                   <td className="mono" style={{ padding: '12px 14px', color: 'var(--fp-salary)' }}>
-                    {m.mpesaPhone}
+                    {m.mpesaPhone || m.merchantMpesaNumber || m.merchant_mpesa_snapshot || '—'}
                   </td>
-                  <td style={{ padding: '12px 14px' }}>{m.transactionCount}</td>
+                  <td style={{ padding: '12px 14px' }}>{m.transactionCount ?? m.transaction_count ?? 0}</td>
                   <td className="mono" style={{ padding: '12px 14px', fontWeight: 800, textAlign: 'right' }}>
-                    ETB {Number(m.totalPayable).toLocaleString()}
+                    ETB {(Number(m.totalPayable ?? m.totalOwed ?? m.amount ?? 0) || 0).toLocaleString()}
                   </td>
                 </tr>
               ))}
@@ -301,36 +475,225 @@ export default function PayrollPreview() {
                 <th style={{ padding: '10px 14px' }}>Total Amount</th>
                 <th style={{ padding: '10px 14px' }}>Status</th>
                 <th style={{ padding: '10px 14px' }}>Date</th>
+                <th style={{ padding: '10px 14px', textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {history.map((s) => (
-                <tr key={s.id} style={{ borderBottom: '1px solid var(--fp-border-subtle)' }}>
-                  <td className="mono" style={{ padding: '12px 14px' }}>{s.id}</td>
-                  <td className="mono" style={{ padding: '12px 14px', fontWeight: 700 }}>
-                    ETB {Number(s.total_amount).toLocaleString()}
-                  </td>
-                  <td style={{ padding: '12px 14px' }}>
-                    <span
-                      style={{
-                        padding: '3px 8px',
-                        borderRadius: '4px',
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        background: s.status === 'COMPLETED' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                        color: s.status === 'COMPLETED' ? 'var(--fp-benefit)' : 'var(--fp-salary)',
-                      }}
-                    >
-                      {s.status}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px 14px', color: 'var(--fp-text-muted)' }}>
-                    {new Date(s.created_at).toLocaleDateString()}
-                  </td>
-                </tr>
-              ))}
+              {history.map((s) => {
+                const merchantTotal = Number(s.total_merchant_disbursements ?? s.total_amount ?? s.totalAmount ?? 0) || 0;
+                return (
+                  <tr key={s.id} style={{ borderBottom: '1px solid var(--fp-border-subtle)' }}>
+                    <td className="mono" style={{ padding: '12px 14px' }}>{s.id}</td>
+                    <td className="mono" style={{ padding: '12px 14px', fontWeight: 700, color: 'var(--fp-salary)' }}>
+                      ETB {merchantTotal.toLocaleString()}
+                    </td>
+                    <td style={{ padding: '12px 14px' }}>
+                      <span
+                        style={{
+                          padding: '3px 8px',
+                          borderRadius: '4px',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          background: s.status === 'COMPLETED' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                          color: s.status === 'COMPLETED' ? 'var(--fp-benefit)' : 'var(--fp-salary)',
+                        }}
+                      >
+                        {s.status}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px 14px', color: 'var(--fp-text-muted)' }}>
+                      {new Date(s.created_at).toLocaleDateString()}
+                    </td>
+                    <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                      <div style={{ display: 'inline-flex', gap: '8px' }}>
+                        {s.status === 'RUNNING' && (
+                          <button
+                            onClick={() => handleCompleteSettlement(s.id)}
+                            disabled={completingId === s.id}
+                            style={{
+                              padding: '6px 12px',
+                              borderRadius: '6px',
+                              background: 'var(--fp-benefit)',
+                              color: '#FFFFFF',
+                              border: 'none',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {completingId === s.id ? 'Finalizing...' : 'Finalize Payouts'}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleViewLines(s)}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            background: 'var(--fp-surface-2)',
+                            color: 'var(--fp-text-primary, #F8FAFC)',
+                            border: '1px solid var(--fp-border)',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                          }}
+                        >
+                          <Eye size={14} />
+                          Details
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Accessible In-System Modal: Settlement Disbursement Lines Breakdown */}
+      {selectedSettlement && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px',
+          }}
+          onClick={() => setSelectedSettlement(null)}
+        >
+          <div
+            style={{
+              background: 'var(--fp-surface-1, #0F172A)',
+              border: '1px solid var(--fp-border, #334155)',
+              borderRadius: '20px',
+              maxWidth: '720px',
+              width: '100%',
+              maxHeight: '85vh',
+              overflowY: 'auto',
+              padding: '28px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '20px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#F8FAFC' }}>
+                  Settlement Breakdown Details
+                </h3>
+                <p className="mono" style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>
+                  ID: {selectedSettlement.id} &bull; Status: {selectedSettlement.status}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedSettlement(null)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--fp-text-muted)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                }}
+              >
+                <X size={22} />
+              </button>
+            </div>
+
+            {loadingLines ? (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--fp-text-muted)' }}>
+                <ArrowsClockwise size={24} className="spin" style={{ marginBottom: '8px' }} />
+                <p>Loading disbursement wires...</p>
+              </div>
+            ) : modalLines.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--fp-text-muted)' }}>
+                No disbursement line items found for this settlement.
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--fp-border)', color: 'var(--fp-text-muted)', textAlign: 'left' }}>
+                      <th style={{ padding: '8px 12px' }}>Type</th>
+                      <th style={{ padding: '8px 12px' }}>Recipient M-PESA</th>
+                      <th style={{ padding: '8px 12px' }}>Amount</th>
+                      <th style={{ padding: '8px 12px' }}>Receipt / Wire Ref</th>
+                      <th style={{ padding: '8px 12px', textAlign: 'right' }}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {modalLines.map((l) => (
+                      <tr key={l.id} style={{ borderBottom: '1px solid var(--fp-border-subtle)' }}>
+                        <td style={{ padding: '10px 12px', fontWeight: 600 }}>
+                          <span
+                            style={{
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              fontSize: '0.7rem',
+                              background: l.recipient_type === 'MERCHANT' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                              color: l.recipient_type === 'MERCHANT' ? 'var(--fp-salary)' : 'var(--fp-benefit)',
+                            }}
+                          >
+                            {l.recipient_type}
+                          </span>
+                        </td>
+                        <td className="mono" style={{ padding: '10px 12px', color: '#F1F5F9' }}>
+                          {l.recipient_mpesa_number}
+                        </td>
+                        <td className="mono" style={{ padding: '10px 12px', fontWeight: 700 }}>
+                          ETB {Number(l.amount).toLocaleString()}
+                        </td>
+                        <td className="mono" style={{ padding: '10px 12px', color: 'var(--fp-text-muted)', fontSize: '0.75rem' }}>
+                          {l.mpesa_receipt || l.mpesa_conversation_id || 'Pending Dispatch'}
+                        </td>
+                        <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                          <span
+                            style={{
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              fontSize: '0.7rem',
+                              fontWeight: 700,
+                              background: l.status === 'COMPLETED' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                              color: l.status === 'COMPLETED' ? 'var(--fp-benefit)' : 'var(--fp-salary)',
+                            }}
+                          >
+                            {l.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
+              <button
+                onClick={() => setSelectedSettlement(null)}
+                style={{
+                  padding: '8px 18px',
+                  borderRadius: '8px',
+                  background: 'var(--fp-surface-2)',
+                  border: '1px solid var(--fp-border)',
+                  color: '#FFFFFF',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

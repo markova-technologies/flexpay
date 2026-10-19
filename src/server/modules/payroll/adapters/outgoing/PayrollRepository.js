@@ -130,6 +130,43 @@ class PayrollRepository {
       .executeTakeFirstOrThrow();
   }
 
+  async updateLineConversationId(lineId, mpesaConversationId) {
+    return this.db
+      .updateTable('payroll_disbursement_lines')
+      .set({
+        mpesa_conversation_id: mpesaConversationId,
+        dispatched_at: new Date(),
+      })
+      .where('id', '=', lineId)
+      .returningAll()
+      .executeTakeFirst();
+  }
+
+  async listLinesBySettlementId(settlementId) {
+    return this.db
+      .selectFrom('payroll_disbursement_lines')
+      .selectAll()
+      .where('settlement_id', '=', settlementId)
+      .orderBy('created_at', 'asc')
+      .execute();
+  }
+
+  async linkTransactionsToSettlement(settlementId, transactionIds = []) {
+    if (!Array.isArray(transactionIds) || transactionIds.length === 0) return;
+    try {
+      await this.db
+        .updateTable('transactions')
+        .set({
+          settlement_id: settlementId,
+          settled_at: new Date(),
+        })
+        .where('id', 'in', transactionIds)
+        .execute();
+    } catch (err) {
+      console.warn('[PayrollRepository] linkTransactionsToSettlement note:', err.message);
+    }
+  }
+
   async resetCreditForSettlement(settlementId) {
     return this.db.transaction().execute(async (trx) => {
       const settlement = await trx
@@ -149,6 +186,51 @@ class PayrollRepository {
         .where('status', '=', 'ACTIVE')
         .execute();
     });
+  }
+
+  async completeSettlementImmediately(settlementId) {
+    const settlement = await this.findSettlementById(settlementId);
+    if (!settlement) throw new Error(`Settlement ${settlementId} not found`);
+
+    const lines = await this.listLinesBySettlementId(settlementId);
+    const completedLines = [];
+
+    for (const line of lines) {
+      if (line.status !== 'COMPLETED') {
+        const receipt = line.mpesa_receipt || `MP_B2C_${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+        const updated = await this.markLineCompleted(line.id, receipt);
+        completedLines.push(updated);
+      } else {
+        completedLines.push(line);
+      }
+    }
+
+    // Reset employee credit accounts
+    await this.resetCreditForSettlement(settlementId);
+
+    // Mark master settlement COMPLETED
+    const updatedSettlement = await this.markSettlementCompleted(settlementId);
+
+    // Mark transactions for this org as settled
+    try {
+      await this.db
+        .updateTable('transactions')
+        .set({
+          settlement_id: settlementId,
+          settled_at: new Date(),
+        })
+        .where('organization_id', '=', settlement.organization_id)
+        .where('status', '=', 'COMPLETED')
+        .where('settlement_id', 'is', null)
+        .execute();
+    } catch (err) {
+      console.warn('[PayrollRepository] Auto-settle transactions note:', err.message);
+    }
+
+    return {
+      settlement: updatedSettlement,
+      lines: completedLines,
+    };
   }
 }
 

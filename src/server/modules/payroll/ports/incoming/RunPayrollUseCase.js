@@ -6,13 +6,20 @@ class RunPayrollUseCase {
     this.mpesa = mpesaB2CService;
   }
 
-  async execute({ organizationId, periodStart, periodEnd, employeeSalaries = [], initiatedBy }) {
+  async execute({
+    organizationId,
+    periodStart,
+    periodEnd,
+    employeeSalaries = [],
+    initiatedBy,
+    autoComplete = false,
+  } = {}) {
     if (!organizationId) throw new Error('organizationId is required');
     if (!periodStart || !periodEnd) throw new Error('periodStart and periodEnd are required');
 
-    // 1. Fetch completed transactions for this organization
+    // 1. Fetch completed, unsettled transactions for this organization
     const allTxns = await this.txnRepo.listRecentByOrg(organizationId, 5000);
-    const completedTxns = allTxns.filter((t) => t.status === 'COMPLETED');
+    const completedTxns = allTxns.filter((t) => t.status === 'COMPLETED' && !t.settlement_id);
 
     // 2. Aggregate owed amounts by merchant
     const merchantMap = new Map();
@@ -46,7 +53,16 @@ class RunPayrollUseCase {
     const employeeDisbursements = [];
     let totalEmployeeDisbursements = 0;
 
-    for (const sal of employeeSalaries) {
+    let salariesToProcess = employeeSalaries;
+    if ((!salariesToProcess || salariesToProcess.length === 0) && typeof this.empRepo?.findByOrgId === 'function') {
+      const activeEmps = await this.empRepo.findByOrgId(organizationId, { limit: 1000 });
+      salariesToProcess = (activeEmps || []).map((e) => ({
+        employeeId: e.id,
+        grossSalary: Number(e.monthly_salary || e.monthlySalary || e.credit_limit || 0),
+      }));
+    }
+
+    for (const sal of (salariesToProcess || [])) {
       const empRecord = await this.empRepo.findById(sal.employeeId);
       if (!empRecord) continue;
 
@@ -118,11 +134,53 @@ class RunPayrollUseCase {
             remarks: `Payroll disbursement [${settlement.id}]`,
           });
           line.mpesa_conversation_id = res.conversationId;
+          if (typeof this.payrollRepo.updateLineConversationId === 'function') {
+            await this.payrollRepo.updateLineConversationId(line.id, res.conversationId);
+          }
         } catch (err) {
           console.warn(`[Payroll B2C Dispatch Warning]: ${err.message}`);
         }
       } else {
-        line.mpesa_conversation_id = `MOCK_CONV_${Date.now()}_${line.id}`;
+        const mockConv = `MOCK_CONV_${Date.now()}_${line.id}`;
+        line.mpesa_conversation_id = mockConv;
+        if (typeof this.payrollRepo.updateLineConversationId === 'function') {
+          await this.payrollRepo.updateLineConversationId(line.id, mockConv);
+        }
+      }
+    }
+
+    // 7. Associate settled transactions with settlement
+    if (typeof this.payrollRepo.linkTransactionsToSettlement === 'function' && completedTxns.length > 0) {
+      await this.payrollRepo.linkTransactionsToSettlement(
+        settlement.id,
+        completedTxns.map((t) => t.id)
+      );
+    }
+
+    // 8. Auto-completion handling (for instant settlement / simulation mode)
+    if (autoComplete) {
+      for (const line of createdLines) {
+        const mockReceipt = `MP-REC-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
+        line.status = 'COMPLETED';
+        line.mpesa_receipt = mockReceipt;
+        line.completed_at = new Date();
+        if (typeof this.payrollRepo.markLineCompleted === 'function') {
+          await this.payrollRepo.markLineCompleted(line.id, mockReceipt);
+        }
+      }
+
+      if (typeof this.payrollRepo.resetCreditForSettlement === 'function') {
+        await this.payrollRepo.resetCreditForSettlement(settlement.id);
+      }
+      if (typeof this.payrollRepo.markSettlementCompleted === 'function') {
+        const completedRecord = await this.payrollRepo.markSettlementCompleted(settlement.id);
+        if (completedRecord) {
+          settlement.status = completedRecord.status || 'COMPLETED';
+          settlement.completed_at = completedRecord.completed_at || new Date();
+        } else {
+          settlement.status = 'COMPLETED';
+          settlement.completed_at = new Date();
+        }
       }
     }
 

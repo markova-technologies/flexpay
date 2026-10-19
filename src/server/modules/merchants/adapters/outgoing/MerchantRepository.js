@@ -27,21 +27,18 @@ class MerchantRepository {
     // Aggregates receivables from transactions
     const txns = await this.db
       .selectFrom('transactions')
-      .select([
-        'organization_id',
-        'org_name_snapshot',
-        'credit_portion',
-        'employee_id',
-      ])
+      .selectAll()
       .where('merchant_id', '=', merchantId)
       .where('status', '=', 'COMPLETED')
       .execute();
+
+    const pendingTxns = txns.filter((t) => !t.settlement_id);
 
     let totalOutstandingReceivables = 0;
     const orgMap = new Map();
     const uniqueEmployees = new Set();
 
-    for (const t of txns) {
+    for (const t of pendingTxns) {
       const credit = Number(t.credit_portion || 0);
       totalOutstandingReceivables += credit;
       uniqueEmployees.add(t.employee_id);

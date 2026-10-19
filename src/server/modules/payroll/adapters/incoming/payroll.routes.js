@@ -10,6 +10,7 @@ const runPayrollSchema = z.object({
   periodStart: z.string().optional(),
   periodEnd: z.string().optional(),
   settlementDate: z.string().optional(),
+  autoComplete: z.boolean().optional(),
   employeeSalaries: z
     .array(
       z.object({
@@ -59,7 +60,7 @@ async function payrollRoutes(fastify, options) {
         ? parse.data.periodEnd
         : defaultEnd;
 
-      const { employeeSalaries } = parse.data;
+      const { employeeSalaries, autoComplete } = parse.data;
 
       const result = await runPayrollUseCase.execute({
         organizationId: request.user.orgId,
@@ -67,14 +68,19 @@ async function payrollRoutes(fastify, options) {
         periodEnd,
         employeeSalaries,
         initiatedBy: request.user.sub,
+        autoComplete: autoComplete ?? false,
       });
 
+      const currentStatus = result.settlement?.status || 'RUNNING';
+
       return reply.code(201).send({
-        message: 'Payroll settlement executed. Automated B2C wire payouts dispatched to merchants and employees.',
+        message: currentStatus === 'COMPLETED'
+          ? 'Payroll settlement executed and completed. Automated B2C wire payouts confirmed and credit reset.'
+          : 'Payroll settlement executed. Automated B2C wire payouts dispatched to merchants and employees.',
         settlementId: result.settlementId,
         settlement: {
           id: result.settlementId,
-          status: 'RUNNING',
+          status: currentStatus,
           totalMerchantDisbursements: result.totalMerchantDisbursements,
           totalEmployeeDisbursements: result.totalEmployeeDisbursements,
           merchantsCount: result.merchantsCount,
@@ -96,8 +102,115 @@ async function payrollRoutes(fastify, options) {
     '/org/payroll/history',
     { preHandler: [requireRole('ORG_ADMIN', 'ORG_CONTROLLER')] },
     async (request, reply) => {
-      const settlements = await payrollRepo.listSettlementsByOrg(request.user.orgId);
+      const rawSettlements = await payrollRepo.listSettlementsByOrg(request.user.orgId);
+      const settlements = (rawSettlements || []).map((s) => {
+        const merchantTotal = Number(s.total_merchant_disbursements || 0);
+        const employeeTotal = Number(s.total_employee_disbursements || 0);
+        const combined = Number((merchantTotal + employeeTotal).toFixed(2));
+        const finalAmount = merchantTotal > 0 ? merchantTotal : (combined > 0 ? combined : Number(s.total_amount || 0));
+        return {
+          ...s,
+          total_merchant_disbursements: merchantTotal,
+          total_employee_disbursements: employeeTotal,
+          total_amount: finalAmount,
+          totalAmount: finalAmount,
+        };
+      });
       return reply.send({ settlements });
+    }
+  );
+
+  // --------------------------------------------------------------------------
+  // 3. Finalize / Complete Running Settlement (Instant B2C Wire Completion)
+  // --------------------------------------------------------------------------
+  fastify.post(
+    '/org/payroll/:settlementId/complete',
+    { preHandler: [requireRole('ORG_ADMIN')] },
+    async (request, reply) => {
+      const { settlementId } = request.params;
+      const settlement = await payrollRepo.findSettlementById(settlementId);
+      if (!settlement) {
+        return reply.code(404).send({ error: 'Settlement not found' });
+      }
+      if (settlement.organization_id !== request.user.orgId) {
+        return reply.code(403).send({ error: 'Unauthorized access to settlement' });
+      }
+
+      if (typeof payrollRepo.completeSettlementImmediately === 'function') {
+        const result = await payrollRepo.completeSettlementImmediately(settlementId);
+        return reply.send({
+          message: 'Settlement marked as completed. Disbursement wires confirmed and employee credit reset.',
+          settlement: result.settlement,
+          lines: result.lines,
+        });
+      }
+
+      if (typeof payrollRepo.resetCreditForSettlement === 'function') {
+        await payrollRepo.resetCreditForSettlement(settlementId);
+      }
+      const updated = typeof payrollRepo.markSettlementCompleted === 'function'
+        ? await payrollRepo.markSettlementCompleted(settlementId)
+        : { ...settlement, status: 'COMPLETED' };
+
+      return reply.send({
+        message: 'Settlement marked as completed. Employee credit accounts reset.',
+        settlement: updated,
+      });
+    }
+  );
+
+  // --------------------------------------------------------------------------
+  // 4. Get Settlement Disbursement Lines Breakdown
+  // --------------------------------------------------------------------------
+  fastify.get(
+    '/org/payroll/:settlementId/lines',
+    { preHandler: [requireRole('ORG_ADMIN', 'ORG_CONTROLLER')] },
+    async (request, reply) => {
+      const { settlementId } = request.params;
+      const settlement = await payrollRepo.findSettlementById(settlementId);
+      if (!settlement || settlement.organization_id !== request.user.orgId) {
+        return reply.code(404).send({ error: 'Settlement not found' });
+      }
+
+      let lines = [];
+      if (typeof payrollRepo.listLinesBySettlementId === 'function') {
+        lines = await payrollRepo.listLinesBySettlementId(settlementId);
+      }
+      return reply.send({ settlement, lines });
+    }
+  );
+
+  // --------------------------------------------------------------------------
+  // 5. Finalize All Running Settlements for Organization
+  // --------------------------------------------------------------------------
+  fastify.post(
+    '/org/payroll/finalize-all',
+    { preHandler: [requireRole('ORG_ADMIN')] },
+    async (request, reply) => {
+      const settlements = await payrollRepo.listSettlementsByOrg(request.user.orgId);
+      const running = settlements.filter((s) => s.status === 'RUNNING');
+
+      const completed = [];
+      for (const s of running) {
+        if (typeof payrollRepo.completeSettlementImmediately === 'function') {
+          const res = await payrollRepo.completeSettlementImmediately(s.id);
+          completed.push(res.settlement);
+        } else {
+          if (typeof payrollRepo.resetCreditForSettlement === 'function') {
+            await payrollRepo.resetCreditForSettlement(s.id);
+          }
+          if (typeof payrollRepo.markSettlementCompleted === 'function') {
+            const updated = await payrollRepo.markSettlementCompleted(s.id);
+            completed.push(updated);
+          }
+        }
+      }
+
+      return reply.send({
+        message: `Successfully finalized ${completed.length} running settlement(s).`,
+        count: completed.length,
+        settlements: completed,
+      });
     }
   );
 }

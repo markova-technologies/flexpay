@@ -93,6 +93,42 @@ class InMemoryPayrollRepository {
       }
     }
   }
+
+  async updateLineConversationId(lineId, convId) {
+    const l = this.lines.get(lineId);
+    if (l) l.mpesa_conversation_id = convId;
+    return l;
+  }
+
+  async listLinesBySettlementId(settlementId) {
+    return Array.from(this.lines.values()).filter(
+      (l) => (l.settlement_id || l.settlementId) === settlementId
+    );
+  }
+
+  async completeSettlementImmediately(settlementId) {
+    const settlement = await this.findSettlementById(settlementId);
+    if (!settlement) throw new Error(`Settlement ${settlementId} not found`);
+
+    const lines = await this.listLinesBySettlementId(settlementId);
+    const completedLines = [];
+
+    for (const line of lines) {
+      line.status = 'COMPLETED';
+      line.mpesa_receipt = line.mpesa_receipt || `MP_B2C_${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+      line.completed_at = new Date();
+      completedLines.push(line);
+    }
+
+    await this.resetCreditForSettlement(settlementId);
+    settlement.status = 'COMPLETED';
+    settlement.completed_at = new Date();
+
+    return {
+      settlement,
+      lines: completedLines,
+    };
+  }
 }
 
 describe('Phase 7: Automated Payroll Settlement & M-PESA B2C Wires', () => {
@@ -280,5 +316,86 @@ describe('Phase 7: Automated Payroll Settlement & M-PESA B2C Wires', () => {
     const body = JSON.parse(res.payload);
     assert.equal(body.settlements.length, 1);
     assert.equal(body.settlements[0].status, 'COMPLETED');
+  });
+
+  test('7.4 ORG_ADMIN runs payroll with autoComplete: true (Instant Settlement & Credit Reset)', async () => {
+    // Reduce employee credit to simulate spending before settlement
+    employeesMap.get('emp-1').available_credit = 4000;
+
+    const res = await server.inject({
+      method: 'POST',
+      url: '/api/v1/org/payroll/run',
+      headers: { authorization: `Bearer ${orgAdminToken}` },
+      payload: {
+        periodStart: '2026-11-01',
+        periodEnd: '2026-11-30',
+        autoComplete: true,
+        employeeSalaries: [
+          { employeeId: 'emp-1', grossSalary: 25000 },
+        ],
+      },
+    });
+
+    assert.equal(res.statusCode, 201);
+    const body = JSON.parse(res.payload);
+    assert.equal(body.settlement.status, 'COMPLETED');
+    assert.ok(body.settlementId);
+
+    // Verify employee available credit accounts have been RESET to max limit
+    assert.equal(employeesMap.get('emp-1').available_credit, 10000);
+  });
+
+  test('7.5 POST /api/v1/org/payroll/:settlementId/complete finalizes a running settlement', async () => {
+    // 1. Create a RUNNING settlement
+    employeesMap.get('emp-2').available_credit = 2000;
+
+    const runRes = await server.inject({
+      method: 'POST',
+      url: '/api/v1/org/payroll/run',
+      headers: { authorization: `Bearer ${orgAdminToken}` },
+      payload: {
+        periodStart: '2026-12-01',
+        periodEnd: '2026-12-31',
+        autoComplete: false,
+        employeeSalaries: [
+          { employeeId: 'emp-2', grossSalary: 18000 },
+        ],
+      },
+    });
+
+    assert.equal(runRes.statusCode, 201);
+    const runBody = JSON.parse(runRes.payload);
+    assert.equal(runBody.settlement.status, 'RUNNING');
+    const settlementId = runBody.settlementId;
+
+    // 2. Complete the settlement via /org/payroll/:settlementId/complete
+    const completeRes = await server.inject({
+      method: 'POST',
+      url: `/api/v1/org/payroll/${settlementId}/complete`,
+      headers: { authorization: `Bearer ${orgAdminToken}` },
+    });
+
+    assert.equal(completeRes.statusCode, 200);
+    const completeBody = JSON.parse(completeRes.payload);
+    assert.equal(completeBody.settlement.status, 'COMPLETED');
+
+    // Credit reset confirmed
+    assert.equal(employeesMap.get('emp-2').available_credit, 8000);
+  });
+
+  test('7.6 GET /api/v1/org/payroll/:settlementId/lines returns disbursement lines and receipts', async () => {
+    const settlements = Array.from(payrollRepo.settlements.values());
+    const settlementId = settlements[0].id;
+
+    const res = await server.inject({
+      method: 'GET',
+      url: `/api/v1/org/payroll/${settlementId}/lines`,
+      headers: { authorization: `Bearer ${orgAdminToken}` },
+    });
+
+    assert.equal(res.statusCode, 200);
+    const body = JSON.parse(res.payload);
+    assert.ok(Array.isArray(body.lines));
+    assert.ok(body.lines.length > 0);
   });
 });

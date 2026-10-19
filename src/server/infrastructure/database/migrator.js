@@ -383,6 +383,8 @@ async function ensureSchema() {
           ALTER TABLE transactions ADD COLUMN IF NOT EXISTS stk_checkout_request_id TEXT;
           ALTER TABLE transactions ADD COLUMN IF NOT EXISTS mpesa_receipt TEXT;
           ALTER TABLE transactions ADD COLUMN IF NOT EXISTS status transaction_status NOT NULL DEFAULT 'PENDING';
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS settlement_id UUID;
+          ALTER TABLE transactions ADD COLUMN IF NOT EXISTS settled_at TIMESTAMPTZ;
           ALTER TABLE transactions ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
           ALTER TABLE transactions ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 
@@ -414,7 +416,8 @@ async function ensureSchema() {
             'employee_fp_id_snapshot', 'employee_name_snapshot', 'employee_phone_snapshot',
             'org_name_snapshot', 'merchant_name_snapshot', 'merchant_mpesa_snapshot',
             'category_snapshot', 'total_amount', 'credit_portion', 'copay_portion',
-            'stk_checkout_request_id', 'mpesa_receipt', 'status', 'created_at', 'updated_at'
+            'stk_checkout_request_id', 'mpesa_receipt', 'status', 'settlement_id', 'settled_at',
+            'created_at', 'updated_at'
           ];
           FOR col IN (
             SELECT column_name 
@@ -600,6 +603,8 @@ async function ensureSchema() {
         stk_checkout_request_id   TEXT,
         mpesa_receipt             TEXT,
         status                    transaction_status NOT NULL DEFAULT 'PENDING',
+        settlement_id             UUID REFERENCES payroll_settlements(id) ON DELETE SET NULL,
+        settled_at                TIMESTAMPTZ,
         created_at                TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at                TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
