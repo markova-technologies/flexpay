@@ -290,7 +290,7 @@ export default function OrgDashboard() {
               padding: '9px 16px',
               borderRadius: '8px',
               background: 'var(--fp-orange, #FF4D26)',
-              color: '#080B10',
+              color: '#FFFFFF',
               fontWeight: 700,
               fontSize: '0.85rem',
               border: 'none',

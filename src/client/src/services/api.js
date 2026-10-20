@@ -4,7 +4,7 @@ import { useAuthStore } from '../stores/authStore';
 function resolveBaseURL() {
   const envUrl = import.meta.env.VITE_API_URL;
   if (!envUrl) {
-    return 'http://localhost:3001/api/v1';
+    return 'http://127.0.0.1:3001/api/v1';
   }
   const clean = envUrl.trim().replace(/\/+$/, '');
   if (clean.endsWith('/api/v1')) {

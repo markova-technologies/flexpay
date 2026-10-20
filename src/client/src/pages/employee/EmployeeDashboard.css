@@ -11,8 +11,8 @@
 }
 
 .emp-hero-card {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(12, 19, 34, 0.95) 100%);
-  border: 1px solid var(--fp-border-strong);
+  background: linear-gradient(135deg, rgba(255, 77, 38, 0.05) 0%, var(--fp-surface-1) 100%);
+  border: 1px solid var(--fp-border);
   border-radius: var(--fp-r-xl);
   padding: var(--fp-sp-6);
   display: flex;
@@ -20,6 +20,7 @@
   align-items: center;
   position: relative;
   overflow: hidden;
+  box-shadow: var(--fp-shadow-sm);
 }
 
 .emp-hero-meta {
@@ -34,9 +35,9 @@
   gap: 6px;
   padding: 4px 10px;
   border-radius: var(--fp-r-pill);
-  background: rgba(16, 185, 129, 0.14);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  color: var(--fp-benefit);
+  background: rgba(5, 150, 105, 0.10);
+  border: 1px solid rgba(5, 150, 105, 0.25);
+  color: #059669;
   font-size: 0.75rem;
   font-weight: 600;
   width: fit-content;

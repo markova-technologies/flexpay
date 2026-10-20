@@ -217,7 +217,7 @@
 
 .merchant-drawer-nav-item.active .merchant-drawer-nav-item__icon {
   background: var(--fp-orange, #FF4D26);
-  color: #080B10;
+  color: #FFFFFF;
 }
 
 .merchant-drawer-nav-item__text {

@@ -52,12 +52,12 @@ export function FlexPayLogo({
   }
 
   // 2. Vector SVG Ribbon Geometry
-  // Top ribbon: Vibrant Electric Orange (#FF4D26)
-  // Bottom ribbon: Warm Cream / Alabaster (#FAF8F5) on dark backgrounds, Obsidian (#0E131C) on light
-  const isDark = theme === 'dark' || theme === 'auto';
-  const bottomRibbonColor = isDark ? '#FAF8F5' : '#0E131C';
-  const wordmarkColor = isDark ? '#FAF8F5' : '#080B10';
-  const taglineColor = isDark ? '#A19A91' : '#64748B';
+  // Top ribbon: Vibrant Terracotta / Electric Orange (#FF4D26)
+  // Bottom ribbon: Deep Obsidian Ink (#141413) on warm cream, Warm Cream (#FAF7F2) on dark
+  const isDark = theme === 'dark';
+  const bottomRibbonColor = isDark ? '#FAF7F2' : '#141413';
+  const wordmarkColor = isDark ? '#FAF7F2' : '#141413';
+  const taglineColor = isDark ? '#8C857B' : '#59544E';
 
   const markSvg = (
     <svg

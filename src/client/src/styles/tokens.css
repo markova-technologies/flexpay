@@ -1,50 +1,50 @@
 /* ============================================================
-   FLEXPAY ELEVATED BRAND DESIGN TOKENS (v3.0)
-   Theme: Vibrant Electric Orange (#FF4D26) + Obsidian Ink (#080B10) + Warm Cream (#FAF8F5 / #FAF7F2)
+   FLEXPAY ELEVATED BRAND DESIGN TOKENS (v4.0 - Anthropic Theme)
+   Palette: Vibrant Terracotta Orange (#FF4D26) + Warm Oatmeal Cream (#FAF7F2) + Deep Obsidian Ink (#141413)
    "Your Salary. More Possibilities."
-   Anti-slop discipline: No generic AI purple gradients, no cliché v0 cards.
-   Rich tactile fintech ergonomics inspired by 21st.dev, Feral UI, and Linear.
+   Inspired by Anthropic (Claude.ai), 21st.dev, and Linear editorial typography.
    ============================================================ */
 
 :root {
-  /* --- Brand Primary (Vibrant Electric Orange & Warm Ember) --- */
+  /* --- Brand Primary (Vibrant Terracotta / Electric Orange) --- */
   --fp-orange:              #FF4D26;
   --fp-orange-hover:        #FF623D;
   --fp-orange-active:       #E63E19;
-  --fp-orange-dim:          rgba(255, 77, 38, 0.12);
-  --fp-orange-border:       rgba(255, 77, 38, 0.32);
-  --fp-orange-glow:         rgba(255, 77, 38, 0.25);
-  --fp-orange-subtle:       rgba(255, 77, 38, 0.06);
+  --fp-orange-dim:          rgba(255, 77, 38, 0.10);
+  --fp-orange-border:       rgba(255, 77, 38, 0.28);
+  --fp-orange-glow:         rgba(255, 77, 38, 0.20);
+  --fp-orange-subtle:       rgba(255, 77, 38, 0.05);
 
-  /* --- Brand Cream / Alabaster (Warm, high-contrast, paper-refined) --- */
-  --fp-cream-pure:          #FDFBF7;
-  --fp-cream:               #FAF7F2;
-  --fp-cream-soft:          #F2ECE1;
-  --fp-cream-border:        rgba(250, 247, 242, 0.14);
-  --fp-cream-text:          #FAF8F5;
-  --fp-cream-muted:         #A19A91;
-  --fp-cream-dim:           rgba(250, 248, 245, 0.08);
+  /* --- Signature Warm Cream / Alabaster Paper Surfaces (Anthropic Claude style) --- */
+  --fp-cream-pure:          #FFFFFF;
+  --fp-cream:               #FAF7F2;   /* Signature Anthropic warm paper canvas */
+  --fp-cream-soft:          #F5EFE6;   /* Subtle warm stone for cards/inputs */
+  --fp-cream-border:        rgba(32, 28, 24, 0.08);
+  --fp-cream-text:          #FAF7F2;   /* Light cream text for dark accents/buttons */
+  --fp-cream-muted:         #6E685F;
+  --fp-cream-dim:           rgba(250, 247, 242, 0.90);
 
-  /* --- Obsidian Midnight & Ink Surfaces --- */
-  --fp-bg:                  #080B10;   /* Deep obsidian base */
-  --fp-surface-1:           #0E131C;   /* Standard card background */
-  --fp-surface-2:           #151C28;   /* Elevated panels / modals / dropdowns */
-  --fp-surface-3:           #1C2638;   /* Interactive hover / active */
-  --fp-surface-glass:       rgba(14, 19, 28, 0.78);
-  --fp-surface-cream-card:  #FAF7F2;   /* High-impact editorial cream card */
+  /* --- Anthropic Canvas & Surfaces --- */
+  --fp-bg:                  #FAF7F2;   /* Main canvas: warm soothing cream paper */
+  --fp-surface-1:           #FFFFFF;   /* Floating cards / primary panels on cream */
+  --fp-surface-2:           #F5EFE6;   /* Elevated warm stone for sub-blocks, inputs, stat pills */
+  --fp-surface-3:           #EBE3D5;   /* Interactive hover / active container */
+  --fp-surface-glass:       rgba(250, 247, 242, 0.88); /* Blurry glass header */
+  --fp-surface-cream-card:  #FFFFFF;
+  --fp-surface-dark:        #141413;   /* High-contrast ink card (editorial contrast) */
 
-  /* --- Borders --- */
-  --fp-border:              rgba(255, 255, 255, 0.08);
-  --fp-border-strong:       rgba(255, 255, 255, 0.16);
+  /* --- Hairline Borders --- */
+  --fp-border:              rgba(32, 28, 24, 0.08);
+  --fp-border-strong:       rgba(32, 28, 24, 0.16);
   --fp-border-focus:        rgba(255, 77, 38, 0.6);
-  --fp-border-subtle:       rgba(255, 255, 255, 0.04);
+  --fp-border-subtle:       rgba(32, 28, 24, 0.04);
   --fp-border-orange:       rgba(255, 77, 38, 0.35);
 
-  /* --- High-Legibility Typography Colors --- */
-  --fp-text-primary:        #FAF8F5;   /* Warm alabaster cream */
-  --fp-text-secondary:      #A19A91;   /* Soft warm stone */
-  --fp-text-muted:          #6B655D;   /* Muted warm taupe */
-  --fp-text-inverse:        #080B10;   /* Obsidian on cream backgrounds */
+  /* --- Anthropic Editorial High-Legibility Typography --- */
+  --fp-text-primary:        #141413;   /* Deep warm obsidian ink (Anthropic primary) */
+  --fp-text-secondary:      #59544E;   /* Warm charcoal for paragraphs and labels */
+  --fp-text-muted:          #8C857B;   /* Muted taupe for timestamps and metadata */
+  --fp-text-inverse:        #FAF7F2;   /* Warm cream text on orange buttons & ink blocks */
 
   /* --- Benefit Allocations & Primary Accents --- */
   --fp-benefit:             var(--fp-orange);
@@ -53,30 +53,30 @@
   --fp-benefit-glow:        var(--fp-orange-glow);
 
   /* --- Salary-Linked Pre-Credit & Verification --- */
-  --fp-salary:              #F59E0B;   /* Amber gold for salary accruals */
-  --fp-salary-dim:          rgba(245, 158, 11, 0.12);
-  --fp-salary-border:       rgba(245, 158, 11, 0.28);
-  --fp-salary-glow:         rgba(245, 158, 11, 0.20);
+  --fp-salary:              #D97706;   /* Rich amber gold for salary accruals */
+  --fp-salary-dim:          rgba(217, 119, 6, 0.10);
+  --fp-salary-border:       rgba(217, 119, 6, 0.28);
+  --fp-salary-glow:         rgba(217, 119, 6, 0.18);
 
   /* --- Financial Status Badges --- */
-  --fp-success:             #10B981;   /* Emerald for wired settlements & confirmed transactions */
-  --fp-success-dim:         rgba(16, 185, 129, 0.12);
-  --fp-pending:             #F59E0B;   /* Amber for pending batches */
-  --fp-pending-dim:         rgba(245, 158, 11, 0.12);
-  --fp-danger:              #EF4444;   /* Crimson for rejections */
-  --fp-danger-dim:          rgba(239, 68, 68, 0.12);
-  --fp-info:                #38BDF8;   /* Sky blue */
-  --fp-info-dim:            rgba(56, 189, 248, 0.12);
+  --fp-success:             #059669;   /* Rich emerald for wired settlements */
+  --fp-success-dim:         rgba(5, 150, 105, 0.10);
+  --fp-pending:             #D97706;   /* Amber for pending batches */
+  --fp-pending-dim:         rgba(217, 119, 6, 0.10);
+  --fp-danger:              #DC2626;   /* Crimson for rejections */
+  --fp-danger-dim:          rgba(220, 38, 38, 0.10);
+  --fp-info:                #0284C7;   /* Sky blue */
+  --fp-info-dim:            rgba(2, 132, 199, 0.10);
 
   /* --- Benefit Categories --- */
   --fp-cat-food:            #FF4D26;
-  --fp-cat-food-dim:        rgba(255, 77, 38, 0.14);
-  --fp-cat-transport:       #38BDF8;
-  --fp-cat-transport-dim:   rgba(56, 189, 248, 0.14);
-  --fp-cat-health:          #10B981;
-  --fp-cat-health-dim:      rgba(16, 185, 129, 0.14);
-  --fp-cat-paylater:        #F59E0B;
-  --fp-cat-paylater-dim:    rgba(245, 158, 11, 0.14);
+  --fp-cat-food-dim:        rgba(255, 77, 38, 0.12);
+  --fp-cat-transport:       #0284C7;
+  --fp-cat-transport-dim:   rgba(2, 132, 199, 0.12);
+  --fp-cat-health:          #059669;
+  --fp-cat-health-dim:      rgba(5, 150, 105, 0.12);
+  --fp-cat-paylater:        #D97706;
+  --fp-cat-paylater-dim:    rgba(217, 119, 6, 0.12);
 
   /* --- Backward Compatible System Aliases --- */
   --color-bg-base:          var(--fp-bg);
@@ -137,13 +137,13 @@
   --radius-lg: var(--fp-r-lg);
   --radius-xl: var(--fp-r-xl);
 
-  /* --- Shadows & Micro-Elevation --- */
-  --fp-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --fp-shadow-md: 0 6px 20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
-  --fp-shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.07);
-  --fp-shadow-orange: 0 10px 30px rgba(255, 77, 38, 0.25);
+  /* --- Soft Ambient Anthropic Shadows --- */
+  --fp-shadow-sm: 0 1px 3px rgba(32, 28, 24, 0.05), 0 1px 2px rgba(32, 28, 24, 0.03);
+  --fp-shadow-md: 0 4px 16px rgba(32, 28, 24, 0.06), 0 0 0 1px rgba(32, 28, 24, 0.04);
+  --fp-shadow-lg: 0 16px 40px rgba(32, 28, 24, 0.08), 0 0 0 1px rgba(32, 28, 24, 0.05);
+  --fp-shadow-orange: 0 8px 24px rgba(255, 77, 38, 0.22);
 
-  /* --- Physics & Easing Curves (Linear / Emil Kowalski style) --- */
+  /* --- Physics & Easing Curves --- */
   --fp-ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
   --fp-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --fp-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);

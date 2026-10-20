@@ -294,7 +294,7 @@ export default function EmployeeLoginPage() {
                 minHeight: '48px',
                 borderRadius: '8px',
                 background: 'var(--fp-orange, #FF4D26)',
-                color: '#080B10',
+                color: '#FFFFFF',
                 fontWeight: 700,
                 fontSize: '0.95rem',
                 border: 'none',

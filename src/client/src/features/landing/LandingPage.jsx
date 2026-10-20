@@ -261,7 +261,7 @@ export default function LandingPage() {
                   onClick={() => setPurchaseAmount(preset.amount)}
                   style={{
                     background: purchaseAmount === preset.amount ? 'var(--fp-orange)' : 'var(--fp-surface-2)',
-                    color: purchaseAmount === preset.amount ? '#080B10' : 'var(--fp-cream-muted)',
+                    color: purchaseAmount === preset.amount ? '#FFFFFF' : 'var(--fp-text-secondary)',
                     border: '1px solid var(--fp-border)',
                     borderRadius: '6px',
                     padding: '4px 10px',
@@ -291,7 +291,7 @@ export default function LandingPage() {
                 title={`M-PESA Co-Pay: ${copayPortion} ETB`}
               />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', color: 'var(--fp-cream-muted)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', color: 'var(--fp-text-secondary)' }}>
               <span>Benefit Coverage: {Math.round(benefitPercent)}%</span>
               <span>M-PESA Co-Pay: {Math.round(copayPercent)}%</span>
             </div>
@@ -312,10 +312,10 @@ export default function LandingPage() {
 
             <div className="split-breakdown-box">
               <div className="split-box-label">
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#38BDF8' }} />
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#0284C7' }} />
                 <span>M-PESA Co-Pay</span>
               </div>
-              <div className="split-box-amount" style={{ color: '#38BDF8' }}>
+              <div className="split-box-amount" style={{ color: '#0284C7' }}>
                 ETB {copayPortion.toLocaleString()}
               </div>
               <span className="split-box-note">
@@ -337,10 +337,10 @@ export default function LandingPage() {
       {/* 3. How It Works (Three-Phase Real Flow) */}
       <section id="how-it-works" style={{ maxWidth: '1240px', margin: '0 auto', padding: '60px 24px' }}>
         <div style={{ textAlign: 'center', maxWidth: '64ch', margin: '0 auto 48px' }}>
-          <h2 style={{ fontSize: 'clamp(1.8rem, 3.2vw, 2.6rem)', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--fp-cream-pure)', marginBottom: '10px' }}>
+          <h2 style={{ fontSize: 'clamp(1.8rem, 3.2vw, 2.6rem)', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--fp-text-primary)', marginBottom: '10px' }}>
             Earned Wage Access without payday debt.
           </h2>
-          <p style={{ color: 'var(--fp-cream-muted)', fontSize: '1.05rem', lineHeight: 1.6 }}>
+          <p style={{ color: 'var(--fp-text-secondary)', fontSize: '1.05rem', lineHeight: 1.6 }}>
             FlexPay bridges daily living expenses and monthly payroll. No 300% micro-loan APR,
             no predatory collection agents—just simple access to what you have already worked for.
           </p>
@@ -522,31 +522,31 @@ export default function LandingPage() {
 
           {/* Right Visual Architecture Box */}
           <div className="cream-visual-box">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #ECE7DE', paddingBottom: '12px' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#080B10' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '12px' }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#FAF7F2' }}>
                 Payment Infrastructure
               </span>
-              <span style={{ fontSize: '0.72rem', background: '#E6F4EA', color: '#137333', padding: '3px 8px', borderRadius: '4px', fontWeight: 700 }}>
+              <span style={{ fontSize: '0.72rem', background: 'rgba(5, 150, 105, 0.2)', color: '#34D399', padding: '3px 8px', borderRadius: '4px', fontWeight: 700 }}>
                 ACTIVE LIVE
               </span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.82rem' }}>
-                <span style={{ color: '#5F5A52' }}>Payment Rail</span>
-                <span style={{ fontWeight: 700, color: '#080B10' }}>Safaricom M-PESA Daraja</span>
+                <span style={{ color: '#A19A91' }}>Payment Rail</span>
+                <span style={{ fontWeight: 700, color: '#FAF7F2' }}>Safaricom M-PESA Daraja</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.82rem' }}>
-                <span style={{ color: '#5F5A52' }}>Disbursement Rail</span>
-                <span style={{ fontWeight: 700, color: '#080B10' }}>M-PESA B2C Instant Wires</span>
+                <span style={{ color: '#A19A91' }}>Disbursement Rail</span>
+                <span style={{ fontWeight: 700, color: '#FAF7F2' }}>M-PESA B2C Instant Wires</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.82rem' }}>
-                <span style={{ color: '#5F5A52' }}>Account Ledger</span>
-                <span style={{ fontWeight: 700, color: '#080B10' }}>Double-Entry (Zero Discrepancy)</span>
+                <span style={{ color: '#A19A91' }}>Account Ledger</span>
+                <span style={{ fontWeight: 700, color: '#FAF7F2' }}>Double-Entry (Zero Discrepancy)</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.82rem' }}>
-                <span style={{ color: '#5F5A52' }}>Card Tokenization</span>
-                <span style={{ fontWeight: 700, color: '#080B10' }}>Luhn 16-Digit FP-ID</span>
+                <span style={{ color: '#A19A91' }}>Card Tokenization</span>
+                <span style={{ fontWeight: 700, color: '#FAF7F2' }}>Luhn 16-Digit FP-ID</span>
               </div>
             </div>
           </div>

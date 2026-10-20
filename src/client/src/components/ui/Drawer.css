@@ -1,7 +1,7 @@
 .drawer-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(20, 18, 15, 0.45);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   opacity: 0;
@@ -21,7 +21,8 @@
   bottom: 0;
   width: 440px;
   max-width: 100vw;
-  background: var(--bg-surface, var(--fp-surface-1, #0C1322));
+  background: var(--fp-surface-1, #FFFFFF);
+  color: var(--fp-text-primary, #141413);
   transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
   z-index: 950;
   overflow-y: auto;
@@ -33,19 +34,19 @@
 .drawer--right {
   right: 0;
   left: auto;
-  border-left: 1px solid var(--border, var(--fp-border, rgba(255, 255, 255, 0.08)));
+  border-left: 1px solid var(--fp-border, rgba(32, 28, 24, 0.08));
   border-right: none;
   transform: translateX(100%);
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.5);
+  box-shadow: -8px 0 32px rgba(32, 28, 24, 0.12);
 }
 
 .drawer--left {
   left: 0;
   right: auto;
-  border-right: 1px solid var(--border, var(--fp-border, rgba(255, 255, 255, 0.08)));
+  border-right: 1px solid var(--fp-border, rgba(32, 28, 24, 0.08));
   border-left: none;
   transform: translateX(-100%);
-  box-shadow: 8px 0 32px rgba(0, 0, 0, 0.5);
+  box-shadow: 8px 0 32px rgba(32, 28, 24, 0.12);
 }
 
 .drawer.open {
@@ -57,24 +58,24 @@
   justify-content: space-between;
   align-items: center;
   padding: var(--space-6, 24px);
-  border-bottom: 1px solid var(--border, var(--fp-border, rgba(255, 255, 255, 0.08)));
+  border-bottom: 1px solid var(--fp-border, rgba(32, 28, 24, 0.08));
   position: sticky;
   top: 0;
-  background: var(--bg-surface, var(--fp-surface-1, #0C1322));
+  background: var(--fp-surface-1, #FFFFFF);
   z-index: 1;
 }
 
 .drawer__title {
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--text-primary, var(--fp-text-primary, #F8FAFC));
+  color: var(--fp-text-primary, #141413);
   margin: 0;
 }
 
 .drawer__close {
-  background: none;
-  border: none;
-  color: var(--text-secondary, var(--fp-text-secondary, #94A3B8));
+  background: var(--fp-surface-2, #F5EFE6);
+  border: 1px solid var(--fp-border, rgba(32, 28, 24, 0.08));
+  color: var(--fp-text-secondary, #59544E);
   cursor: pointer;
   font-size: 1.25rem;
   padding: 8px 12px;
@@ -88,8 +89,8 @@
 }
 
 .drawer__close:hover {
-  color: var(--text-primary, #F8FAFC);
-  background: var(--bg-hover, rgba(255, 255, 255, 0.05));
+  color: var(--fp-text-primary, #141413);
+  background: var(--fp-surface-3, #EBE3D5);
 }
 
 .drawer__body {
@@ -101,6 +102,7 @@
   .drawer {
     width: 100vw;
     border-left: none;
+    border-right: none;
     padding-bottom: calc(var(--space-6, 24px) + var(--fp-safe-bottom, 0px));
   }
   .drawer__header {

@@ -201,7 +201,7 @@
 
 .org-drawer-nav-item.active .org-drawer-nav-item__icon {
   background: var(--fp-orange, #FF4D26);
-  color: #080B10;
+  color: #FFFFFF;
 }
 
 .org-drawer-nav-item__text {

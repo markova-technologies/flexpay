@@ -2680,3 +2680,52 @@ Comprehensive visual and architectural UI transformation of FlexPay across the b
    - Staged all files, created authoritative commit, and pushed to `origin/main`.
 
 ---
+
+#### Turn 21 (Step 21)
+##### 👤 User Prompt:
+```text
+It is a orange and black, but instead make it orange and cream (like antropic),
+```
+
+##### 🤖 Agent Response:
+Transformed the FlexPay visual design system from an obsidian-dark scheme to an editorial **Terracotta Orange & Warm Cream aesthetic (Anthropic / Claude-style)** across the public landing page, authentication hub, and all three dashboards (Organization Management, Employee Digital Wallet, and Merchant POS & Settlements):
+
+1. **Anthropic Cream & Terracotta Design Tokens ([`tokens.css`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/styles/tokens.css))**:
+   - **Signature Cream Canvas**: Set `--fp-bg: #FAF7F2` (warm oatmeal paper canvas), `--fp-surface-1: #FFFFFF` (pure floating cards), `--fp-surface-2: #F5EFE6` (warm stone for inputs and secondary containers), `--fp-surface-3: #EBE3D5` (interactive hover containers).
+   - **Editorial High-Legibility Typography**: Set `--fp-text-primary: #141413` (deep warm obsidian ink), `--fp-text-secondary: #59544E` (warm charcoal), `--fp-text-muted: #8C857B` (muted taupe), and `--fp-text-inverse: #FAF7F2` (cream on orange/ink).
+   - **Brand Terracotta Orange**: `--fp-orange: #FF4D26`, `--fp-orange-hover: #FF623D`, `--fp-orange-active: #E63E19`, with soft glowing ambient tints `--fp-orange-dim: rgba(255, 77, 38, 0.10)`.
+   - **Soft Umber Shadows**: Calibrated `--fp-shadow-sm/md/lg` to warm umber tones (`rgba(32, 28, 24, 0.05-0.08)`) with hairline borders (`rgba(32, 28, 24, 0.08)`).
+   - Maintained 100% backward compatibility for all semantic aliases (`--color-bg-base`, `--fp-salary`, `--fp-benefit`, etc.).
+
+2. **Brand Mark & Favicon Alignment**:
+   - [`FlexPayLogo.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/components/ui/FlexPayLogo.jsx): Defaulted to `isDark = false` on light cream canvas, rendering the dark ink ribbon (`#141413`) and ink wordmark matching the uploaded logo file.
+   - [`favicon.svg`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/public/favicon.svg): Updated background to `#FAF7F2` cream tile with subtle border and `#141413` ink bottom loop.
+   - [`index.html`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/index.html): Updated browser theme color to `#FAF7F2`.
+
+3. **Public Landing Page & Components ([`LandingPage.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/landing/LandingPage.jsx) & [`LandingPage.css`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/landing/LandingPage.css))**:
+   - Converted hero background to warm cream gradient with subtle warm ambient glow.
+   - Restyled SplitEngine™ live simulator into a crisp `#FFFFFF` card with soft hairline borders, `#F5EFE6` preset pills, and glowing terracotta slider thumb.
+   - Restyled the three ecosystem cards (HR, Wallet, Merchant POS) to clean white paper cards with warm stone badges and dark ink headers.
+   - Preserved the high-contrast editorial ink card (`#141413`) for NBE compliance architecture.
+   - Updated footer to warm `#F4EFE6` stone with ink typography.
+
+4. **Authentication Hub & Portal Login Pages**:
+   - [`OrgAuthPage.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/auth/OrgAuthPage.jsx), [`MerchantAuthPage.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/auth/MerchantAuthPage.jsx), [`EmployeeLoginPage.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/auth/EmployeeLoginPage.jsx): Calibrated active tab buttons and submit buttons to crisp white text (`#FFFFFF`) on brand orange/amber backgrounds.
+   - [`Drawer.css`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/components/ui/Drawer.css): Converted slide-out drawer to `#FFFFFF` with warm cream backdrop overlay `rgba(20, 18, 15, 0.45)`.
+
+5. **The Three Dashboards**:
+   - **Organization Dashboard** ([`OrgDashboard.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/organization/OrgDashboard.jsx) & [`OrgDashboard.css`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/organization/OrgDashboard.css)): Converted cards, tables, and drawers to cream/white with terracotta active indicators and dark ink text.
+   - **Employee Dashboard** ([`EmployeeDashboard.css`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/pages/employee/EmployeeDashboard.css)): Converted employee balance hero card to subtle warm stone gradient on cream paper canvas.
+   - **Merchant Dashboard & POS** ([`MerchantLayout.css`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/merchant/MerchantLayout.css)): Calibrated active navigation items to terracotta orange with white icons and crisp white cards.
+
+6. **Network Alignment & Fastify Proxy**:
+   - [`api.js`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/services/api.js): Defaulted fallback URL to `http://127.0.0.1:3001/api/v1` to eliminate Windows localhost IPv6 resolution failures.
+   - [`vite.config.js`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/vite.config.js): Updated dev proxy target to `http://127.0.0.1:3001`.
+
+7. **Verification, Build & Git Push**:
+   - Verified live rendering and layout ergonomics via browser subagent across desktop and mobile viewports.
+   - Verified production build (`npm --prefix src/client run build`) compiles cleanly without errors.
+   - Verified test suite (`npm run test:unit`) with 100% pass rate: **81 tests passed across 31 suites, 0 failures**.
+   - Staged all changes, created git commit, and pushed to `origin/main`.
+
+---
