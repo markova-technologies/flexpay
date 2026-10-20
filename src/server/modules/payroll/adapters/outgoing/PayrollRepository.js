@@ -66,6 +66,7 @@ class PayrollRepository {
   }
 
   async listSettlementsByOrg(organizationId) {
+    if (!organizationId) return [];
     return this.db
       .selectFrom('payroll_settlements')
       .selectAll()

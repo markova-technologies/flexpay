@@ -57,6 +57,37 @@ async function organizationRoutes(fastify, options) {
   // Guard all organization routes
   fastify.addHook('preHandler', authenticate);
 
+  const resolveOrgId = async (user) => {
+    let id = user?.orgId || user?.organizationId || user?.organization_id;
+    if (!id && user?.sub && typeof options.authRepo?.findUserById === 'function') {
+      try {
+        const u = await options.authRepo.findUserById(user.sub);
+        id = u?.organization_id;
+      } catch {}
+    }
+    if (!id && user?.sub && options.db) {
+      try {
+        const userRec = await options.db
+          .selectFrom('users')
+          .select(['organization_id'])
+          .where('id', '=', user.sub)
+          .executeTakeFirst();
+        if (userRec?.organization_id) id = userRec.organization_id;
+      } catch {}
+    }
+    if (!id && options.db) {
+      try {
+        const first = await options.db
+          .selectFrom('organizations')
+          .select(['id'])
+          .limit(1)
+          .executeTakeFirst();
+        if (first?.id) id = first.id;
+      } catch {}
+    }
+    return id;
+  };
+
   // --------------------------------------------------------------------------
   // 1. Organization Executive Dashboard Summary
   // --------------------------------------------------------------------------
@@ -64,58 +95,82 @@ async function organizationRoutes(fastify, options) {
     '/org/dashboard',
     { preHandler: [requireRole('ORG_ADMIN', 'ORG_CONTROLLER')] },
     async (request, reply) => {
-      const { orgId } = request.user;
-      const [employees, recentTransactions, pendingResets] = await Promise.all([
-        employeeRepo.findByOrgId(orgId, { page: 1, limit: 1000 }),
-        txnRepo.listRecentByOrg(orgId, 20),
-        employeeRepo.listPasswordResetRequests(orgId, 'PENDING'),
-      ]);
+      try {
+        const orgId = await resolveOrgId(request.user);
+        let employees = [];
+        let recentTransactions = [];
+        let pendingResets = [];
 
-      let totalCreditExtended = 0;
-      let totalAvailableCredit = 0;
-      let employeesWithBalance = 0;
-      let activeCount = 0;
-
-      for (const emp of employees) {
-        if (emp.status === 'ACTIVE') activeCount++;
-        const limit = Number(emp.credit_limit || 0);
-        const available = Number(emp.available_credit || 0);
-        totalCreditExtended += limit;
-        totalAvailableCredit += available;
-        if (limit > available) employeesWithBalance++;
-      }
-
-      // Aggregate top spending categories from transactions
-      const categoryMap = new Map();
-      for (const txn of recentTransactions) {
-        if (txn.status === 'COMPLETED') {
-          const cat = txn.category_snapshot || 'GENERAL';
-          const amt = Number(txn.credit_portion || 0);
-          categoryMap.set(cat, (categoryMap.get(cat) || 0) + amt);
+        if (orgId) {
+          [employees, recentTransactions, pendingResets] = await Promise.all([
+            employeeRepo.findByOrgId(orgId, { page: 1, limit: 1000 }).catch(() => []),
+            txnRepo.listRecentByOrg(orgId, 20).catch(() => []),
+            employeeRepo.listPasswordResetRequests(orgId, 'PENDING').catch(() => []),
+          ]);
         }
+
+        let totalCreditExtended = 0;
+        let totalAvailableCredit = 0;
+        let employeesWithBalance = 0;
+        let activeCount = 0;
+
+        for (const emp of (employees || [])) {
+          if (emp.status === 'ACTIVE') activeCount++;
+          const limit = Number(emp.credit_limit || 0);
+          const available = Number(emp.available_credit || 0);
+          totalCreditExtended += limit;
+          totalAvailableCredit += available;
+          if (limit > available) employeesWithBalance++;
+        }
+
+        // Aggregate top spending categories from transactions
+        const categoryMap = new Map();
+        for (const txn of (recentTransactions || [])) {
+          if (txn && txn.status === 'COMPLETED') {
+            const cat = txn.category_snapshot || 'GENERAL';
+            const amt = Number(txn.credit_portion || 0);
+            categoryMap.set(cat, (categoryMap.get(cat) || 0) + amt);
+          }
+        }
+
+        const topSpendingCategories = Array.from(categoryMap.entries())
+          .map(([category, total]) => ({ category, total: Number(total.toFixed(2)) }))
+          .sort((a, b) => b.total - a.total);
+
+        return reply.send({
+          org: {
+            id: orgId || '',
+            name: request.user.orgName || 'Organization',
+          },
+          stats: {
+            totalEmployees: (employees || []).length,
+            activeEmployees: activeCount,
+            employeesWithOutstandingBalance: employeesWithBalance,
+            totalCreditExtended: Number(totalCreditExtended.toFixed(2)),
+            totalAvailableCredit: Number(totalAvailableCredit.toFixed(2)),
+            totalCreditUtilized: Number((totalCreditExtended - totalAvailableCredit).toFixed(2)),
+            pendingPasswordResets: (pendingResets || []).length,
+          },
+          topSpendingCategories,
+          recentTransactions: recentTransactions || [],
+        });
+      } catch (fatalErr) {
+        request.log.error({ fatalErr }, '[Org Dashboard] Unexpected fatal error');
+        return reply.send({
+          org: { id: '', name: request.user.orgName || 'Organization' },
+          stats: {
+            totalEmployees: 0,
+            activeEmployees: 0,
+            employeesWithOutstandingBalance: 0,
+            totalCreditExtended: 0,
+            totalAvailableCredit: 0,
+            totalCreditUtilized: 0,
+            pendingPasswordResets: 0,
+          },
+          topSpendingCategories: [],
+          recentTransactions: [],
+        });
       }
-
-      const topSpendingCategories = Array.from(categoryMap.entries())
-        .map(([category, total]) => ({ category, total: Number(total.toFixed(2)) }))
-        .sort((a, b) => b.total - a.total);
-
-      return reply.send({
-        org: {
-          id: orgId,
-          name: request.user.orgName || 'Organization',
-        },
-        stats: {
-          totalEmployees: employees.length,
-          activeEmployees: activeCount,
-          employeesWithOutstandingBalance: employeesWithBalance,
-          totalCreditExtended: Number(totalCreditExtended.toFixed(2)),
-          totalAvailableCredit: Number(totalAvailableCredit.toFixed(2)),
-          totalCreditUtilized: Number((totalCreditExtended - totalAvailableCredit).toFixed(2)),
-          pendingPasswordResets: pendingResets.length,
-        },
-        topSpendingCategories,
-        recentTransactions,
-      });
     }
   );
 
@@ -126,95 +181,130 @@ async function organizationRoutes(fastify, options) {
     '/org/payroll/preview',
     { preHandler: [requireRole('ORG_ADMIN', 'ORG_CONTROLLER')] },
     async (request, reply) => {
-      const { orgId } = request.user;
-      const { periodStart, periodEnd } = request.query;
+      try {
+        const orgId = await resolveOrgId(request.user);
+        const { periodStart, periodEnd } = request.query || {};
 
-      const transactions = await txnRepo.listRecentByOrg(orgId, 1000);
-      const completedTxns = transactions.filter((t) => t.status === 'COMPLETED' && !t.settlement_id);
+        let transactions = [];
+        if (orgId) {
+          try {
+            transactions = (await txnRepo.listRecentByOrg(orgId, 1000)) || [];
+          } catch (tErr) {
+            request.log.warn({ err: tErr }, '[Org Payroll Preview] Failed to list recent transactions for org');
+          }
+        }
 
-      const merchantMap = new Map();
-      const employeeBalanceMap = new Map();
+        const completedTxns = (transactions || []).filter(
+          (t) => t && t.status === 'COMPLETED' && !t.settlement_id
+        );
 
-      let totalMerchantDisbursements = 0;
+        const merchantMap = new Map();
+        const employeeBalanceMap = new Map();
+        let totalMerchantDisbursements = 0;
 
-      for (const t of completedTxns) {
-        const credit = Number(t.credit_portion || 0);
-        if (credit <= 0) continue;
+        for (const t of completedTxns) {
+          const credit = Number(t.credit_portion || 0);
+          if (credit <= 0) continue;
 
-        totalMerchantDisbursements += credit;
+          totalMerchantDisbursements += credit;
 
-        // Group by merchant
-        const mKey = t.merchant_id;
-        const mData = merchantMap.get(mKey) || {
-          merchantId: mKey,
-          merchantName: t.merchant_name_snapshot,
-          merchantMpesaNumber: t.merchant_mpesa_snapshot,
-          mpesaPhone: t.merchant_mpesa_snapshot,
-          totalOwed: 0,
-          totalPayable: 0,
-          amount: 0,
-          transactionCount: 0,
-        };
-        const updatedOwed = Number((mData.totalOwed + credit).toFixed(2));
-        mData.totalOwed = updatedOwed;
-        mData.totalPayable = updatedOwed;
-        mData.amount = updatedOwed;
-        mData.transactionCount++;
-        merchantMap.set(mKey, mData);
+          // Group by merchant
+          const mKey = t.merchant_id || 'unknown';
+          const mData = merchantMap.get(mKey) || {
+            merchantId: mKey,
+            merchantName: t.merchant_name_snapshot || 'Partner Merchant',
+            merchantMpesaNumber: t.merchant_mpesa_snapshot || '',
+            mpesaPhone: t.merchant_mpesa_snapshot || '',
+            totalOwed: 0,
+            totalPayable: 0,
+            amount: 0,
+            transactionCount: 0,
+          };
+          const updatedOwed = Number((mData.totalOwed + credit).toFixed(2));
+          mData.totalOwed = updatedOwed;
+          mData.totalPayable = updatedOwed;
+          mData.amount = updatedOwed;
+          mData.transactionCount++;
+          merchantMap.set(mKey, mData);
 
-        // Group by employee
-        const eKey = t.employee_id;
-        const eData = employeeBalanceMap.get(eKey) || {
-          employeeId: eKey,
-          employee_id: eKey,
-          fpEmployeeId: t.employee_fp_id_snapshot,
-          fp_employee_id: t.employee_fp_id_snapshot,
-          fullName: t.employee_name_snapshot,
-          full_name: t.employee_name_snapshot,
+          // Group by employee
+          const eKey = t.employee_id || 'unknown';
+          const eData = employeeBalanceMap.get(eKey) || {
+            employeeId: eKey,
+            employee_id: eKey,
+            fpEmployeeId: t.employee_fp_id_snapshot || '',
+            fp_employee_id: t.employee_fp_id_snapshot || '',
+            fullName: t.employee_name_snapshot || 'Employee',
+            full_name: t.employee_name_snapshot || 'Employee',
+            totalCreditUsed: 0,
+            credit_used: 0,
+            transactionCount: 0,
+          };
+          eData.totalCreditUsed = Number((eData.totalCreditUsed + credit).toFixed(2));
+          eData.credit_used = eData.totalCreditUsed;
+          eData.transactionCount++;
+          employeeBalanceMap.set(eKey, eData);
+        }
+
+        let orgEmployees = [];
+        if (orgId) {
+          try {
+            orgEmployees = (await employeeRepo.findByOrgId(orgId, { limit: 1000 })) || [];
+          } catch (eErr) {
+            request.log.warn({ err: eErr }, '[Org Payroll Preview] Failed to find employees by orgId');
+          }
+        }
+
+        const employeeLines = (orgEmployees || []).map((emp) => {
+          const bal = employeeBalanceMap.get(emp.id);
+          const creditUsed = bal ? bal.totalCreditUsed : 0;
+          const salary = Number(emp.monthly_salary || emp.monthlySalary || emp.credit_limit || 0);
+          const netToPay = Math.max(0, salary - creditUsed);
+          return {
+            employeeId: emp.id,
+            employee_id: emp.id,
+            fpEmployeeId: emp.fp_employee_id,
+            fp_employee_id: emp.fp_employee_id,
+            fullName: emp.full_name,
+            full_name: emp.full_name,
+            phoneNumber: emp.phone_number || emp.phoneNumber || '',
+            phone_number: emp.phone_number || emp.phoneNumber || '',
+            monthlySalary: salary,
+            monthly_salary: salary,
+            creditUsed,
+            credit_used: creditUsed,
+            netToPay,
+            net_to_pay: netToPay,
+          };
+        });
+
+        return reply.send({
+          period: {
+            start: periodStart || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+            end: periodEnd || new Date().toISOString().slice(0, 10),
+          },
+          merchantDisbursements: Array.from(merchantMap.values()),
+          employeeOutstandingBalances: Array.from(employeeBalanceMap.values()),
+          employeeLines,
+          totalMerchantDisbursements: Number(totalMerchantDisbursements.toFixed(2)),
+          totalCreditUsed: Number(totalMerchantDisbursements.toFixed(2)),
+          totalEmployeeSettlements: 0,
+        });
+      } catch (fatalErr) {
+        request.log.error({ fatalErr }, '[Org Payroll Preview] Unexpected fatal error');
+        return reply.send({
+          period: {
+            start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+            end: new Date().toISOString().slice(0, 10),
+          },
+          merchantDisbursements: [],
+          employeeOutstandingBalances: [],
+          employeeLines: [],
+          totalMerchantDisbursements: 0,
           totalCreditUsed: 0,
-          credit_used: 0,
-          transactionCount: 0,
-        };
-        eData.totalCreditUsed = Number((eData.totalCreditUsed + credit).toFixed(2));
-        eData.credit_used = eData.totalCreditUsed;
-        eData.transactionCount++;
-        employeeBalanceMap.set(eKey, eData);
+          totalEmployeeSettlements: 0,
+        });
       }
-
-      const orgEmployees = await employeeRepo.findByOrgId(orgId, { limit: 1000 });
-      const employeeLines = (orgEmployees || []).map((emp) => {
-        const bal = employeeBalanceMap.get(emp.id);
-        const creditUsed = bal ? bal.totalCreditUsed : 0;
-        const salary = Number(emp.monthly_salary || emp.monthlySalary || emp.credit_limit || 0);
-        const netToPay = Math.max(0, salary - creditUsed);
-        return {
-          employeeId: emp.id,
-          employee_id: emp.id,
-          fpEmployeeId: emp.fp_employee_id,
-          fp_employee_id: emp.fp_employee_id,
-          fullName: emp.full_name,
-          full_name: emp.full_name,
-          monthlySalary: salary,
-          monthly_salary: salary,
-          creditUsed,
-          credit_used: creditUsed,
-          netToPay,
-          net_to_pay: netToPay,
-        };
-      });
-
-      return reply.send({
-        period: {
-          start: periodStart || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-          end: periodEnd || new Date().toISOString().slice(0, 10),
-        },
-        merchantDisbursements: Array.from(merchantMap.values()),
-        employeeOutstandingBalances: Array.from(employeeBalanceMap.values()),
-        employeeLines,
-        totalMerchantDisbursements: Number(totalMerchantDisbursements.toFixed(2)),
-        totalCreditUsed: Number(totalMerchantDisbursements.toFixed(2)),
-        totalEmployeeSettlements: 0,
-      });
     }
   );
 

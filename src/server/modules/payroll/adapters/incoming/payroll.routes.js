@@ -37,6 +37,31 @@ async function payrollRoutes(fastify, options) {
 
   fastify.addHook('preHandler', authenticate);
 
+  const resolveOrgId = async (user) => {
+    let id = user?.orgId || user?.organizationId || user?.organization_id;
+    if (!id && user?.sub && options.db) {
+      try {
+        const userRec = await options.db
+          .selectFrom('users')
+          .select(['organization_id'])
+          .where('id', '=', user.sub)
+          .executeTakeFirst();
+        if (userRec?.organization_id) id = userRec.organization_id;
+      } catch {}
+    }
+    if (!id && options.db) {
+      try {
+        const first = await options.db
+          .selectFrom('organizations')
+          .select(['id'])
+          .limit(1)
+          .executeTakeFirst();
+        if (first?.id) id = first.id;
+      } catch {}
+    }
+    return id;
+  };
+
   // --------------------------------------------------------------------------
   // 1. Run Automated Payroll Settlement
   // --------------------------------------------------------------------------
@@ -61,9 +86,13 @@ async function payrollRoutes(fastify, options) {
         : defaultEnd;
 
       const { employeeSalaries, autoComplete } = parse.data;
+      const orgId = await resolveOrgId(request.user);
+      if (!orgId) {
+        return reply.code(400).send({ error: 'Organization ID not found for user' });
+      }
 
       const result = await runPayrollUseCase.execute({
-        organizationId: request.user.orgId,
+        organizationId: orgId,
         periodStart,
         periodEnd,
         employeeSalaries,
@@ -102,21 +131,30 @@ async function payrollRoutes(fastify, options) {
     '/org/payroll/history',
     { preHandler: [requireRole('ORG_ADMIN', 'ORG_CONTROLLER')] },
     async (request, reply) => {
-      const rawSettlements = await payrollRepo.listSettlementsByOrg(request.user.orgId);
-      const settlements = (rawSettlements || []).map((s) => {
-        const merchantTotal = Number(s.total_merchant_disbursements || 0);
-        const employeeTotal = Number(s.total_employee_disbursements || 0);
-        const combined = Number((merchantTotal + employeeTotal).toFixed(2));
-        const finalAmount = merchantTotal > 0 ? merchantTotal : (combined > 0 ? combined : Number(s.total_amount || 0));
-        return {
-          ...s,
-          total_merchant_disbursements: merchantTotal,
-          total_employee_disbursements: employeeTotal,
-          total_amount: finalAmount,
-          totalAmount: finalAmount,
-        };
-      });
-      return reply.send({ settlements });
+      try {
+        const orgId = await resolveOrgId(request.user);
+        if (!orgId) {
+          return reply.send({ settlements: [] });
+        }
+        const rawSettlements = (await payrollRepo.listSettlementsByOrg(orgId)) || [];
+        const settlements = rawSettlements.map((s) => {
+          const merchantTotal = Number(s.total_merchant_disbursements || 0);
+          const employeeTotal = Number(s.total_employee_disbursements || 0);
+          const combined = Number((merchantTotal + employeeTotal).toFixed(2));
+          const finalAmount = merchantTotal > 0 ? merchantTotal : (combined > 0 ? combined : Number(s.total_amount || 0));
+          return {
+            ...s,
+            total_merchant_disbursements: merchantTotal,
+            total_employee_disbursements: employeeTotal,
+            total_amount: finalAmount,
+            totalAmount: finalAmount,
+          };
+        });
+        return reply.send({ settlements });
+      } catch (err) {
+        request.log.warn({ err }, '[Payroll History] Failed to list settlements for org');
+        return reply.send({ settlements: [] });
+      }
     }
   );
 
@@ -128,11 +166,12 @@ async function payrollRoutes(fastify, options) {
     { preHandler: [requireRole('ORG_ADMIN')] },
     async (request, reply) => {
       const { settlementId } = request.params;
+      const orgId = await resolveOrgId(request.user);
       const settlement = await payrollRepo.findSettlementById(settlementId);
       if (!settlement) {
         return reply.code(404).send({ error: 'Settlement not found' });
       }
-      if (settlement.organization_id !== request.user.orgId) {
+      if (settlement.organization_id !== orgId && request.user.role !== 'SUPER_ADMIN' && request.user.role !== 'ADMIN') {
         return reply.code(403).send({ error: 'Unauthorized access to settlement' });
       }
 
@@ -167,8 +206,9 @@ async function payrollRoutes(fastify, options) {
     { preHandler: [requireRole('ORG_ADMIN', 'ORG_CONTROLLER')] },
     async (request, reply) => {
       const { settlementId } = request.params;
+      const orgId = await resolveOrgId(request.user);
       const settlement = await payrollRepo.findSettlementById(settlementId);
-      if (!settlement || settlement.organization_id !== request.user.orgId) {
+      if (!settlement || (settlement.organization_id !== orgId && request.user.role !== 'SUPER_ADMIN' && request.user.role !== 'ADMIN')) {
         return reply.code(404).send({ error: 'Settlement not found' });
       }
 

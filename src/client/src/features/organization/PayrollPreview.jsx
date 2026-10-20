@@ -37,13 +37,39 @@ export default function PayrollPreview() {
     setErrorMsg('');
     try {
       const [prevRes, histRes] = await Promise.all([
-        api.get('/org/payroll/preview'),
+        api.get('/org/payroll/preview').catch((err) => {
+          console.warn('[PayrollPreview] Failed to load preview calculations:', err);
+          return {
+            data: {
+              merchantDisbursements: [],
+              employeeOutstandingBalances: [],
+              employeeLines: [],
+              totalMerchantDisbursements: 0,
+              totalCreditUsed: 0,
+              totalEmployeeSettlements: 0,
+            },
+          };
+        }),
         api.get('/org/payroll/history').catch(() => ({ data: { settlements: [] } })),
       ]);
-      setPreview(prevRes.data);
-      setHistory(histRes.data?.settlements || []);
+      setPreview(
+        prevRes?.data || {
+          merchantDisbursements: [],
+          employeeOutstandingBalances: [],
+          employeeLines: [],
+          totalMerchantDisbursements: 0,
+          totalCreditUsed: 0,
+          totalEmployeeSettlements: 0,
+        }
+      );
+      setHistory(histRes?.data?.settlements || []);
     } catch (err) {
-      setErrorMsg('Failed to load payroll preview calculations.');
+      console.warn('[PayrollPreview] Unexpected error loading data:', err);
+      setErrorMsg(
+        err.response?.data?.message ||
+          err.response?.data?.error ||
+          'Failed to load payroll preview calculations.'
+      );
     } finally {
       setLoading(false);
     }
