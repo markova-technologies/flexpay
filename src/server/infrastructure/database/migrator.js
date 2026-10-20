@@ -351,6 +351,13 @@ async function ensureSchema() {
         END IF;
 
         IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'payroll_disbursement_lines') THEN
+          ALTER TABLE payroll_disbursement_lines ADD COLUMN IF NOT EXISTS settlement_id UUID;
+          ALTER TABLE payroll_disbursement_lines ADD COLUMN IF NOT EXISTS recipient_type TEXT DEFAULT 'MERCHANT';
+          ALTER TABLE payroll_disbursement_lines ADD COLUMN IF NOT EXISTS merchant_id UUID;
+          ALTER TABLE payroll_disbursement_lines ADD COLUMN IF NOT EXISTS employee_id UUID;
+          ALTER TABLE payroll_disbursement_lines ADD COLUMN IF NOT EXISTS recipient_mpesa_number TEXT;
+          ALTER TABLE payroll_disbursement_lines ADD COLUMN IF NOT EXISTS amount NUMERIC(14,2) DEFAULT 0;
+          ALTER TABLE payroll_disbursement_lines ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'PENDING';
           ALTER TABLE payroll_disbursement_lines ADD COLUMN IF NOT EXISTS mpesa_conversation_id TEXT;
           ALTER TABLE payroll_disbursement_lines ADD COLUMN IF NOT EXISTS mpesa_receipt TEXT;
           ALTER TABLE payroll_disbursement_lines ADD COLUMN IF NOT EXISTS dispatched_at TIMESTAMPTZ;

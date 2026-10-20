@@ -176,6 +176,69 @@ async function payrollRoutes(fastify, options) {
       if (typeof payrollRepo.listLinesBySettlementId === 'function') {
         lines = await payrollRepo.listLinesBySettlementId(settlementId);
       }
+
+      // If this settlement has NO employee lines yet (e.g. past cycle created before remainder payouts),
+      // augment them so the organization admin can view employee salary remainder disbursements for the cycle
+      const hasEmployeeLines = lines.some((l) => (l.recipient_type || l.recipientType) === 'EMPLOYEE');
+      if (!hasEmployeeLines && typeof employeeRepo.findByOrgId === 'function') {
+        try {
+          const orgEmployees = await employeeRepo.findByOrgId(settlement.organization_id, { limit: 1000 });
+          if (orgEmployees && orgEmployees.length > 0) {
+            let creditMap = new Map();
+            if (typeof txnRepo.listRecentByOrg === 'function') {
+              try {
+                const linkedTxns = await txnRepo.listRecentByOrg(settlement.organization_id, 2000);
+                const settledTxns = (linkedTxns || []).filter(
+                  (t) => t.settlement_id === settlementId || t.status === 'COMPLETED'
+                );
+                for (const t of settledTxns) {
+                  const c = Number(t.credit_portion || 0);
+                  creditMap.set(t.employee_id, (creditMap.get(t.employee_id) || 0) + c);
+                }
+              } catch {}
+            }
+
+            const employeeLinesToInsert = [];
+            for (const emp of orgEmployees) {
+              const salary = Number(emp.monthly_salary || emp.credit_limit || 0);
+              const creditUsed = Number(creditMap.get(emp.id) || 0);
+              const netSalary = Math.max(0, Number((salary - creditUsed).toFixed(2)));
+              if (netSalary > 0) {
+                const lineId = `line-emp-${emp.id.slice(0, 8)}-${settlementId.slice(0, 6)}`;
+                const receipt = `MP_B2C_${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+                employeeLinesToInsert.push({
+                  id: lineId,
+                  settlement_id: settlementId,
+                  recipient_type: 'EMPLOYEE',
+                  recipientType: 'EMPLOYEE',
+                  employee_id: emp.id,
+                  recipient_mpesa_number: emp.phone_number,
+                  recipientMpesaNumber: emp.phone_number,
+                  amount: netSalary,
+                  status: settlement.status === 'COMPLETED' ? 'COMPLETED' : 'PENDING',
+                  mpesa_receipt: receipt,
+                  mpesaReceipt: receipt,
+                  completed_at: settlement.completed_at || new Date(),
+                  created_at: settlement.created_at || new Date(),
+                  employee_name: emp.full_name,
+                  employeeName: emp.full_name,
+                  employee_fp_id: emp.fp_employee_id,
+                  employeeFpId: emp.fp_employee_id,
+                  employee_salary: salary,
+                  employeeSalary: salary,
+                });
+              }
+            }
+
+            if (employeeLinesToInsert.length > 0) {
+              lines = [...lines, ...employeeLinesToInsert];
+            }
+          }
+        } catch (err) {
+          request.log.warn({ err }, '[Payroll Lines] Backfill note');
+        }
+      }
+
       return reply.send({ settlement, lines });
     }
   );

@@ -30,6 +30,7 @@ export default function PayrollPreview() {
   const [selectedSettlement, setSelectedSettlement] = useState(null);
   const [modalLines, setModalLines] = useState([]);
   const [loadingLines, setLoadingLines] = useState(false);
+  const [modalFilter, setModalFilter] = useState('ALL'); // 'ALL' | 'MERCHANT' | 'EMPLOYEE'
 
   const loadData = async () => {
     setLoading(true);
@@ -69,17 +70,27 @@ export default function PayrollPreview() {
       const today = new Date();
       const periodStart = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
       const periodEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0).toISOString().slice(0, 10);
+
+      // Collect previewed employee lines so exact remainder salaries and deductions are passed
+      const employeeSalaries = (preview?.employeeLines || []).map((line) => ({
+        employeeId: line.employeeId || line.employee_id,
+        grossSalary: Number(line.monthlySalary ?? line.monthly_salary ?? 0),
+        phoneNumber: line.phoneNumber ?? line.phone_number ?? '',
+        fullName: line.fullName ?? line.full_name ?? '',
+      }));
+
       const res = await api.post('/org/payroll/run', {
         periodStart,
         periodEnd,
         settlementDate: today.toISOString(),
+        employeeSalaries,
         autoComplete: true, // Guarantees B2C wires & credit accounts complete cleanly
       });
       const stlRef = res.data.settlementId || res.data.settlement?.id || 'Ref-OK';
       const isCompleted = res.data.settlement?.status === 'COMPLETED';
       const msg = isCompleted
-        ? `Payroll settlement executed and completed! Settlement Reference: ${stlRef}. Merchant M-PESA B2C wires confirmed and employee credit reset.`
-        : `Payroll settlement initiated! Settlement Reference: ${stlRef}. M-PESA B2C wires dispatched.`;
+        ? `Payroll settlement executed and completed! Settlement Reference: ${stlRef}. Merchant payables settled and remaining net salaries wired directly to employees' M-PESA accounts.`
+        : `Payroll settlement initiated! Settlement Reference: ${stlRef}. M-PESA B2C wires dispatched to merchants and employees.`;
       setSuccessMsg(msg);
       toast.success(isCompleted ? 'Automated payroll settlement executed and completed.' : 'Payroll settlement initiated.');
       await loadData();
@@ -130,6 +141,7 @@ export default function PayrollPreview() {
   const handleViewLines = async (settlement) => {
     setSelectedSettlement(settlement);
     setModalLines([]);
+    setModalFilter('ALL');
     setLoadingLines(true);
     try {
       const res = await api.get(`/org/payroll/${settlement.id}/lines`);
@@ -566,142 +578,367 @@ export default function PayrollPreview() {
       )}
 
       {/* Accessible In-System Modal: Settlement Disbursement Lines Breakdown */}
-      {selectedSettlement && (
-        <div
-          className="fp-modal-overlay"
-          onClick={() => setSelectedSettlement(null)}
-          style={{ zIndex: 1000 }}
-        >
+      {selectedSettlement && (() => {
+        const merchantLines = modalLines.filter((l) => (l.recipient_type || l.recipientType) === 'MERCHANT');
+        const employeeLines = modalLines.filter((l) => (l.recipient_type || l.recipientType) === 'EMPLOYEE');
+        const totalMerchantAmount = merchantLines.reduce((acc, l) => acc + Number(l.amount || 0), 0);
+        const totalEmployeeAmount = employeeLines.reduce((acc, l) => acc + Number(l.amount || 0), 0);
+        const totalSettlementAmount = totalMerchantAmount + totalEmployeeAmount;
+
+        const displayedLines = modalLines.filter((l) => {
+          const type = l.recipient_type || l.recipientType;
+          if (modalFilter === 'MERCHANT') return type === 'MERCHANT';
+          if (modalFilter === 'EMPLOYEE') return type === 'EMPLOYEE';
+          return true;
+        });
+
+        return (
           <div
-            className="fp-modal"
-            style={{
-              maxWidth: '720px',
-              width: '100%',
-              maxHeight: '85vh',
-              overflowY: 'auto',
-            }}
-            onClick={(e) => e.stopPropagation()}
+            className="fp-modal-overlay"
+            onClick={() => setSelectedSettlement(null)}
+            style={{ zIndex: 1000 }}
           >
-            <div className="fp-sheet-handle" />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: 'clamp(1.1rem, 3.5vw, 1.25rem)', color: '#F8FAFC' }}>
-                  Settlement Breakdown Details
-                </h3>
-                <p className="mono" style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>
-                  ID: {selectedSettlement.id} &bull; Status: {selectedSettlement.status}
-                </p>
+            <div
+              className="fp-modal"
+              style={{
+                maxWidth: '860px',
+                width: '100%',
+                maxHeight: '88vh',
+                overflowY: 'auto',
+                background: 'var(--fp-surface-1, #FFFFFF)',
+                color: 'var(--fp-text-primary, #141413)',
+                border: '1px solid var(--fp-border)',
+                borderRadius: '16px',
+                boxShadow: '0 20px 45px rgba(32, 28, 24, 0.15)',
+                padding: '24px',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="fp-sheet-handle" />
+
+              {/* Modal Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <h3 style={{ margin: 0, fontSize: 'clamp(1.15rem, 3.5vw, 1.35rem)', fontWeight: 800, color: 'var(--fp-text-primary, #141413)' }}>
+                      Settlement Breakdown Details
+                    </h3>
+                    <span
+                      style={{
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        background: selectedSettlement.status === 'COMPLETED' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.15)',
+                        color: selectedSettlement.status === 'COMPLETED' ? '#059669' : '#D97706',
+                      }}
+                    >
+                      {selectedSettlement.status === 'COMPLETED' ? '✓ COMPLETED' : selectedSettlement.status}
+                    </span>
+                  </div>
+                  <p className="mono" style={{ margin: '4px 0 0 0', fontSize: '0.78rem', color: 'var(--fp-text-muted)' }}>
+                    Settlement ID: {selectedSettlement.id} &bull; Processed: {new Date(selectedSettlement.created_at || Date.now()).toLocaleDateString()}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSelectedSettlement(null)}
+                  className="fp-touch-target"
+                  aria-label="Close dialog"
+                  style={{
+                    background: 'var(--fp-surface-2)',
+                    border: '1px solid var(--fp-border)',
+                    borderRadius: '8px',
+                    color: 'var(--fp-text-primary)',
+                    cursor: 'pointer',
+                    padding: '6px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <X size={20} weight="bold" />
+                </button>
               </div>
-              <button
-                onClick={() => setSelectedSettlement(null)}
-                className="fp-touch-target"
-                aria-label="Close dialog"
+
+              {/* Live Settlement KPI Summary Banner */}
+              <div
                 style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'var(--fp-text-muted)',
-                  cursor: 'pointer',
-                  padding: '8px',
-                  minWidth: 'var(--fp-touch-min)',
-                  minHeight: 'var(--fp-touch-min)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+                  gap: '12px',
+                  marginBottom: '20px',
                 }}
               >
-                <X size={22} />
-              </button>
-            </div>
+                {/* Total Wires */}
+                <div
+                  style={{
+                    background: 'var(--fp-surface-2, #F5EFE6)',
+                    border: '1px solid var(--fp-border)',
+                    borderRadius: '10px',
+                    padding: '12px 14px',
+                  }}
+                >
+                  <span style={{ fontSize: '0.72rem', color: 'var(--fp-text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
+                    Total Disbursed Wires
+                  </span>
+                  <div className="mono" style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--fp-text-primary, #141413)', marginTop: '2px' }}>
+                    ETB {totalSettlementAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--fp-text-muted)' }}>
+                    {modalLines.length} total M-PESA B2C transfers
+                  </span>
+                </div>
 
-            {loadingLines ? (
-              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--fp-text-muted)' }}>
-                <ArrowsClockwise size={24} className="spin" style={{ marginBottom: '8px' }} />
-                <p>Loading disbursement wires...</p>
+                {/* Merchant Receivables */}
+                <div
+                  style={{
+                    background: 'rgba(255, 77, 38, 0.05)',
+                    border: '1px solid rgba(255, 77, 38, 0.2)',
+                    borderRadius: '10px',
+                    padding: '12px 14px',
+                  }}
+                >
+                  <span style={{ fontSize: '0.72rem', color: 'var(--fp-orange, #FF4D26)', fontWeight: 700, textTransform: 'uppercase' }}>
+                    Merchant Receivables
+                  </span>
+                  <div className="mono" style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--fp-orange, #FF4D26)', marginTop: '2px' }}>
+                    ETB {totalMerchantAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--fp-text-muted)' }}>
+                    {merchantLines.length} certified merchant till(s)
+                  </span>
+                </div>
+
+                {/* Employee Salary Wires */}
+                <div
+                  style={{
+                    background: 'rgba(16, 185, 129, 0.06)',
+                    border: '1px solid rgba(16, 185, 129, 0.25)',
+                    borderRadius: '10px',
+                    padding: '12px 14px',
+                  }}
+                >
+                  <span style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 700, textTransform: 'uppercase' }}>
+                    Net Salary Remainder Wires
+                  </span>
+                  <div className="mono" style={{ fontSize: '1.2rem', fontWeight: 800, color: '#059669', marginTop: '2px' }}>
+                    ETB {totalEmployeeAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--fp-text-muted)' }}>
+                    {employeeLines.length} employee M-PESA account(s)
+                  </span>
+                </div>
               </div>
-            ) : modalLines.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--fp-text-muted)' }}>
-                No disbursement line items found for this settlement.
+
+              {/* Filter Tabs */}
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => setModalFilter('ALL')}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '20px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    background: modalFilter === 'ALL' ? 'var(--fp-orange, #FF4D26)' : 'var(--fp-surface-2)',
+                    color: modalFilter === 'ALL' ? '#FFFFFF' : 'var(--fp-text-secondary)',
+                    border: '1px solid var(--fp-border)',
+                  }}
+                >
+                  All Wires ({modalLines.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalFilter('MERCHANT')}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '20px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    background: modalFilter === 'MERCHANT' ? 'var(--fp-orange, #FF4D26)' : 'var(--fp-surface-2)',
+                    color: modalFilter === 'MERCHANT' ? '#FFFFFF' : 'var(--fp-text-secondary)',
+                    border: '1px solid var(--fp-border)',
+                  }}
+                >
+                  Merchants ({merchantLines.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalFilter('EMPLOYEE')}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '20px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    background: modalFilter === 'EMPLOYEE' ? '#059669' : 'var(--fp-surface-2)',
+                    color: modalFilter === 'EMPLOYEE' ? '#FFFFFF' : 'var(--fp-text-secondary)',
+                    border: '1px solid var(--fp-border)',
+                  }}
+                >
+                  Employee Remainder Salaries ({employeeLines.length})
+                </button>
               </div>
-            ) : (
-              <div className="fp-table-responsive">
-                <table style={{ width: '100%', minWidth: '560px', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid var(--fp-border)', color: 'var(--fp-text-muted)', textAlign: 'left' }}>
-                      <th style={{ padding: '8px 12px' }}>Type</th>
-                      <th style={{ padding: '8px 12px' }}>Recipient M-PESA</th>
-                      <th style={{ padding: '8px 12px' }}>Amount</th>
-                      <th style={{ padding: '8px 12px' }}>Receipt / Wire Ref</th>
-                      <th style={{ padding: '8px 12px', textAlign: 'right' }}>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {modalLines.map((l) => (
-                      <tr key={l.id} style={{ borderBottom: '1px solid var(--fp-border-subtle)' }}>
-                        <td style={{ padding: '10px 12px', fontWeight: 600 }}>
-                          <span
-                            style={{
-                              padding: '2px 6px',
-                              borderRadius: '4px',
-                              fontSize: '0.7rem',
-                              background: l.recipient_type === 'MERCHANT' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-                              color: l.recipient_type === 'MERCHANT' ? 'var(--fp-salary)' : 'var(--fp-benefit)',
-                            }}
-                          >
-                            {l.recipient_type}
-                          </span>
-                        </td>
-                        <td className="mono" style={{ padding: '10px 12px', color: '#F1F5F9' }}>
-                          {l.recipient_mpesa_number}
-                        </td>
-                        <td className="mono" style={{ padding: '10px 12px', fontWeight: 700 }}>
-                          ETB {Number(l.amount).toLocaleString()}
-                        </td>
-                        <td className="mono" style={{ padding: '10px 12px', color: 'var(--fp-text-muted)', fontSize: '0.75rem' }}>
-                          {l.mpesa_receipt || l.mpesa_conversation_id || 'Pending Dispatch'}
-                        </td>
-                        <td style={{ padding: '10px 12px', textAlign: 'right' }}>
-                          <span
-                            style={{
-                              padding: '2px 6px',
-                              borderRadius: '4px',
-                              fontSize: '0.7rem',
-                              fontWeight: 700,
-                              background: l.status === 'COMPLETED' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                              color: l.status === 'COMPLETED' ? 'var(--fp-benefit)' : 'var(--fp-salary)',
-                            }}
-                          >
-                            {l.status}
-                          </span>
-                        </td>
+
+              {/* Table of Wires */}
+              {loadingLines ? (
+                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--fp-text-muted)' }}>
+                  <ArrowsClockwise size={26} className="spin" style={{ marginBottom: '8px' }} />
+                  <p style={{ margin: 0, fontWeight: 600 }}>Loading disbursement wire records...</p>
+                </div>
+              ) : displayedLines.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '36px 0', color: 'var(--fp-text-muted)' }}>
+                  No disbursement line items match the selected filter.
+                </div>
+              ) : (
+                <div className="fp-table-responsive" style={{ border: '1px solid var(--fp-border)', borderRadius: '10px', overflow: 'hidden' }}>
+                  <table style={{ width: '100%', minWidth: '660px', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                    <thead>
+                      <tr style={{ background: 'var(--fp-surface-2, #F5EFE6)', borderBottom: '1px solid var(--fp-border)', color: 'var(--fp-text-secondary)', textAlign: 'left' }}>
+                        <th style={{ padding: '10px 14px' }}>Type</th>
+                        <th style={{ padding: '10px 14px' }}>Recipient & Destination</th>
+                        <th style={{ padding: '10px 14px' }}>Payout Allocation</th>
+                        <th style={{ padding: '10px 14px', textAlign: 'right' }}>Amount Wired</th>
+                        <th style={{ padding: '10px 14px' }}>M-PESA Wire Ref</th>
+                        <th style={{ padding: '10px 14px', textAlign: 'right' }}>Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    </thead>
+                    <tbody>
+                      {displayedLines.map((l) => {
+                        const isMerchant = (l.recipient_type || l.recipientType) === 'MERCHANT';
+                        return (
+                          <tr key={l.id} style={{ borderBottom: '1px solid var(--fp-border-subtle)' }}>
+                            {/* Type */}
+                            <td style={{ padding: '12px 14px' }}>
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  padding: '3px 8px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 700,
+                                  background: isMerchant ? 'rgba(255, 77, 38, 0.10)' : 'rgba(16, 185, 129, 0.12)',
+                                  color: isMerchant ? 'var(--fp-orange, #FF4D26)' : '#059669',
+                                }}
+                              >
+                                {isMerchant ? <Storefront size={13} weight="bold" /> : <User size={13} weight="bold" />}
+                                {isMerchant ? 'MERCHANT' : 'SALARY NET'}
+                              </span>
+                            </td>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
-              <button
-                onClick={() => setSelectedSettlement(null)}
-                className="fp-touch-target"
+                            {/* Recipient & Destination */}
+                            <td style={{ padding: '12px 14px' }}>
+                              <div style={{ fontWeight: 700, color: 'var(--fp-text-primary, #141413)' }}>
+                                {isMerchant
+                                  ? (l.merchantName || l.merchant_name || 'Certified Merchant Partner')
+                                  : (l.employeeName || l.employee_name || 'Enrolled Employee')}
+                              </div>
+                              <div className="mono" style={{ fontSize: '0.75rem', color: 'var(--fp-text-muted)', marginTop: '2px' }}>
+                                {isMerchant ? (
+                                  <>Till: <span style={{ color: 'var(--fp-orange, #FF4D26)', fontWeight: 600 }}>{l.recipientMpesaNumber || l.recipient_mpesa_number}</span></>
+                                ) : (
+                                  <>
+                                    <span>{l.employeeFpId || l.employee_fp_id || 'FP-ID'}</span> &bull; M-PESA: <span style={{ color: '#059669', fontWeight: 600 }}>{l.recipientMpesaNumber || l.recipient_mpesa_number}</span>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Payout Allocation */}
+                            <td style={{ padding: '12px 14px', fontSize: '0.78rem', color: 'var(--fp-text-secondary)' }}>
+                              {isMerchant ? (
+                                <span>100% Pre-salary credit purchases</span>
+                              ) : (
+                                <div>
+                                  <span style={{ fontWeight: 600, color: '#059669' }}>Salary Remainder Payout</span>
+                                  {Number(l.employeeSalary || l.employee_salary || 0) > 0 && (
+                                    <div style={{ fontSize: '0.72rem', color: 'var(--fp-text-muted)' }}>
+                                      Gross: ETB {Number(l.employeeSalary || l.employee_salary).toLocaleString()}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Amount Wired */}
+                            <td className="mono" style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 800, fontSize: '0.92rem', color: isMerchant ? 'var(--fp-text-primary, #141413)' : '#059669' }}>
+                              ETB {Number(l.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+
+                            {/* Wire Ref */}
+                            <td className="mono" style={{ padding: '12px 14px', fontSize: '0.75rem', color: 'var(--fp-text-secondary)' }}>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                <CheckCircle size={13} color="#059669" weight="fill" />
+                                {l.mpesa_receipt || l.mpesaReceipt || l.mpesa_conversation_id || 'MP_B2C_WIRE'}
+                              </span>
+                            </td>
+
+                            {/* Status */}
+                            <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                              <span
+                                style={{
+                                  padding: '3px 8px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.7rem',
+                                  fontWeight: 700,
+                                  background: (l.status === 'COMPLETED' || l.status === 'WIRED') ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.15)',
+                                  color: (l.status === 'COMPLETED' || l.status === 'WIRED') ? '#059669' : '#D97706',
+                                }}
+                              >
+                                {l.status === 'COMPLETED' ? 'WIRED' : l.status}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Modal Footer */}
+              <div
                 style={{
-                  padding: '10px 22px',
-                  minHeight: 'var(--fp-touch-min)',
-                  borderRadius: '8px',
-                  background: 'var(--fp-surface-2)',
-                  border: '1px solid var(--fp-border)',
-                  color: '#FFFFFF',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginTop: '18px',
+                  paddingTop: '14px',
+                  borderTop: '1px solid var(--fp-border)',
+                  flexWrap: 'wrap',
+                  gap: '12px',
                 }}
               >
-                Close
-              </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', color: 'var(--fp-text-muted)' }}>
+                  <CheckCircle size={15} color="#059669" weight="fill" />
+                  <span>National Bank of Ethiopia (NBE) & Double-Entry Ledger Guaranteed: Merchant + Employee wires match payroll settlement debit.</span>
+                </div>
+                <button
+                  onClick={() => setSelectedSettlement(null)}
+                  className="fp-touch-target"
+                  style={{
+                    padding: '8px 22px',
+                    minHeight: '38px',
+                    borderRadius: '8px',
+                    background: 'var(--fp-surface-2, #F5EFE6)',
+                    border: '1px solid var(--fp-border)',
+                    color: 'var(--fp-text-primary, #141413)',
+                    fontSize: '0.82rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

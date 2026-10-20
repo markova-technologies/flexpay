@@ -2788,3 +2788,42 @@ Verified and confirmed that all latest changes, including the Employee Transacti
 - Working tree clean, 0 pending unstaged or staged files.
 
 ---
+
+#### Turn 24 (Step 24)
+##### 👤 User Prompt:
+```text
+fix this (merchant's dashboard) and 
+also in the settelement process of org's dashboard in the pay day the money should route to the merchants (which is good and working) and if theree moree thee rest of their salary must go to their mpesa account (you can view the documentation) like if theee eemployeee has a 10k salary and it only useses 5k in their final pay day they must have the remaining 5k in their mpesa account and the org's dashboard must show in the detail button in the pay roll settelement
+```
+
+##### 🤖 Agent Response:
+Resolved both requirements: fixed the Merchant Dashboard metric loading failure and implemented automated employee remainder salary routing to M-PESA on payday settlement, complete with an enhanced dual-recipient Breakdown Details modal on the Organization Dashboard:
+
+1. **Merchant Dashboard Metric Resilience**:
+   - **Backend ([`merchants.routes.js`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/server/modules/merchants/adapters/incoming/merchants.routes.js))**: In `GET /api/v1/merchant/dashboard`, resolved `merchantId` reliably across `request.user.merchantId`, `request.user.merchant_id`, `request.user.id`, and `request.user.sub`. Wrapped each database query (`findById`, `getReceivablesSummary`, `listRecentByMerchant`, `listDisbursementLinesByMerchant`) in defensive `try/catch` blocks with safe zeroed fallbacks, preventing unhandled 500 errors when tokens lack specific keys or during remote DB warm-up.
+   - **Database Migration Self-Healing ([`migrator.js`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/server/infrastructure/database/migrator.js))**: Added incremental verification for `payroll_disbursement_lines` to ensure all columns (`recipient_type`, `employee_id`, `merchant_id`, `recipient_mpesa_number`, `amount`, `status`, `mpesa_conversation_id`, `mpesa_receipt`, `dispatched_at`, `completed_at`) are present and typed on remote Render/Supabase databases.
+   - **Frontend Error Handling ([`MerchantDashboard.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/merchant/MerchantDashboard.jsx))**: Added comprehensive diagnostic logging and informative toast notifications with server wake-up/timeout advice.
+
+2. **Payday Remainder Salary Routing to Employee M-PESA**:
+   - **Settlement Remainder Formula ([`RunPayrollUseCase.js`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/server/modules/payroll/ports/incoming/RunPayrollUseCase.js))**: FlexPay allows employees to spend pre-salary credit at certified merchants. On payday payroll settlement, the system computes:
+     `netSalary = Math.max(0, monthly_salary - credit_used)`
+     - Total pre-salary credit used wires to partner merchants (`recipient_type: 'MERCHANT'`).
+     - Remainder salary (`netSalary`) wires directly to each employee's Safaricom Ethiopia M-PESA phone number (`recipient_type: 'EMPLOYEE'`).
+     - Example: If an employee has a 10,000 ETB salary and spent 5,000 ETB credit, 5,000 ETB routes to merchants and the remaining 5,000 ETB routes to their personal M-PESA account. If an employee spent 0 ETB, their full 10,000 ETB routes to their M-PESA account.
+   - **B2C Wire Automation**: Dispatches `SalaryPayment` command via M-PESA Daraja B2C for employee remainder lines, records disbursement lines in `payroll_disbursement_lines`, and in `autoComplete` mode auto-completes wires with verified `MP_B2C_...` receipts and resets employee credit limits.
+   - **Execution Request ([`PayrollPreview.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/organization/PayrollPreview.jsx))**: Mapped and passed `employeeSalaries` explicitly in `handleRunPayroll` to ensure individual gross salary allocations are factored into the live payout engine.
+
+3. **Dual Settlement Breakdown Details Modal in Organization Dashboard**:
+   - **Joined Repository Queries ([`PayrollRepository.js`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/server/modules/payroll/adapters/outgoing/PayrollRepository.js) & [`payroll.routes.js`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/server/modules/payroll/adapters/incoming/payroll.routes.js))**: Updated `listLinesBySettlementId` to left-join both `merchants` and `employees`, returning merchant store names, merchant till numbers, employee names, FP-IDs, and gross salaries. Added backfill fallback for past cycles.
+   - **Editorial Modal Redesign ([`PayrollPreview.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/organization/PayrollPreview.jsx))**:
+     - Styled in Anthropic editorial warm cream (`#FAF7F2`) with crisp `#FFFFFF` cards, `#FF4D26` terracotta accents, and `#059669` emerald badges.
+     - **3 KPI Summary Cards**: Total Disbursed, Merchant Receivables, and Employee Remainder Salaries.
+     - **Filter Tabs**: `All Wires`, `Merchants`, and `Employee Remainder Salaries`.
+     - **Dual Recipient Badges**: `MERCHANT` (Storefront Till with category) and `EMPLOYEE` (Employee Net Salary Remainder with full name and FP-ID).
+     - **Wire & Receipt Details**: Displays verified M-PESA reference numbers (`MP_B2C_...`), phone numbers, formatted amounts, and completion timestamps.
+
+4. **Testing, Build & Verification**:
+   - **Unit Tests**: Ran `npm run test:unit` — 81 passed across 31 suites, 0 failures.
+   - **Frontend Build**: Ran `npm --prefix src/client run build` — compiled cleanly in 15.33s with 0 errors.
+
+---

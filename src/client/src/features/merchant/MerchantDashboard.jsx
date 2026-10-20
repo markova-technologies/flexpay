@@ -20,7 +20,16 @@ export function MerchantDashboard({ onNavigateToPos, onNavigateToSettlements }) 
     api
       .get('/merchant/dashboard')
       .then((res) => setData(res.data))
-      .catch(() => toast.error('Failed to load merchant dashboard metrics'))
+      .catch((err) => {
+        console.warn('[MerchantDashboard] Failed to fetch dashboard data:', err);
+        const msg =
+          err.response?.data?.error ||
+          err.response?.data?.message ||
+          (err.code === 'ECONNABORTED'
+            ? 'Request timed out. Backend may be waking up.'
+            : 'Failed to load merchant dashboard metrics');
+        toast.error(msg);
+      })
       .finally(() => setLoading(false));
   }, []);
 

@@ -143,16 +143,75 @@ class PayrollRepository {
   }
 
   async listLinesBySettlementId(settlementId) {
-    return this.db
-      .selectFrom('payroll_disbursement_lines')
-      .selectAll()
-      .where('settlement_id', '=', settlementId)
-      .orderBy('created_at', 'asc')
-      .execute();
+    if (!this.db || !settlementId) return [];
+    try {
+      const lines = await this.db
+        .selectFrom('payroll_disbursement_lines as pdl')
+        .leftJoin('merchants as m', 'm.id', 'pdl.merchant_id')
+        .leftJoin('employees as e', 'e.id', 'pdl.employee_id')
+        .select([
+          'pdl.id as id',
+          'pdl.settlement_id as settlement_id',
+          'pdl.recipient_type as recipient_type',
+          'pdl.merchant_id as merchant_id',
+          'pdl.employee_id as employee_id',
+          'pdl.recipient_mpesa_number as recipient_mpesa_number',
+          'pdl.amount as amount',
+          'pdl.status as status',
+          'pdl.mpesa_receipt as mpesa_receipt',
+          'pdl.mpesa_conversation_id as mpesa_conversation_id',
+          'pdl.dispatched_at as dispatched_at',
+          'pdl.completed_at as completed_at',
+          'pdl.created_at as created_at',
+          'm.business_name as merchant_name',
+          'm.category as merchant_category',
+          'm.mpesa_number as merchant_till',
+          'e.full_name as employee_name',
+          'e.fp_employee_id as employee_fp_id',
+          'e.monthly_salary as employee_salary',
+        ])
+        .where('pdl.settlement_id', '=', settlementId)
+        .orderBy('pdl.created_at', 'asc')
+        .execute();
+
+      return lines.map((l) => ({
+        ...l,
+        amount: Number(l.amount || 0),
+        recipientType: l.recipient_type,
+        recipientMpesaNumber: l.recipient_mpesa_number,
+        mpesaReceipt: l.mpesa_receipt,
+        completedAt: l.completed_at || l.created_at,
+        merchantName: l.merchant_name,
+        employeeName: l.employee_name,
+        employeeFpId: l.employee_fp_id,
+        employeeSalary: Number(l.employee_salary || 0),
+      }));
+    } catch (err) {
+      console.warn('[PayrollRepository] listLinesBySettlementId fallback:', err.message);
+      try {
+        const raw = await this.db
+          .selectFrom('payroll_disbursement_lines')
+          .selectAll()
+          .where('settlement_id', '=', settlementId)
+          .orderBy('created_at', 'asc')
+          .execute();
+        return raw.map((l) => ({
+          ...l,
+          amount: Number(l.amount || 0),
+          recipientType: l.recipient_type,
+          recipientMpesaNumber: l.recipient_mpesa_number,
+          mpesaReceipt: l.mpesa_receipt,
+          completedAt: l.completed_at || l.created_at,
+        }));
+      } catch (innerErr) {
+        console.warn('[PayrollRepository] listLinesBySettlementId complete fallback:', innerErr.message);
+        return [];
+      }
+    }
   }
 
   async listDisbursementLinesByMerchant(merchantId, limit = 50) {
-    if (!this.db) return [];
+    if (!this.db || !merchantId) return [];
     try {
       const rows = await this.db
         .selectFrom('payroll_disbursement_lines as pdl')
@@ -204,29 +263,34 @@ class PayrollRepository {
       }));
     } catch (err) {
       console.warn('[PayrollRepository] listDisbursementLinesByMerchant fallback:', err.message);
-      const lines = await this.db
-        .selectFrom('payroll_disbursement_lines')
-        .selectAll()
-        .where('merchant_id', '=', merchantId)
-        .where('recipient_type', '=', 'MERCHANT')
-        .orderBy('created_at', 'desc')
-        .limit(limit)
-        .execute();
+      try {
+        const lines = await this.db
+          .selectFrom('payroll_disbursement_lines')
+          .selectAll()
+          .where('merchant_id', '=', merchantId)
+          .where('recipient_type', '=', 'MERCHANT')
+          .orderBy('created_at', 'desc')
+          .limit(limit)
+          .execute();
 
-      return lines.map((l) => ({
-        id: l.id,
-        settlementId: l.settlement_id,
-        recipientType: l.recipient_type,
-        merchantId: l.merchant_id,
-        recipientMpesaNumber: l.recipient_mpesa_number,
-        amount: Number(l.amount || 0),
-        status: l.status,
-        mpesaReceipt: l.mpesa_receipt || `MP_B2C_${(l.id || '').slice(0, 6).toUpperCase()}`,
-        mpesaConversationId: l.mpesa_conversation_id,
-        completedAt: l.completed_at || l.created_at,
-        createdAt: l.created_at,
-        organizationName: 'Corporate Employer',
-      }));
+        return lines.map((l) => ({
+          id: l.id,
+          settlementId: l.settlement_id,
+          recipientType: l.recipient_type || 'MERCHANT',
+          merchantId: l.merchant_id,
+          recipientMpesaNumber: l.recipient_mpesa_number,
+          amount: Number(l.amount || 0),
+          status: l.status,
+          mpesaReceipt: l.mpesa_receipt || `MP_B2C_${(l.id || '').slice(0, 6).toUpperCase()}`,
+          mpesaConversationId: l.mpesa_conversation_id,
+          completedAt: l.completed_at || l.created_at,
+          createdAt: l.created_at,
+          organizationName: 'Corporate Employer',
+        }));
+      } catch (innerErr) {
+        console.warn('[PayrollRepository] listDisbursementLinesByMerchant complete fallback:', innerErr.message);
+        return [];
+      }
     }
   }
 

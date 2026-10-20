@@ -221,55 +221,115 @@ async function merchantRoutes(fastify, options) {
     '/merchant/dashboard',
     { preHandler: [requireRole('MERCHANT_OWNER', 'MERCHANT_STAFF')] },
     async (request, reply) => {
-      const merchant = await merchantRepo.findById(request.user.merchantId);
-      const summary = await merchantRepo.getReceivablesSummary(request.user.merchantId);
-      const recentTransactions = await txnRepo.listRecentByMerchant(request.user.merchantId, 10);
+      try {
+        const merchantId =
+          request.user.merchantId ||
+          request.user.merchant_id ||
+          request.user.id ||
+          (request.user.sub && typeof options.authRepo?.findUserById === 'function'
+            ? (await options.authRepo.findUserById(request.user.sub))?.merchant_id
+            : null);
 
-      let recentSettlements = [];
-      if (typeof payrollRepo.listDisbursementLinesByMerchant === 'function') {
-        try {
-          recentSettlements = await payrollRepo.listDisbursementLinesByMerchant(request.user.merchantId, 10);
-        } catch (err) {
-          request.log.warn({ err }, '[Merchant Dashboard] Failed to load recent settlements');
+        let merchant = null;
+        if (merchantId) {
+          try {
+            merchant = await merchantRepo.findById(merchantId);
+          } catch (err) {
+            request.log.warn({ err }, '[Merchant Dashboard] Failed to find merchant by ID');
+          }
         }
-      }
 
-      const totalOutstanding = Number(summary?.totalOutstandingReceivables || 0);
-      const totalSettled = Number(summary?.totalSettledAmount || 0);
-      const uniqueOrgs = Number(summary?.uniqueOrganizations || summary?.partnerOrgCount || 0);
-      const totalTxns = Number(summary?.totalTransactions || 0);
-      const todaySales = Number(summary?.todaySales || 0);
+        let summary = {};
+        if (merchantId) {
+          try {
+            summary = (await merchantRepo.getReceivablesSummary(merchantId)) || {};
+          } catch (err) {
+            request.log.warn({ err }, '[Merchant Dashboard] Failed to load receivables summary');
+          }
+        }
 
-      return reply.send({
-        merchant: {
-          id: merchant?.id || request.user.merchantId,
-          businessName: merchant?.business_name || merchant?.businessName || 'Partner Merchant',
-          mpesaNumber: merchant?.mpesa_number || merchant?.mpesaNumber || '',
-          category: merchant?.category || 'RETAIL',
-        },
-        stats: {
-          totalOutstandingReceivables: totalOutstanding,
-          totalSettledAmount: totalSettled,
-          uniqueOrganizations: uniqueOrgs,
-          uniqueEmployees: Number(summary?.uniqueEmployees || 0),
-          totalTransactions: totalTxns,
-          todaySales,
-          settledCount: recentSettlements.length,
-        },
-        receivablesSummary: {
-          totalReceivables: totalOutstanding,
-          totalDue: totalOutstanding,
-          totalSettled,
+        let recentTransactions = [];
+        if (merchantId) {
+          try {
+            recentTransactions = (await txnRepo.listRecentByMerchant(merchantId, 10)) || [];
+          } catch (err) {
+            request.log.warn({ err }, '[Merchant Dashboard] Failed to load recent transactions');
+          }
+        }
+
+        let recentSettlements = [];
+        if (merchantId && typeof payrollRepo.listDisbursementLinesByMerchant === 'function') {
+          try {
+            recentSettlements = (await payrollRepo.listDisbursementLinesByMerchant(merchantId, 10)) || [];
+          } catch (err) {
+            request.log.warn({ err }, '[Merchant Dashboard] Failed to load recent settlements');
+          }
+        }
+
+        const totalOutstanding = Number(summary?.totalOutstandingReceivables || 0);
+        const totalSettled = Number(summary?.totalSettledAmount || 0);
+        const uniqueOrgs = Number(summary?.uniqueOrganizations || summary?.partnerOrgCount || 0);
+        const totalTxns = Number(summary?.totalTransactions || 0);
+        const todaySales = Number(summary?.todaySales || 0);
+
+        return reply.send({
+          merchant: {
+            id: merchant?.id || merchantId || '',
+            businessName: merchant?.business_name || merchant?.businessName || 'Partner Merchant',
+            mpesaNumber: merchant?.mpesa_number || merchant?.mpesaNumber || '',
+            category: merchant?.category || 'RETAIL',
+          },
+          stats: {
+            totalOutstandingReceivables: totalOutstanding,
+            totalSettledAmount: totalSettled,
+            uniqueOrganizations: uniqueOrgs,
+            uniqueEmployees: Number(summary?.uniqueEmployees || 0),
+            totalTransactions: totalTxns,
+            todaySales,
+            settledCount: recentSettlements.length,
+          },
+          receivablesSummary: {
+            totalReceivables: totalOutstanding,
+            totalDue: totalOutstanding,
+            totalSettled,
+            partnerOrgCount: uniqueOrgs,
+            todaySales,
+            transactionCount: totalTxns,
+          },
           partnerOrgCount: uniqueOrgs,
-          todaySales,
-          transactionCount: totalTxns,
-        },
-        partnerOrgCount: uniqueOrgs,
-        todayTotal: todaySales,
-        receivablesByOrg: summary?.receivablesByOrg || [],
-        recentTransactions: recentTransactions || [],
-        recentSettlements: recentSettlements || [],
-      });
+          todayTotal: todaySales,
+          receivablesByOrg: summary?.receivablesByOrg || [],
+          recentTransactions: recentTransactions || [],
+          recentSettlements: recentSettlements || [],
+        });
+      } catch (fatalErr) {
+        request.log.error({ fatalErr }, '[Merchant Dashboard] Unexpected fatal error');
+        return reply.send({
+          merchant: { id: '', businessName: 'Partner Merchant', mpesaNumber: '', category: 'RETAIL' },
+          stats: {
+            totalOutstandingReceivables: 0,
+            totalSettledAmount: 0,
+            uniqueOrganizations: 0,
+            uniqueEmployees: 0,
+            totalTransactions: 0,
+            todaySales: 0,
+            settledCount: 0,
+          },
+          receivablesSummary: {
+            totalReceivables: 0,
+            totalDue: 0,
+            totalSettled: 0,
+            partnerOrgCount: 0,
+            todaySales: 0,
+            transactionCount: 0,
+          },
+          partnerOrgCount: 0,
+          todayTotal: 0,
+          receivablesByOrg: [],
+          recentTransactions: [],
+          recentSettlements: [],
+        });
+      }
     }
   );
 

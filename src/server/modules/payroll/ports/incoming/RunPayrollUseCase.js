@@ -55,27 +55,54 @@ class RunPayrollUseCase {
 
     let salariesToProcess = employeeSalaries;
     if ((!salariesToProcess || salariesToProcess.length === 0) && typeof this.empRepo?.findByOrgId === 'function') {
-      const activeEmps = await this.empRepo.findByOrgId(organizationId, { limit: 1000 });
-      salariesToProcess = (activeEmps || []).map((e) => ({
-        employeeId: e.id,
-        grossSalary: Number(e.monthly_salary || e.monthlySalary || e.credit_limit || 0),
-      }));
+      try {
+        const activeEmps = await this.empRepo.findByOrgId(organizationId, { limit: 1000 });
+        salariesToProcess = (activeEmps || []).map((e) => ({
+          employeeId: e.id,
+          grossSalary: Number(e.monthly_salary || e.monthlySalary || e.credit_limit || 0),
+          phoneNumber: e.phone_number || e.phoneNumber,
+          fullName: e.full_name || e.fullName,
+        }));
+      } catch (err) {
+        console.warn('[RunPayrollUseCase] findByOrgId error:', err.message);
+      }
     }
 
     for (const sal of (salariesToProcess || [])) {
-      const empRecord = await this.empRepo.findById(sal.employeeId);
-      if (!empRecord) continue;
+      let empRecord = null;
+      if (typeof this.empRepo?.findById === 'function') {
+        try {
+          empRecord = await this.empRepo.findById(sal.employeeId);
+        } catch {}
+      }
 
-      const gross = Number(sal.grossSalary || 0);
+      const gross = Number(
+        sal.grossSalary !== undefined
+          ? sal.grossSalary
+          : (empRecord?.monthly_salary ?? empRecord?.monthlySalary ?? empRecord?.credit_limit ?? 0)
+      );
       const creditUsed = Number(employeeCreditMap.get(sal.employeeId) || 0);
       const netSalary = Math.max(0, Number((gross - creditUsed).toFixed(2)));
 
       totalEmployeeDisbursements += netSalary;
 
+      const recipientPhone =
+        sal.phoneNumber ||
+        sal.recipientMpesaNumber ||
+        empRecord?.phone_number ||
+        empRecord?.phoneNumber ||
+        '251700000000';
+
+      const fullName =
+        sal.fullName ||
+        empRecord?.full_name ||
+        empRecord?.fullName ||
+        'Enrolled Employee';
+
       employeeDisbursements.push({
         employeeId: sal.employeeId,
-        recipientMpesaNumber: empRecord.phone_number,
-        fullName: empRecord.full_name,
+        recipientMpesaNumber: recipientPhone,
+        fullName,
         grossSalary: gross,
         creditDeducted: creditUsed,
         amount: netSalary,
