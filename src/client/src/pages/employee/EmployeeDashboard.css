@@ -188,3 +188,77 @@
     align-items: flex-start;
   }
 }
+
+/* ============================================================
+   RESPONSIVE TRANSACTION ACTIVITY & MOBILE CARDS
+   ============================================================ */
+.employee-table-desktop {
+  display: block;
+}
+
+.employee-cards-mobile {
+  display: none;
+}
+
+@media (max-width: 680px) {
+  .employee-table-desktop {
+    display: none !important;
+  }
+  .employee-cards-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+.employee-card-item {
+  background: var(--fp-surface-1, #FFFFFF);
+  border: 1px solid var(--fp-border, rgba(32, 28, 24, 0.08));
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: var(--fp-shadow-sm);
+}
+
+.employee-card-item__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.employee-card-item__merchant {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--fp-text-primary, #141413);
+}
+
+.employee-card-item__date {
+  font-size: 0.75rem;
+  color: var(--fp-text-muted, #8C857B);
+  margin-top: 2px;
+}
+
+.employee-card-item__breakdown {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background: var(--fp-surface-2, #F5EFE6);
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--fp-border, rgba(32, 28, 24, 0.08));
+}
+
+.employee-card-item__meta-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.employee-card-item__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+

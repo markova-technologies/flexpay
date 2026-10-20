@@ -4,6 +4,7 @@ import { useToast } from '../../contexts/ToastContext';
 import { SkeletonDashboard } from '../../components/ui/Skeleton/SkeletonDashboard';
 import { downloadReceipt, downloadSettlementReceipt } from '../../utils/download';
 import { SettlementReceiptModal } from './SettlementReceiptModal';
+import { TransactionReceiptModal } from '../employee/TransactionReceiptModal';
 import { CheckCircle, Clock, Receipt, DownloadSimple } from '@phosphor-icons/react';
 
 export function MerchantDashboard({ onNavigateToPos, onNavigateToSettlements }) {
@@ -12,6 +13,8 @@ export function MerchantDashboard({ onNavigateToPos, onNavigateToSettlements }) 
   const [loading, setLoading] = useState(true);
   const [selectedSettlement, setSelectedSettlement] = useState(null);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
+  const [selectedTxn, setSelectedTxn] = useState(null);
+  const [isTxnReceiptModalOpen, setIsTxnReceiptModalOpen] = useState(false);
 
   useEffect(() => {
     api
@@ -61,6 +64,11 @@ export function MerchantDashboard({ onNavigateToPos, onNavigateToSettlements }) 
     } catch {
       toast.error('Failed to download transaction receipt.');
     }
+  };
+
+  const handleOpenTxnReceipt = (txn) => {
+    setSelectedTxn(txn);
+    setIsTxnReceiptModalOpen(true);
   };
 
   const handleOpenSettlementReceipt = (settlement) => {
@@ -458,22 +466,47 @@ export function MerchantDashboard({ onNavigateToPos, onNavigateToSettlements }) 
                         ETB {Number(t.total_amount).toFixed(2)}
                       </td>
                       <td style={{ padding: '12px', textAlign: 'center' }}>
-                        <button
-                          type="button"
-                          onClick={() => handleDownloadTxnReceipt(t.id, t.fp_transaction_ref)}
-                          className="fp-touch-target"
-                          style={{
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            border: '1px solid var(--border, rgba(255, 255, 255, 0.08))',
-                            color: 'var(--text-secondary, #94A3B8)',
-                            padding: '4px 10px',
-                            borderRadius: '6px',
-                            fontSize: '0.75rem',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          PDF
-                        </button>
+                        <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenTxnReceipt(t)}
+                            className="fp-touch-target"
+                            style={{
+                              background: 'rgba(255, 77, 38, 0.10)',
+                              border: '1px solid rgba(255, 77, 38, 0.28)',
+                              color: 'var(--fp-orange, #FF4D26)',
+                              padding: '6px 12px',
+                              minHeight: '34px',
+                              borderRadius: '6px',
+                              fontSize: '0.78rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            View Receipt
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadTxnReceipt(t.id, t.fp_transaction_ref)}
+                            className="fp-touch-target"
+                            title="Download PDF Receipt"
+                            style={{
+                              background: 'rgba(255, 255, 255, 0.05)',
+                              border: '1px solid var(--border, rgba(255, 255, 255, 0.08))',
+                              color: 'var(--text-secondary, #94A3B8)',
+                              padding: '6px 10px',
+                              minHeight: '34px',
+                              borderRadius: '6px',
+                              fontSize: '0.75rem',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <DownloadSimple size={15} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -510,29 +543,49 @@ export function MerchantDashboard({ onNavigateToPos, onNavigateToSettlements }) 
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleDownloadTxnReceipt(t.id, t.fp_transaction_ref)}
-                    className="fp-touch-target"
-                    style={{
-                      width: '100%',
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid var(--border, rgba(255, 255, 255, 0.08))',
-                      color: 'var(--text-secondary, #94A3B8)',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      fontSize: '0.82rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '6px',
-                      minHeight: '40px',
-                    }}
-                  >
-                    <DownloadSimple size={15} />
-                    <span>Download Receipt (PDF)</span>
-                  </button>
+                  <div className="merchant-card-item__actions">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenTxnReceipt(t)}
+                      className="fp-touch-target"
+                      style={{
+                        flex: 1,
+                        background: 'rgba(255, 77, 38, 0.10)',
+                        border: '1px solid rgba(255, 77, 38, 0.28)',
+                        color: 'var(--fp-orange, #FF4D26)',
+                        padding: '8px 12px',
+                        minHeight: '38px',
+                        borderRadius: '8px',
+                        fontSize: '0.82rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      View Receipt
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadTxnReceipt(t.id, t.fp_transaction_ref)}
+                      className="fp-touch-target"
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid var(--border, rgba(255, 255, 255, 0.08))',
+                        color: 'var(--text-secondary, #94A3B8)',
+                        padding: '8px 14px',
+                        borderRadius: '8px',
+                        fontSize: '0.82rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        minHeight: '38px',
+                      }}
+                    >
+                      <DownloadSimple size={15} />
+                      <span>PDF</span>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -545,6 +598,13 @@ export function MerchantDashboard({ onNavigateToPos, onNavigateToSettlements }) 
         isOpen={isReceiptModalOpen}
         onClose={() => setIsReceiptModalOpen(false)}
         settlement={selectedSettlement}
+      />
+
+      {/* In-Store Customer Transaction Receipt Modal */}
+      <TransactionReceiptModal
+        isOpen={isTxnReceiptModalOpen}
+        onClose={() => setIsTxnReceiptModalOpen(false)}
+        transaction={selectedTxn}
       />
     </div>
   );

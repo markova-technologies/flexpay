@@ -18,8 +18,8 @@
 }
 
 .fp-modal-card {
-  background: var(--fp-surface-2);
-  border: 1px solid var(--fp-border-strong);
+  background: var(--fp-surface-1, #FFFFFF);
+  border: 1px solid var(--fp-border);
   border-radius: var(--fp-r-xl);
   box-shadow: var(--fp-shadow-lg);
   width: 100%;
@@ -99,7 +99,7 @@
     width: 38px;
     height: 4px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.25);
+    background: rgba(32, 28, 24, 0.2);
     margin: 10px auto 4px auto;
     flex-shrink: 0;
   }

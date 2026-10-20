@@ -23,6 +23,19 @@ async function transactionRoutes(fastify, options) {
       return reply.send(pdfBuffer);
     }
   );
+
+  fastify.get(
+    '/transactions/:transactionId',
+    { preHandler: [authenticate] },
+    async (request, reply) => {
+      const { transactionId } = request.params;
+      const txn = await txnRepo.findById(transactionId);
+      if (!txn) {
+        return reply.code(404).send({ error: 'Transaction not found' });
+      }
+      return reply.send({ transaction: txn });
+    }
+  );
 }
 
 module.exports = transactionRoutes;

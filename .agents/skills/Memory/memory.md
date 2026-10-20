@@ -2729,3 +2729,48 @@ Transformed the FlexPay visual design system from an obsidian-dark scheme to an 
    - Staged all changes, created git commit, and pushed to `origin/main`.
 
 ---
+
+#### Turn 22 (Step 22)
+##### 👤 User Prompt:
+```text
+Okay good now on the employee's dashboard must have their transaction reciept just like the merchants
+```
+
+##### 🤖 Agent Response:
+Implemented official **Transaction Receipt** capability for the Employee Dashboard ([`EmployeeDashboard.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/employee/EmployeeDashboard.jsx)) matching the Merchant Dashboard ([`MerchantDashboard.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/merchant/MerchantDashboard.jsx)), fixed the `ETB NaN` / `0` bug in the employee category spending chart, and added full symmetry between portals:
+
+1. **Transaction Receipt Modal ([`TransactionReceiptModal.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/employee/TransactionReceiptModal.jsx))**:
+   - Built a comprehensive receipt modal adhering to the Anthropic Warm Cream and Terracotta Orange design system (`#FAF7F2` canvas, `#FFFFFF` surface cards, and `#FF4D26` accents).
+   - Features:
+     - Verified Settlement Badge (`✓ Purchase Settled` or `Pending`).
+     - SplitEngine™ Breakdown Cards: displays exact split between **FlexPay Benefit Credit** (deducted from employee's monthly salary limit) and **Safaricom Ethiopia M-PESA Co-Pay** (out-of-pocket), with a 100% employer allowance indicator when fully covered.
+     - Transaction reference code with 1-click clipboard copy.
+     - Safaricom M-PESA Co-Pay receipt number (`mpesa_receipt`).
+     - Merchant breakdown: store name, category icon/pill, and M-PESA Till number.
+     - Employer and employee identity details: Employer organization name, Employee full name, and Luhn-validated `FP-ID`.
+     - Timestamp with dual local date & time representation.
+     - NBE Compliance & Double-Entry Ledger Guarantee badge.
+     - Interactive actions: **Download PDF Receipt** (triggers `downloadReceipt`), **Print / Save**, and **Done / Close**.
+
+2. **Employee Dashboard Integration ([`EmployeeDashboard.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/employee/EmployeeDashboard.jsx) & [`EmployeeDashboard.css`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/pages/employee/EmployeeDashboard.css))**:
+   - Added `selectedTxn` state and `isReceiptModalOpen` modal controls.
+   - Fixed **"Spending by Category" `ETB NaN` & `0` bug**: normalized `data?.spendingByCategory` whether returned as an array of objects `[ { category, total } ]` or as a dictionary `{ category: total }`, resolving the `NaN` calculation displayed in the user screenshot.
+   - Added a **Receipt** column to the "Recent Activity" table with both `View Receipt` (opens interactive modal) and `PDF` (direct download) buttons.
+   - Added responsive mobile cards view (`.employee-cards-mobile`) displaying transactions with action buttons for handheld and small viewports.
+
+3. **Merchant Dashboard Mirroring ([`MerchantDashboard.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/merchant/MerchantDashboard.jsx))**:
+   - Integrated `<TransactionReceiptModal />` into the Merchant Dashboard for "Recent In-Store Purchases".
+   - Merchants can now click `View Receipt` to review the verified split and customer details in-modal, in addition to direct PDF downloads, providing seamless parity between employee and merchant experiences.
+
+4. **API Route Support ([`transactions.routes.js`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/server/modules/transactions/adapters/incoming/transactions.routes.js))**:
+   - Added `GET /api/v1/transactions/:transactionId` route to securely return single transaction snapshots with employee/merchant authentication.
+
+5. **Modal Surface Styling ([`Modal.css`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/components/ui/Modal.css))**:
+   - Calibrated modal surface to `--fp-surface-1` (`#FFFFFF`) and mobile sheet handle to `rgba(32, 28, 24, 0.2)` to ensure crisp contrast on Anthropic cream backdrops.
+
+6. **Validation, Build & Git Push**:
+   - Verified production build (`npm --prefix src/client run build`) compiled cleanly without errors.
+   - Ran all unit tests (`npm run test:unit`): **81 passing tests across 31 suites, 0 failures**.
+   - Pushed commit to `origin/main`.
+
+---
