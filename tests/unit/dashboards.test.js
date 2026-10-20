@@ -127,11 +127,54 @@ describe('Phase 6: Dashboard APIs (All Portals & QR Code Generation)', () => {
       }),
     };
 
+    const mockPayrollRepo = {
+      listDisbursementLinesByMerchant: async (merchantId) => [
+        {
+          id: 'line-mch-101',
+          settlementId: 'stl-saf-001',
+          recipientType: 'MERCHANT',
+          merchantId: 'mch-cafe-1',
+          recipientMpesaNumber: '251799887766',
+          amount: 1800,
+          status: 'COMPLETED',
+          mpesaReceipt: 'MP_B2C_K49X8A',
+          completedAt: new Date().toISOString(),
+          organizationName: 'Safaricom Ethiopia PLC',
+          organizationShortcode: '251700',
+        },
+      ],
+      findMerchantDisbursementReceipt: async (merchantId, lineId) => ({
+        id: lineId,
+        settlementId: 'stl-saf-001',
+        recipientType: 'MERCHANT',
+        merchantId: 'mch-cafe-1',
+        recipientMpesaNumber: '251799887766',
+        amount: 1800,
+        status: 'COMPLETED',
+        mpesaReceipt: 'MP_B2C_K49X8A',
+        completedAt: new Date().toISOString(),
+        periodStart: '2026-10-01',
+        periodEnd: '2026-10-31',
+        organization: {
+          id: 'org-saf-1',
+          name: 'Safaricom Ethiopia PLC',
+          shortcode: '251700',
+        },
+        merchant: {
+          id: 'mch-cafe-1',
+          businessName: 'Bunaye Coffee & Bakery',
+          category: 'FOOD',
+          mpesaNumber: '251799887766',
+        },
+      }),
+    };
+
     server = await buildServer({
       logger: false,
       employeeRepo: mockEmployeeRepo,
       transactionRepo: mockTxnRepo,
       merchantRepo: mockMerchantRepo,
+      payrollRepo: mockPayrollRepo,
     });
 
     employeeToken = signAccessToken({
@@ -242,7 +285,7 @@ describe('Phase 6: Dashboard APIs (All Portals & QR Code Generation)', () => {
   });
 
   describe('6.3 Merchant Dashboard', () => {
-    test('GET /api/v1/merchant/dashboard returns receivables summary and breakdown', async () => {
+    test('GET /api/v1/merchant/dashboard returns receivables summary, breakdown, and recent settlements', async () => {
       const res = await server.inject({
         method: 'GET',
         url: '/api/v1/merchant/dashboard',
@@ -256,6 +299,52 @@ describe('Phase 6: Dashboard APIs (All Portals & QR Code Generation)', () => {
       assert.equal(body.stats.uniqueOrganizations, 1);
       assert.equal(body.receivablesByOrg.length, 1);
       assert.equal(body.receivablesByOrg[0].totalOwed, 1800);
+      assert.ok(Array.isArray(body.recentSettlements));
+      assert.equal(body.recentSettlements.length, 1);
+      assert.equal(body.recentSettlements[0].mpesaReceipt, 'MP_B2C_K49X8A');
+    });
+
+    test('GET /api/v1/merchant/settlements returns historical payroll settlement payouts', async () => {
+      const res = await server.inject({
+        method: 'GET',
+        url: '/api/v1/merchant/settlements',
+        headers: { authorization: `Bearer ${merchantToken}` },
+      });
+
+      assert.equal(res.statusCode, 200);
+      const body = JSON.parse(res.payload);
+      assert.ok(Array.isArray(body.settlements));
+      assert.equal(body.settlements.length, 1);
+      assert.equal(body.settlements[0].organizationName, 'Safaricom Ethiopia PLC');
+      assert.equal(body.settlements[0].amount, 1800);
+    });
+
+    test('GET /api/v1/merchant/settlements/:lineId returns settlement receipt data', async () => {
+      const res = await server.inject({
+        method: 'GET',
+        url: '/api/v1/merchant/settlements/line-mch-101',
+        headers: { authorization: `Bearer ${merchantToken}` },
+      });
+
+      assert.equal(res.statusCode, 200);
+      const body = JSON.parse(res.payload);
+      assert.ok(body.settlement);
+      assert.equal(body.settlement.mpesaReceipt, 'MP_B2C_K49X8A');
+      assert.equal(body.settlement.organization.name, 'Safaricom Ethiopia PLC');
+      assert.equal(body.settlement.merchant.businessName, 'Bunaye Coffee & Bakery');
+    });
+
+    test('GET /api/v1/merchant/settlements/:lineId/receipt streams official PDF settlement voucher', async () => {
+      const res = await server.inject({
+        method: 'GET',
+        url: '/api/v1/merchant/settlements/line-mch-101/receipt',
+        headers: { authorization: `Bearer ${merchantToken}` },
+      });
+
+      assert.equal(res.statusCode, 200);
+      assert.equal(res.headers['content-type'], 'application/pdf');
+      assert.ok(res.headers['content-disposition'].includes('flexpay-settlement-receipt-'));
+      assert.ok(res.rawPayload.length > 500);
     });
   });
 });

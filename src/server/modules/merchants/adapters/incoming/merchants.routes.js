@@ -6,7 +6,9 @@ const { GetMerchantAnalyticsUseCase } = require('../../ports/incoming/GetMerchan
 const { CreateTransactionUseCase } = require('../../../transactions/ports/incoming/CreateTransactionUseCase');
 const { TransactionRepository } = require('../../../transactions/adapters/outgoing/TransactionRepository');
 const { EmployeeRepository } = require('../../../employees/adapters/outgoing/EmployeeRepository');
+const { PayrollRepository } = require('../../../payroll/adapters/outgoing/PayrollRepository');
 const { MerchantRepository } = require('../outgoing/MerchantRepository');
+const { generateSettlementReceipt } = require('../../domain/SettlementReceiptEngine');
 const { z } = require('zod');
 
 const verifyEmployeeSchema = z.object({
@@ -27,6 +29,7 @@ async function merchantRoutes(fastify, options) {
   const merchantRepo = options.merchantRepo || new MerchantRepository(options.db);
   const employeeRepo = options.employeeRepo || new EmployeeRepository(options.db);
   const txnRepo = options.transactionRepo || new TransactionRepository(options.db);
+  const payrollRepo = options.payrollRepo || new PayrollRepository(options.db);
   const mpesaStkService = options.mpesaStkService || null;
   const notificationService = options.notificationService || null;
 
@@ -222,20 +225,50 @@ async function merchantRoutes(fastify, options) {
       const summary = await merchantRepo.getReceivablesSummary(request.user.merchantId);
       const recentTransactions = await txnRepo.listRecentByMerchant(request.user.merchantId, 10);
 
+      let recentSettlements = [];
+      if (typeof payrollRepo.listDisbursementLinesByMerchant === 'function') {
+        try {
+          recentSettlements = await payrollRepo.listDisbursementLinesByMerchant(request.user.merchantId, 10);
+        } catch (err) {
+          request.log.warn({ err }, '[Merchant Dashboard] Failed to load recent settlements');
+        }
+      }
+
+      const totalOutstanding = Number(summary?.totalOutstandingReceivables || 0);
+      const totalSettled = Number(summary?.totalSettledAmount || 0);
+      const uniqueOrgs = Number(summary?.uniqueOrganizations || summary?.partnerOrgCount || 0);
+      const totalTxns = Number(summary?.totalTransactions || 0);
+      const todaySales = Number(summary?.todaySales || 0);
+
       return reply.send({
         merchant: {
-          businessName: merchant.business_name,
-          mpesaNumber: merchant.mpesa_number,
-          category: merchant.category,
+          id: merchant?.id || request.user.merchantId,
+          businessName: merchant?.business_name || merchant?.businessName || 'Partner Merchant',
+          mpesaNumber: merchant?.mpesa_number || merchant?.mpesaNumber || '',
+          category: merchant?.category || 'RETAIL',
         },
         stats: {
-          totalOutstandingReceivables: summary.totalOutstandingReceivables,
-          uniqueOrganizations: summary.uniqueOrganizations,
-          uniqueEmployees: summary.uniqueEmployees,
-          totalTransactions: summary.totalTransactions,
+          totalOutstandingReceivables: totalOutstanding,
+          totalSettledAmount: totalSettled,
+          uniqueOrganizations: uniqueOrgs,
+          uniqueEmployees: Number(summary?.uniqueEmployees || 0),
+          totalTransactions: totalTxns,
+          todaySales,
+          settledCount: recentSettlements.length,
         },
-        receivablesByOrg: summary.receivablesByOrg,
-        recentTransactions,
+        receivablesSummary: {
+          totalReceivables: totalOutstanding,
+          totalDue: totalOutstanding,
+          totalSettled,
+          partnerOrgCount: uniqueOrgs,
+          todaySales,
+          transactionCount: totalTxns,
+        },
+        partnerOrgCount: uniqueOrgs,
+        todayTotal: todaySales,
+        receivablesByOrg: summary?.receivablesByOrg || [],
+        recentTransactions: recentTransactions || [],
+        recentSettlements: recentSettlements || [],
       });
     }
   );
@@ -255,6 +288,70 @@ async function merchantRoutes(fastify, options) {
         period,
       });
       return reply.send(analytics);
+    }
+  );
+
+  // --------------------------------------------------------------------------
+  // 6. List Merchant Corporate Settlements (Disbursement Payouts)
+  // --------------------------------------------------------------------------
+  fastify.get(
+    '/merchant/settlements',
+    { preHandler: [requireRole('MERCHANT_OWNER', 'MERCHANT_STAFF')] },
+    async (request, reply) => {
+      const limit = Number(request.query.limit) || 50;
+      let settlements = [];
+      if (typeof payrollRepo.listDisbursementLinesByMerchant === 'function') {
+        try {
+          settlements = await payrollRepo.listDisbursementLinesByMerchant(request.user.merchantId, limit);
+        } catch (err) {
+          request.log.warn({ err }, '[Merchant Settlements] Failed to load settlements');
+        }
+      }
+      return reply.send({ settlements });
+    }
+  );
+
+  // --------------------------------------------------------------------------
+  // 7. Get Settlement Receipt Details (JSON for Modal)
+  // --------------------------------------------------------------------------
+  fastify.get(
+    '/merchant/settlements/:lineId',
+    { preHandler: [requireRole('MERCHANT_OWNER', 'MERCHANT_STAFF')] },
+    async (request, reply) => {
+      const { lineId } = request.params;
+      let receiptData = null;
+      if (typeof payrollRepo.findMerchantDisbursementReceipt === 'function') {
+        receiptData = await payrollRepo.findMerchantDisbursementReceipt(request.user.merchantId, lineId);
+      }
+      if (!receiptData) {
+        return reply.code(404).send({ error: 'Settlement disbursement line not found' });
+      }
+      return reply.send({ settlement: receiptData });
+    }
+  );
+
+  // --------------------------------------------------------------------------
+  // 8. Download Official Settlement PDF Receipt
+  // --------------------------------------------------------------------------
+  fastify.get(
+    '/merchant/settlements/:lineId/receipt',
+    { preHandler: [requireRole('MERCHANT_OWNER', 'MERCHANT_STAFF')] },
+    async (request, reply) => {
+      const { lineId } = request.params;
+      let receiptData = null;
+      if (typeof payrollRepo.findMerchantDisbursementReceipt === 'function') {
+        receiptData = await payrollRepo.findMerchantDisbursementReceipt(request.user.merchantId, lineId);
+      }
+      if (!receiptData) {
+        return reply.code(404).send({ error: 'Settlement disbursement line not found' });
+      }
+
+      const pdfBuffer = await generateSettlementReceipt(receiptData);
+      const receiptNo = receiptData.mpesaReceipt || lineId.slice(0, 8);
+
+      reply.header('Content-Type', 'application/pdf');
+      reply.header('Content-Disposition', `attachment; filename="flexpay-settlement-receipt-${receiptNo}.pdf"`);
+      return reply.send(pdfBuffer);
     }
   );
 }

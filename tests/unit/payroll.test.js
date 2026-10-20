@@ -129,6 +129,62 @@ class InMemoryPayrollRepository {
       lines: completedLines,
     };
   }
+
+  async listDisbursementLinesByMerchant(merchantId, limit = 50) {
+    const res = [];
+    for (const l of this.lines.values()) {
+      if ((l.merchant_id || l.merchantId) === merchantId && l.recipient_type === 'MERCHANT') {
+        const s = this.settlements.get(l.settlement_id || l.settlementId) || {};
+        res.push({
+          id: l.id,
+          settlementId: l.settlement_id || l.settlementId,
+          recipientType: l.recipient_type,
+          merchantId: l.merchant_id || l.merchantId,
+          recipientMpesaNumber: l.recipient_mpesa_number,
+          amount: Number(l.amount || 0),
+          status: l.status,
+          mpesaReceipt: l.mpesa_receipt || `MP_B2C_${l.id.slice(0, 6).toUpperCase()}`,
+          completedAt: l.completed_at || l.created_at || new Date(),
+          createdAt: l.created_at || new Date(),
+          periodStart: s.period_start || s.periodStart || '2026-10-01',
+          periodEnd: s.period_end || s.periodEnd || '2026-10-31',
+          organizationName: 'Safaricom Ethiopia PLC',
+        });
+      }
+    }
+    return res.slice(0, limit);
+  }
+
+  async findMerchantDisbursementReceipt(merchantId, lineId) {
+    const l = this.lines.get(lineId);
+    if (!l) return null;
+    const s = this.settlements.get(l.settlement_id || l.settlementId) || {};
+    return {
+      id: l.id,
+      settlementId: l.settlement_id || l.settlementId,
+      recipientType: l.recipient_type,
+      merchantId: l.merchant_id || l.merchantId,
+      recipientMpesaNumber: l.recipient_mpesa_number,
+      amount: Number(l.amount || 0),
+      status: l.status,
+      mpesaReceipt: l.mpesa_receipt || `MP_B2C_${l.id.slice(0, 6).toUpperCase()}`,
+      completedAt: l.completed_at || l.created_at || new Date(),
+      createdAt: l.created_at || new Date(),
+      periodStart: s.period_start || s.periodStart || '2026-10-01',
+      periodEnd: s.period_end || s.periodEnd || '2026-10-31',
+      organization: {
+        id: s.organization_id || s.organizationId || 'org-saf-1',
+        name: 'Safaricom Ethiopia PLC',
+        shortcode: '251700',
+      },
+      merchant: {
+        id: l.merchant_id || l.merchantId,
+        businessName: 'Bunaye Coffee & Bakery',
+        category: 'FOOD',
+        mpesaNumber: l.recipient_mpesa_number,
+      },
+    };
+  }
 }
 
 describe('Phase 7: Automated Payroll Settlement & M-PESA B2C Wires', () => {

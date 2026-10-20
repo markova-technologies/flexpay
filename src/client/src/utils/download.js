@@ -18,4 +18,18 @@ export async function downloadReceipt(transactionId, filename = 'receipt.pdf') {
   URL.revokeObjectURL(url);
 }
 
-export default { downloadReceipt };
+export async function downloadSettlementReceipt(lineId, filename = 'settlement-receipt.pdf') {
+  const response = await api.get(`/merchant/settlements/${lineId}/receipt`, {
+    responseType: 'blob',
+  });
+  const url = URL.createObjectURL(response.data);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+export default { downloadReceipt, downloadSettlementReceipt };

@@ -12,11 +12,19 @@ export function MerchantTransactions() {
   const fetchTransactions = () => {
     setLoading(true);
     api
-      .get('/merchant/dashboard')
+      .get('/merchant/transactions?limit=100')
       .then((res) => {
-        setTransactions(res.data?.recentTransactions || []);
+        setTransactions(res.data?.transactions || []);
       })
-      .catch(() => toast.error('Failed to load transaction history'))
+      .catch(() => {
+        // Fallback to dashboard summary
+        api
+          .get('/merchant/dashboard')
+          .then((res) => {
+            setTransactions(res.data?.recentTransactions || []);
+          })
+          .catch(() => toast.error('Failed to load transaction history'));
+      })
       .finally(() => setLoading(false));
   };
 

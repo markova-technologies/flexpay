@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import api from '../../services/api';
 import MerchantDashboard from './MerchantDashboard';
+import MerchantSettlements from './MerchantSettlements';
 import MerchantOrgs from './MerchantOrgs';
 import MerchantEmployees from './MerchantEmployees';
 import MerchantTransactions from './MerchantTransactions';
@@ -12,6 +13,7 @@ import './MerchantLayout.css';
 
 const NAV_ITEMS = [
   { key: 'overview',       label: 'Overview',       icon: '📊' },
+  { key: 'settlements',    label: 'Settlements',    icon: '💰' },
   { key: 'organizations',  label: 'Organizations',  icon: '🏢' },
   { key: 'employees',      label: 'Employees',      icon: '👥' },
   { key: 'transactions',   label: 'Transactions',   icon: '📋' },
@@ -83,7 +85,13 @@ export function MerchantLayout() {
       </nav>
 
       <main className="merchant-main">
-        {active === 'overview' && <MerchantDashboard onNavigateToPos={() => setActive('pos')} />}
+        {active === 'overview' && (
+          <MerchantDashboard
+            onNavigateToPos={() => setActive('pos')}
+            onNavigateToSettlements={() => setActive('settlements')}
+          />
+        )}
+        {active === 'settlements' && <MerchantSettlements />}
         {active === 'organizations' && <MerchantOrgs />}
         {active === 'employees' && <MerchantEmployees />}
         {active === 'transactions' && <MerchantTransactions />}

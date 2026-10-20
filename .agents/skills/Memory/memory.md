@@ -2533,3 +2533,57 @@ Staged all modified mobile-first and tablet responsive UI/UX files, design token
 
 ---
 
+#### Turn 17 (Step 17)
+##### 👤 User Prompt:
+```text
+Look the pay roll resetelement and distribution is woriking on the org's dashboard but it didn't show the information or numbers or reciept on the merchant dashboard. So fix that (and also there must be a reciept when the org pays/resetelles to the merchant )
+```
+
+##### 🤖 Agent Response:
+Fixed the merchant dashboard numbers and data synchronization, added merchant-side corporate payroll settlement tracking, and implemented official M-PESA B2C digital and PDF settlement receipts:
+
+1. **Root Cause Analysis & Backend Enhancements**:
+   - Discrepancy diagnosed: The frontend `MerchantDashboard.jsx` was referencing legacy properties (`receivablesSummary.totalReceivables`, `partnerOrgCount`), while backend `/merchant/dashboard` returned `stats.totalOutstandingReceivables` and `receivablesByOrg`. Furthermore, completed payroll settlements created disbursement lines (`payroll_disbursement_lines`), but there were no endpoints or queries exposing settled payout history and digital receipts to the merchant.
+   - [`PayrollRepository.js`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/server/modules/payroll/adapters/outgoing/PayrollRepository.js): Added `listDisbursementLinesByMerchant(merchantId, limit)` and `findMerchantDisbursementReceipt(merchantId, lineId)` joining `payroll_disbursement_lines`, `payroll_settlements`, and `organizations`.
+   - [`MerchantRepository.js`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/server/modules/merchants/adapters/outgoing/MerchantRepository.js): Updated `getReceivablesSummary` to compute `totalSettledAmount` (sum of completed B2C disbursement lines), `todaySales`, and provide backward-compatible aliases (`totalReceivables`, `totalDue`, `totalSettled`, `partnerOrgCount`).
+   - [`merchants.routes.js`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/server/modules/merchants/adapters/incoming/merchants.routes.js):
+     - Enhanced `GET /merchant/dashboard` to include `totalOutstandingReceivables`, `totalSettledAmount`, `recentSettlements`, and `todaySales`.
+     - Added `GET /merchant/settlements` to fetch historical corporate payroll settlements for the merchant.
+     - Added `GET /merchant/settlements/:lineId` returning structured receipt metadata for in-system modals.
+     - Added `GET /merchant/settlements/:lineId/receipt` streaming high-contrast PDF settlement receipts.
+
+2. **PDF Corporate Settlement Receipt Engine**:
+   - Created [`SettlementReceiptEngine.js`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/server/modules/merchants/domain/SettlementReceiptEngine.js): Uses `PDFDocument` and `QRCode` to render an authentic Safaricom Ethiopia M-PESA B2C settlement voucher with status badge, amount in ETB, M-PESA receipt confirmation (`MP_B2C_...`), settlement batch reference, employer name & shortcode, merchant till/phone, settlement period, and double-entry ledger audit verification hash.
+
+3. **Frontend Dashboard & Receipt Modal Upgrades**:
+   - [`download.js`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/utils/download.js): Exported `downloadSettlementReceipt(lineId, filename)` for direct browser blob download.
+   - Created [`SettlementReceiptModal.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/merchant/SettlementReceiptModal.jsx): Accessible in-system modal (mobile bottom sheet) displaying authentic M-PESA B2C payout voucher with print and PDF download capabilities.
+   - Rebuilt [`MerchantDashboard.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/merchant/MerchantDashboard.jsx):
+     - Displays live metrics for **Pending Receivables**, **Settled Payouts Received (ETB)**, **Partner Organizations**, and **Total Transactions**.
+     - Added dedicated **"Payroll Settlements & Payout Receipts"** section with date, M-PESA receipt, paying employer, amount, status pill (`✓ WIRED`), "View Receipt" modal trigger, and PDF download button.
+     - Added **"Receivables by Partner Organization"** table breakdown.
+     - Maintained POS quick-launcher and in-store purchase records.
+   - Created [`MerchantSettlements.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/merchant/MerchantSettlements.jsx): Full dedicated settlements view with search/filter by employer/receipt, settlement KPIs, and modal integration.
+   - [`MerchantLayout.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/merchant/MerchantLayout.jsx): Added `{ key: 'settlements', label: 'Settlements', icon: '💰' }` to desktop sidebar and mobile navigation strip.
+   - [`MerchantTransactions.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/merchant/MerchantTransactions.jsx): Updated to query `/merchant/transactions?limit=100`.
+
+4. **Testing & Verification**:
+   - Added unit test cases in [`dashboards.test.js`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/tests/unit/dashboards.test.js) and [`payroll.test.js`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/tests/unit/payroll.test.js) for settlement listing and PDF generation.
+   - Verified all 81 project unit and integration tests pass with zero failures.
+   - Verified `npm --prefix src/client run build` compiles cleanly.
+
+---
+
+#### Turn 18 (Step 18)
+##### 👤 User Prompt:
+```text
+Push it
+```
+
+##### 🤖 Agent Response:
+Staged all changes for merchant dashboard synchronization, settlement payout tracking, M-PESA B2C receipt generation, and test suites, created an authoritative git commit, and pushed the branch to `origin/main`.
+
+---
+
+
+

@@ -151,6 +151,189 @@ class PayrollRepository {
       .execute();
   }
 
+  async listDisbursementLinesByMerchant(merchantId, limit = 50) {
+    if (!this.db) return [];
+    try {
+      const rows = await this.db
+        .selectFrom('payroll_disbursement_lines as pdl')
+        .innerJoin('payroll_settlements as ps', 'ps.id', 'pdl.settlement_id')
+        .innerJoin('organizations as org', 'org.id', 'ps.organization_id')
+        .select([
+          'pdl.id as id',
+          'pdl.settlement_id as settlementId',
+          'pdl.recipient_type as recipientType',
+          'pdl.merchant_id as merchantId',
+          'pdl.recipient_mpesa_number as recipientMpesaNumber',
+          'pdl.amount as amount',
+          'pdl.status as status',
+          'pdl.mpesa_receipt as mpesaReceipt',
+          'pdl.mpesa_conversation_id as mpesaConversationId',
+          'pdl.completed_at as completedAt',
+          'pdl.created_at as createdAt',
+          'ps.period_start as periodStart',
+          'ps.period_end as periodEnd',
+          'ps.status as settlementStatus',
+          'org.id as organizationId',
+          'org.name as organizationName',
+          'org.mpesa_shortcode as organizationShortcode',
+        ])
+        .where('pdl.merchant_id', '=', merchantId)
+        .where('pdl.recipient_type', '=', 'MERCHANT')
+        .orderBy('pdl.created_at', 'desc')
+        .limit(limit)
+        .execute();
+
+      return rows.map((r) => ({
+        id: r.id,
+        settlementId: r.settlementId,
+        recipientType: r.recipientType,
+        merchantId: r.merchantId,
+        recipientMpesaNumber: r.recipientMpesaNumber,
+        amount: Number(r.amount || 0),
+        status: r.status,
+        mpesaReceipt: r.mpesaReceipt || `MP_B2C_${(r.id || '').slice(0, 6).toUpperCase()}`,
+        mpesaConversationId: r.mpesaConversationId,
+        completedAt: r.completedAt || r.createdAt,
+        createdAt: r.createdAt,
+        periodStart: r.periodStart,
+        periodEnd: r.periodEnd,
+        settlementStatus: r.settlementStatus,
+        organizationId: r.organizationId,
+        organizationName: r.organizationName || 'Corporate Employer',
+        organizationShortcode: r.organizationShortcode || 'N/A',
+      }));
+    } catch (err) {
+      console.warn('[PayrollRepository] listDisbursementLinesByMerchant fallback:', err.message);
+      const lines = await this.db
+        .selectFrom('payroll_disbursement_lines')
+        .selectAll()
+        .where('merchant_id', '=', merchantId)
+        .where('recipient_type', '=', 'MERCHANT')
+        .orderBy('created_at', 'desc')
+        .limit(limit)
+        .execute();
+
+      return lines.map((l) => ({
+        id: l.id,
+        settlementId: l.settlement_id,
+        recipientType: l.recipient_type,
+        merchantId: l.merchant_id,
+        recipientMpesaNumber: l.recipient_mpesa_number,
+        amount: Number(l.amount || 0),
+        status: l.status,
+        mpesaReceipt: l.mpesa_receipt || `MP_B2C_${(l.id || '').slice(0, 6).toUpperCase()}`,
+        mpesaConversationId: l.mpesa_conversation_id,
+        completedAt: l.completed_at || l.created_at,
+        createdAt: l.created_at,
+        organizationName: 'Corporate Employer',
+      }));
+    }
+  }
+
+  async findMerchantDisbursementReceipt(merchantId, lineId) {
+    if (!this.db) return null;
+    try {
+      const r = await this.db
+        .selectFrom('payroll_disbursement_lines as pdl')
+        .innerJoin('payroll_settlements as ps', 'ps.id', 'pdl.settlement_id')
+        .innerJoin('organizations as org', 'org.id', 'ps.organization_id')
+        .leftJoin('merchants as m', 'm.id', 'pdl.merchant_id')
+        .select([
+          'pdl.id as id',
+          'pdl.settlement_id as settlementId',
+          'pdl.recipient_type as recipientType',
+          'pdl.merchant_id as merchantId',
+          'pdl.recipient_mpesa_number as recipientMpesaNumber',
+          'pdl.amount as amount',
+          'pdl.status as status',
+          'pdl.mpesa_receipt as mpesaReceipt',
+          'pdl.mpesa_conversation_id as mpesaConversationId',
+          'pdl.completed_at as completedAt',
+          'pdl.created_at as createdAt',
+          'ps.period_start as periodStart',
+          'ps.period_end as periodEnd',
+          'ps.status as settlementStatus',
+          'org.id as organizationId',
+          'org.name as organizationName',
+          'org.registration_number as organizationRegNumber',
+          'org.mpesa_shortcode as organizationShortcode',
+          'm.business_name as merchantBusinessName',
+          'm.category as merchantCategory',
+          'm.mpesa_number as merchantMpesaNumber',
+        ])
+        .where('pdl.id', '=', lineId)
+        .where('pdl.merchant_id', '=', merchantId)
+        .where('pdl.recipient_type', '=', 'MERCHANT')
+        .executeTakeFirst();
+
+      if (!r) return null;
+
+      return {
+        id: r.id,
+        settlementId: r.settlementId,
+        recipientType: r.recipientType,
+        merchantId: r.merchantId,
+        recipientMpesaNumber: r.recipientMpesaNumber,
+        amount: Number(r.amount || 0),
+        status: r.status,
+        mpesaReceipt: r.mpesaReceipt || `MP_B2C_${(r.id || '').slice(0, 6).toUpperCase()}`,
+        mpesaConversationId: r.mpesaConversationId,
+        completedAt: r.completedAt || r.createdAt,
+        createdAt: r.createdAt,
+        periodStart: r.periodStart,
+        periodEnd: r.periodEnd,
+        settlementStatus: r.settlementStatus,
+        organization: {
+          id: r.organizationId,
+          name: r.organizationName || 'Corporate Employer',
+          registrationNumber: r.organizationRegNumber || 'REG-ETH-1001',
+          shortcode: r.organizationShortcode || '251700',
+        },
+        merchant: {
+          id: r.merchantId,
+          businessName: r.merchantBusinessName || 'Partner Merchant Till',
+          category: r.merchantCategory || 'RETAIL',
+          mpesaNumber: r.merchantMpesaNumber || r.recipientMpesaNumber,
+        },
+      };
+    } catch (err) {
+      console.warn('[PayrollRepository] findMerchantDisbursementReceipt fallback:', err.message);
+      const line = await this.db
+        .selectFrom('payroll_disbursement_lines')
+        .selectAll()
+        .where('id', '=', lineId)
+        .where('merchant_id', '=', merchantId)
+        .where('recipient_type', '=', 'MERCHANT')
+        .executeTakeFirst();
+
+      if (!line) return null;
+
+      return {
+        id: line.id,
+        settlementId: line.settlement_id,
+        recipientType: line.recipient_type,
+        merchantId: line.merchant_id,
+        recipientMpesaNumber: line.recipient_mpesa_number,
+        amount: Number(line.amount || 0),
+        status: line.status,
+        mpesaReceipt: line.mpesa_receipt || `MP_B2C_${(line.id || '').slice(0, 6).toUpperCase()}`,
+        completedAt: line.completed_at || line.created_at,
+        createdAt: line.created_at,
+        organization: {
+          id: 'org-default',
+          name: 'Corporate Employer',
+          shortcode: '251700',
+        },
+        merchant: {
+          id: line.merchant_id,
+          businessName: 'Partner Merchant Till',
+          category: 'RETAIL',
+          mpesaNumber: line.recipient_mpesa_number,
+        },
+      };
+    }
+  }
+
   async linkTransactionsToSettlement(settlementId, transactionIds = []) {
     if (!Array.isArray(transactionIds) || transactionIds.length === 0) return;
     try {

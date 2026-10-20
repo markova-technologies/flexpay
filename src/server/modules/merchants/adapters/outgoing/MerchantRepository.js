@@ -33,6 +33,7 @@ class MerchantRepository {
       .execute();
 
     const pendingTxns = txns.filter((t) => !t.settlement_id);
+    const settledTxns = txns.filter((t) => !!t.settlement_id);
 
     let totalOutstandingReceivables = 0;
     const orgMap = new Map();
@@ -61,12 +62,46 @@ class MerchantRepository {
       employeeCount: o.employees.size,
     }));
 
+    // Calculate total settled payout amounts
+    const settledTxnSum = settledTxns.reduce((acc, t) => acc + Number(t.credit_portion || 0), 0);
+    let totalSettledDisbursements = 0;
+    try {
+      const settledLines = await this.db
+        .selectFrom('payroll_disbursement_lines')
+        .select(['amount', 'status'])
+        .where('merchant_id', '=', merchantId)
+        .where('recipient_type', '=', 'MERCHANT')
+        .where('status', '=', 'COMPLETED')
+        .execute();
+      totalSettledDisbursements = settledLines.reduce((acc, l) => acc + Number(l.amount || 0), 0);
+    } catch {
+      totalSettledDisbursements = settledTxnSum;
+    }
+
+    const totalSettledAmount = Number((totalSettledDisbursements > 0 ? totalSettledDisbursements : settledTxnSum).toFixed(2));
+
+    // Calculate today's sales
+    const todayStr = new Date().toISOString().split('T')[0];
+    const todayTxns = txns.filter((t) => {
+      const d = t.created_at ? new Date(t.created_at).toISOString().split('T')[0] : '';
+      return d === todayStr;
+    });
+    const todaySales = Number(todayTxns.reduce((acc, t) => acc + Number(t.total_amount || 0), 0).toFixed(2));
+
     return {
       totalOutstandingReceivables: Number(totalOutstandingReceivables.toFixed(2)),
+      totalSettledAmount,
       uniqueOrganizations: orgMap.size,
       uniqueEmployees: uniqueEmployees.size,
       totalTransactions: txns.length,
+      todaySales,
       receivablesByOrg,
+      // Compatibility aliases:
+      totalReceivables: Number(totalOutstandingReceivables.toFixed(2)),
+      totalDue: Number(totalOutstandingReceivables.toFixed(2)),
+      totalSettled: totalSettledAmount,
+      partnerOrgCount: orgMap.size,
+      breakdownByOrg: receivablesByOrg,
     };
   }
 
