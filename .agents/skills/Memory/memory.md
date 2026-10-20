@@ -2471,3 +2471,65 @@ Reverted the landing page changes from commit `3a065a1`:
 4. Committed and pushed the revert to `origin/main`.
 
 ---
+
+#### Turn 15 (Step 15)
+##### 👤 User Prompt:
+```text
+By using this skill "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill" (install it) and others, make the whole system phone and tablet ui/ux interface be good in mobile and tablet as good as the desktop. Like it is mobile first.. i know it is a lot but you can take your time, just plan and do it one at a time by testing and verifying
+```
+
+##### 🤖 Agent Response:
+Transformed the entire FlexPay system into an ergonomic, high-polish **Mobile-First & Tablet-Optimized** fintech experience across all portals, landing pages, authentication surfaces, modals, and tables. Applied principles from `ui-ux-pro-max`, `apple-design`, and `emil-design-eng`:
+
+1. **Foundational Design Tokens & Global Viewport Rules**:
+   - [`src/client/index.html`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/index.html): Configured `viewport-fit=cover`, obsidian theme-color `#060A14`, and Apple web-app standalone meta tags.
+   - [`src/client/src/styles/tokens.css`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/styles/tokens.css): Defined hardware safe-area variables (`--fp-safe-top`, `--fp-safe-bottom`, `--fp-safe-left`, `--fp-safe-right`), minimum touch targets (`--fp-touch-min: 44px`, `--fp-touch-comfortable: 48px`), `--fp-bottom-nav-h: 64px`, and `--fp-header-h-mob: 56px`.
+   - [`src/client/src/styles/global.css`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/styles/global.css): Added touch discipline (`touch-action: manipulation`, tap-highlight removal), 16px input font size on `< 768px` to prevent iOS Safari auto-zoom, `.fp-touch-target`, `.fp-table-responsive` with `-webkit-overflow-scrolling: touch`, and mobile full-width safe-area toast notification styling.
+
+2. **Universal Modals, Drawers & In-System Dialogs**:
+   - [`src/client/src/components/ui/Modal.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/components/ui/Modal.jsx) & [`Modal.css`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/components/ui/Modal.css): Converted to native-feeling bottom sheets on mobile viewports (`@media (max-width: 640px)`) with top grab handle (`.fp-sheet-handle`), rounded top corners (`20px 20px 0 0`), safe-area bottom insets, and 44px touch close button.
+   - [`src/client/src/components/ui/Drawer.css`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/components/ui/Drawer.css): Full width on `< 640px` with safe-area padding.
+   - [`src/client/src/components/ui/LedgerTable.css`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/components/ui/LedgerTable.css): Added touch momentum scrolling and compact mobile padding.
+   - [`src/client/src/contexts/ToastContext.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/contexts/ToastContext.jsx): Confirmation modal upgraded to `.fp-modal` bottom sheet with 44px touch action buttons.
+
+3. **Public Landing Page & Authentication Surfaces**:
+   - [`src/client/src/features/landing/LandingPage.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/landing/LandingPage.jsx): Added mobile hamburger drawer, fluid typography with `clamp()`, non-overflowing card grids `minmax(min(100%, 280px), 1fr)`, and touch-friendly SplitEngine™ range slider.
+   - [`src/client/src/features/auth/AuthHub.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/auth/AuthHub.jsx): Responsive padding, fluid headers, 44px touch cards.
+   - [`src/client/src/features/auth/EmployeeLoginPage.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/auth/EmployeeLoginPage.jsx): Converted forgot password dialog into responsive `.fp-modal` bottom sheet; 44px min-height inputs with 16px font size, 48px touch submit button.
+   - [`src/client/src/features/auth/OrgAuthPage.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/auth/OrgAuthPage.jsx): Responsive switcher, 44px inputs, `inputMode="tel"` on phone.
+   - [`src/client/src/features/auth/MerchantAuthPage.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/auth/MerchantAuthPage.jsx): Responsive category grid `minmax(min(100%, 180px), 1fr)`, 44px inputs, 48px submit button.
+
+4. **Employee Digital Wallet & QR Code Terminal**:
+   - [`src/client/src/features/employee/CreditRing.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/employee/CreditRing.jsx): Added SVG `viewBox`, `maxWidth: 100%`, and `aspectRatio: 1` so the utilization gauge scales smoothly on handhelds.
+   - [`src/client/src/features/employee/QRCodeCard.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/employee/QRCodeCard.jsx): Responsive QR container with `maxWidth: 210px`, `aspectRatio: 1`, and 44px touch buttons.
+   - [`src/client/src/features/employee/EmployeeDashboard.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/employee/EmployeeDashboard.jsx): Adaptive navbar with `minHeight: var(--fp-header-h-mob)`, touch logout, balance grid `minmax(min(100%, 280px), 1fr)`, category spending grid `minmax(min(100%, 140px), 1fr)`, and recent transactions table wrapped in `.fp-table-responsive`.
+
+5. **Merchant Cashier POS & Merchant Portal**:
+   - [`src/client/src/features/merchant/MerchantLayout.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/merchant/MerchantLayout.jsx) & [`MerchantLayout.css`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/merchant/MerchantLayout.css): Replaced stacked sidebar on mobile with sticky top bar (`FlexPay Merchant POS`) + horizontally scrollable touch navigation pills with active states and safe-area padding. Fixed CSS syntax property warning.
+   - [`src/client/src/features/merchant/pos/MerchantPOS.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/merchant/pos/MerchantPOS.jsx): 44px/48px touch mode toggle buttons; 48px/52px inputs with `inputMode="decimal"` and `inputMode="text"`; 48px primary action buttons; responsive camera scanner viewport.
+   - [`src/client/src/features/merchant/MerchantTransactions.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/merchant/MerchantTransactions.jsx), [`MerchantOrgs.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/merchant/MerchantOrgs.jsx), [`MerchantEmployees.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/merchant/MerchantEmployees.jsx): All wrapped in `.fp-table-responsive` with momentum scrolling.
+
+6. **Organization & Automated Payroll Settlement Portal**:
+   - [`src/client/src/features/organization/OrgDashboard.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/organization/OrgDashboard.jsx): Mobile-friendly sticky header, horizontal touch scroll tab strip, KPI grid `minmax(min(100%, 250px), 1fr)`, workforce preview table and staff roster table wrapped in `.fp-table-responsive`, 44px search input with 16px font size, and credit limit modal transformed to `.fp-modal` bottom sheet.
+   - [`src/client/src/features/organization/AddEmployeeForm.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/organization/AddEmployeeForm.jsx): Transformed into `.fp-modal` bottom sheet with grab handle; 44px touch inputs with `inputMode="tel"` and `inputMode="decimal"`; responsive grid for department & job title; 48px touch submit button.
+   - [`src/client/src/features/organization/PasswordDisplay.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/organization/PasswordDisplay.jsx): Transformed into `.fp-modal` bottom sheet; responsive monospace password typography `clamp(1.15rem, 4.5vw, 1.55rem)`; 48px touch action buttons with full wrapping on phone.
+   - [`src/client/src/features/organization/PasswordResetRequests.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/organization/PasswordResetRequests.jsx): 44px touch refresh button, table wrapped in `.fp-table-responsive`, 38px touch action buttons.
+   - [`src/client/src/features/organization/PayrollPreview.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/organization/PayrollPreview.jsx): Overview cards `minmax(min(100%, 280px), 1fr)`, 48px execute settlement touch button, merchant payout and employee deduction tables wrapped in `.fp-table-responsive`, and settlement disbursement breakdown modal transformed into `.fp-modal` bottom sheet with scrollable lines table.
+
+7. **Verification & Testing**:
+   - Compiled Vite client build (`npm --prefix src/client run build`) with zero errors and zero warnings.
+   - Ran unit and integration test suite (`npm run test:unit`) with all 78 tests across 31 test suites passing.
+
+---
+
+#### Turn 16 (Step 16)
+##### 👤 User Prompt:
+```text
+Okay push it
+```
+
+##### 🤖 Agent Response:
+Staged all modified mobile-first and tablet responsive UI/UX files, design tokens, safe-area viewport configurations, accessible bottom sheets, tables, POS ergonomics, and memory documentation, created an authoritative git commit, and pushed the branch to `origin/main`.
+
+---
+

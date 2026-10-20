@@ -65,10 +65,28 @@
 
 .ledger-table-container {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--fp-border-strong);
   border-radius: var(--fp-r-md);
   background: var(--fp-surface-2);
   box-shadow: var(--fp-shadow-sm);
+  position: relative;
+}
+
+@media (max-width: 640px) {
+  .ledger-table th {
+    padding: 10px 12px;
+    font-size: 0.65rem;
+  }
+  .ledger-table td {
+    padding: 10px 12px;
+    font-size: 0.8125rem;
+  }
+  .ledger-table-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--fp-sp-2);
+  }
 }
 
 .ledger-table {

@@ -82,15 +82,17 @@ export default function EmployeeLoginPage() {
     >
       <header
         style={{
-          padding: '16px 24px',
+          padding: 'clamp(12px, 3vw, 16px) clamp(16px, 4vw, 24px)',
           borderBottom: '1px solid var(--fp-border)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          minHeight: 'var(--fp-header-h-mob)',
         }}
       >
         <button
           onClick={() => navigate('/auth')}
+          className="fp-touch-target"
           style={{
             background: 'none',
             border: 'none',
@@ -100,6 +102,8 @@ export default function EmployeeLoginPage() {
             gap: '8px',
             cursor: 'pointer',
             fontSize: '0.9rem',
+            padding: '8px 12px',
+            borderRadius: '6px',
           }}
         >
           <ArrowLeft size={18} />
@@ -117,7 +121,9 @@ export default function EmployeeLoginPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '40px 20px',
+          padding: 'clamp(20px, 4vw, 40px) 16px',
+          width: '100%',
+          boxSizing: 'border-box',
         }}
       >
         <div
@@ -127,8 +133,9 @@ export default function EmployeeLoginPage() {
             background: 'var(--fp-surface-1)',
             border: '1px solid var(--fp-border)',
             borderRadius: '20px',
-            padding: '36px',
+            padding: 'clamp(22px, 5vw, 36px) clamp(16px, 4vw, 28px)',
             boxShadow: 'var(--fp-shadow-lg)',
+            boxSizing: 'border-box',
           }}
         >
           {/* Header */}
@@ -203,6 +210,9 @@ export default function EmployeeLoginPage() {
                   value={fpId}
                   onChange={(e) => setFpId(e.target.value.toUpperCase())}
                   placeholder="FP-ETH-2026-XXXXX-C"
+                  autoCapitalize="characters"
+                  autoCorrect="off"
+                  spellCheck="false"
                   style={{
                     width: '100%',
                     padding: '12px 14px 12px 38px',
@@ -210,9 +220,11 @@ export default function EmployeeLoginPage() {
                     background: 'var(--fp-surface-2)',
                     border: '1px solid var(--fp-border)',
                     color: 'var(--fp-text-primary)',
-                    fontSize: '0.925rem',
+                    fontSize: '1rem',
                     fontFamily: 'var(--fp-font-mono)',
                     letterSpacing: '0.04em',
+                    minHeight: '44px',
+                    boxSizing: 'border-box',
                   }}
                 />
               </div>
@@ -231,6 +243,7 @@ export default function EmployeeLoginPage() {
                     setForgotSuccess('');
                     setForgotError('');
                   }}
+                  className="fp-touch-target"
                   style={{
                     background: 'none',
                     border: 'none',
@@ -238,13 +251,14 @@ export default function EmployeeLoginPage() {
                     fontSize: '0.8rem',
                     cursor: 'pointer',
                     textDecoration: 'underline',
+                    padding: '4px 0',
                   }}
                 >
                   Forgot / Lost Password?
                 </button>
               </div>
               <div style={{ position: 'relative' }}>
-                <LockKey size={18} color="var(--fp-text-muted)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+                <LockKey size={18} color="var(--fp-text-muted)" style={{ position: 'absolute', left: '12px', top: '13px' }} />
                 <input
                   type="password"
                   required
@@ -258,8 +272,10 @@ export default function EmployeeLoginPage() {
                     background: 'var(--fp-surface-2)',
                     border: '1px solid var(--fp-border)',
                     color: 'var(--fp-text-primary)',
-                    fontSize: '0.925rem',
+                    fontSize: '1rem',
                     fontFamily: 'var(--fp-font-mono)',
+                    minHeight: '44px',
+                    boxSizing: 'border-box',
                   }}
                 />
               </div>
@@ -268,9 +284,11 @@ export default function EmployeeLoginPage() {
             <button
               type="submit"
               disabled={loading}
+              className="fp-touch-target"
               style={{
                 marginTop: '8px',
-                padding: '13px',
+                padding: '14px',
+                minHeight: '48px',
                 borderRadius: '8px',
                 background: '#38BDF8',
                 color: '#060A14',
@@ -290,30 +308,19 @@ export default function EmployeeLoginPage() {
 
       {/* Forgot Password Modal */}
       {showForgotModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(6, 10, 20, 0.85)',
-            backdropFilter: 'blur(8px)',
-            zIndex: 100,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px',
-          }}
-        >
+        <div className="fp-modal-overlay" onClick={() => setShowForgotModal(false)}>
           <div
+            className="fp-modal"
+            onClick={(e) => e.stopPropagation()}
             style={{
               width: '100%',
               maxWidth: '460px',
-              background: 'var(--fp-surface-1)',
-              border: '1px solid var(--fp-border-strong)',
-              borderRadius: '20px',
-              padding: '32px',
-              boxShadow: 'var(--fp-shadow-lg)',
+              padding: 'clamp(20px, 4vw, 32px)',
+              boxSizing: 'border-box',
             }}
           >
+            <div className="fp-sheet-handle" />
+
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
               <div
                 style={{
@@ -324,6 +331,7 @@ export default function EmployeeLoginPage() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  flexShrink: 0,
                 }}
               >
                 <Warning size={24} color="var(--fp-salary)" weight="bold" />
@@ -379,6 +387,7 @@ export default function EmployeeLoginPage() {
                     value={forgotFpId}
                     onChange={(e) => setForgotFpId(e.target.value.toUpperCase())}
                     placeholder="FP-ETH-2026-XXXXX-C"
+                    autoCapitalize="characters"
                     style={{
                       width: '100%',
                       padding: '10px 12px',
@@ -387,6 +396,9 @@ export default function EmployeeLoginPage() {
                       border: '1px solid var(--fp-border)',
                       color: 'var(--fp-text-primary)',
                       fontFamily: 'var(--fp-font-mono)',
+                      fontSize: '1rem',
+                      minHeight: '44px',
+                      boxSizing: 'border-box',
                     }}
                   />
                 </div>
@@ -396,7 +408,8 @@ export default function EmployeeLoginPage() {
                     Registered Safaricom Phone Number (251...)
                   </label>
                   <input
-                    type="text"
+                    type="tel"
+                    inputMode="tel"
                     required
                     value={forgotPhone}
                     onChange={(e) => setForgotPhone(e.target.value)}
@@ -409,6 +422,9 @@ export default function EmployeeLoginPage() {
                       border: '1px solid var(--fp-border)',
                       color: 'var(--fp-text-primary)',
                       fontFamily: 'var(--fp-font-mono)',
+                      fontSize: '1rem',
+                      minHeight: '44px',
+                      boxSizing: 'border-box',
                     }}
                   />
                 </div>
@@ -429,6 +445,9 @@ export default function EmployeeLoginPage() {
                       background: 'var(--fp-surface-2)',
                       border: '1px solid var(--fp-border)',
                       color: 'var(--fp-text-primary)',
+                      fontSize: '1rem',
+                      minHeight: '44px',
+                      boxSizing: 'border-box',
                     }}
                   />
                 </div>
@@ -436,6 +455,7 @@ export default function EmployeeLoginPage() {
                 <button
                   type="submit"
                   disabled={forgotLoading}
+                  className="fp-touch-target"
                   style={{
                     padding: '12px',
                     borderRadius: '8px',
@@ -444,6 +464,7 @@ export default function EmployeeLoginPage() {
                     fontWeight: 700,
                     border: 'none',
                     cursor: forgotLoading ? 'not-allowed' : 'pointer',
+                    minHeight: '48px',
                     marginTop: '6px',
                   }}
                 >
@@ -454,10 +475,12 @@ export default function EmployeeLoginPage() {
 
             <button
               onClick={() => setShowForgotModal(false)}
+              className="fp-touch-target"
               style={{
                 width: '100%',
                 marginTop: '12px',
                 padding: '10px',
+                minHeight: '44px',
                 background: 'transparent',
                 border: '1px solid var(--fp-border)',
                 color: 'var(--fp-text-secondary)',

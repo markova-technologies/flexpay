@@ -100,15 +100,17 @@ export default function MerchantAuthPage() {
     >
       <header
         style={{
-          padding: '16px 24px',
+          padding: 'clamp(12px, 3vw, 16px) clamp(16px, 4vw, 24px)',
           borderBottom: '1px solid var(--fp-border)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          minHeight: 'var(--fp-header-h-mob)',
         }}
       >
         <button
           onClick={() => navigate('/auth')}
+          className="fp-touch-target"
           style={{
             background: 'none',
             border: 'none',
@@ -118,6 +120,8 @@ export default function MerchantAuthPage() {
             gap: '8px',
             cursor: 'pointer',
             fontSize: '0.9rem',
+            padding: '8px 12px',
+            borderRadius: '6px',
           }}
         >
           <ArrowLeft size={18} />
@@ -135,7 +139,9 @@ export default function MerchantAuthPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '40px 20px',
+          padding: 'clamp(20px, 4vw, 40px) 16px',
+          width: '100%',
+          boxSizing: 'border-box',
         }}
       >
         <div
@@ -145,12 +151,13 @@ export default function MerchantAuthPage() {
             background: 'var(--fp-surface-1)',
             border: '1px solid var(--fp-border)',
             borderRadius: '20px',
-            padding: '36px',
+            padding: 'clamp(22px, 5vw, 36px) clamp(16px, 4vw, 28px)',
             boxShadow: 'var(--fp-shadow-lg)',
+            boxSizing: 'border-box',
           }}
         >
           {/* Header */}
-          <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 'clamp(20px, 4vw, 28px)' }}>
             <div
               style={{
                 width: '56px',
@@ -166,10 +173,10 @@ export default function MerchantAuthPage() {
             >
               <Storefront size={32} color="var(--fp-salary)" weight="bold" />
             </div>
-            <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>
+            <h2 style={{ fontSize: 'clamp(1.35rem, 4vw, 1.6rem)', fontWeight: 800 }}>
               {mode === 'login' ? 'Merchant Sign In' : 'Register Merchant'}
             </h2>
-            <p style={{ color: 'var(--fp-text-secondary)', fontSize: '0.9rem', marginTop: '6px' }}>
+            <p style={{ color: 'var(--fp-text-secondary)', fontSize: '0.875rem', marginTop: '6px' }}>
               {mode === 'login'
                 ? 'Accept FlexPay QR payments & check settlement balance'
                 : 'Join the Ethiopian merchant network with direct M-PESA wires'}
@@ -184,13 +191,16 @@ export default function MerchantAuthPage() {
               borderRadius: '10px',
               padding: '4px',
               marginBottom: '24px',
+              gap: '4px',
             }}
           >
             <button
               onClick={() => { setMode('login'); setError(''); }}
+              className="fp-touch-target"
               style={{
                 flex: 1,
                 padding: '10px',
+                minHeight: '44px',
                 border: 'none',
                 borderRadius: '8px',
                 background: mode === 'login' ? 'var(--fp-salary)' : 'transparent',
@@ -204,9 +214,11 @@ export default function MerchantAuthPage() {
             </button>
             <button
               onClick={() => { setMode('register'); setError(''); }}
+              className="fp-touch-target"
               style={{
                 flex: 1,
                 padding: '10px',
+                minHeight: '44px',
                 border: 'none',
                 borderRadius: '8px',
                 background: mode === 'register' ? 'var(--fp-salary)' : 'transparent',
@@ -243,9 +255,10 @@ export default function MerchantAuthPage() {
                   M-PESA Till / Paybill Number
                 </label>
                 <div style={{ position: 'relative' }}>
-                  <IdentificationCard size={18} color="var(--fp-text-muted)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+                  <IdentificationCard size={18} color="var(--fp-text-muted)" style={{ position: 'absolute', left: '12px', top: '13px' }} />
                   <input
                     type="text"
+                    inputMode="numeric"
                     required
                     value={loginMpesaNumber}
                     onChange={(e) => setLoginMpesaNumber(e.target.value)}
@@ -257,8 +270,10 @@ export default function MerchantAuthPage() {
                       background: 'var(--fp-surface-2)',
                       border: '1px solid var(--fp-border)',
                       color: 'var(--fp-text-primary)',
-                      fontSize: '0.925rem',
+                      fontSize: '1rem',
                       fontFamily: 'var(--fp-font-mono)',
+                      minHeight: '44px',
+                      boxSizing: 'border-box',
                     }}
                   />
                 </div>
@@ -272,7 +287,7 @@ export default function MerchantAuthPage() {
                   Password
                 </label>
                 <div style={{ position: 'relative' }}>
-                  <LockKey size={18} color="var(--fp-text-muted)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+                  <LockKey size={18} color="var(--fp-text-muted)" style={{ position: 'absolute', left: '12px', top: '13px' }} />
                   <input
                     type="password"
                     required
@@ -286,7 +301,9 @@ export default function MerchantAuthPage() {
                       background: 'var(--fp-surface-2)',
                       border: '1px solid var(--fp-border)',
                       color: 'var(--fp-text-primary)',
-                      fontSize: '0.925rem',
+                      fontSize: '1rem',
+                      minHeight: '44px',
+                      boxSizing: 'border-box',
                     }}
                   />
                 </div>
@@ -295,9 +312,11 @@ export default function MerchantAuthPage() {
               <button
                 type="submit"
                 disabled={loading}
+                className="fp-touch-target"
                 style={{
                   marginTop: '8px',
-                  padding: '12px',
+                  padding: '14px',
+                  minHeight: '48px',
                   borderRadius: '8px',
                   background: 'var(--fp-salary)',
                   color: '#060A14',
@@ -326,17 +345,19 @@ export default function MerchantAuthPage() {
                   placeholder="Friendship Supermarket"
                   style={{
                     width: '100%',
-                    padding: '10px 14px',
+                    padding: '12px 14px',
                     borderRadius: '8px',
                     background: 'var(--fp-surface-2)',
                     border: '1px solid var(--fp-border)',
                     color: 'var(--fp-text-primary)',
-                    fontSize: '0.9rem',
+                    fontSize: '1rem',
+                    minHeight: '44px',
+                    boxSizing: 'border-box',
                   }}
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '12px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.825rem', color: 'var(--fp-text-secondary)', marginBottom: '6px' }}>
                     Category
@@ -346,12 +367,14 @@ export default function MerchantAuthPage() {
                     onChange={(e) => setCategory(e.target.value)}
                     style={{
                       width: '100%',
-                      padding: '10px',
+                      padding: '10px 12px',
                       borderRadius: '8px',
                       background: 'var(--fp-surface-2)',
                       border: '1px solid var(--fp-border)',
                       color: 'var(--fp-text-primary)',
-                      fontSize: '0.9rem',
+                      fontSize: '1rem',
+                      minHeight: '44px',
+                      boxSizing: 'border-box',
                     }}
                   >
                     <option value="GROCERY">GROCERY</option>
@@ -369,19 +392,22 @@ export default function MerchantAuthPage() {
                   </label>
                   <input
                     type="text"
+                    inputMode="numeric"
                     required
                     value={mpesaNumber}
                     onChange={(e) => setMpesaNumber(e.target.value)}
                     placeholder="174379"
                     style={{
                       width: '100%',
-                      padding: '10px',
+                      padding: '10px 12px',
                       borderRadius: '8px',
                       background: 'var(--fp-surface-2)',
                       border: '1px solid var(--fp-border)',
                       color: 'var(--fp-text-primary)',
-                      fontSize: '0.9rem',
+                      fontSize: '1rem',
                       fontFamily: 'var(--fp-font-mono)',
+                      minHeight: '44px',
+                      boxSizing: 'border-box',
                     }}
                   />
                 </div>
@@ -392,22 +418,25 @@ export default function MerchantAuthPage() {
                   Safaricom Contact Phone Number (12 digits)
                 </label>
                 <div style={{ position: 'relative' }}>
-                  <Phone size={18} color="var(--fp-text-muted)" style={{ position: 'absolute', left: '12px', top: '10px' }} />
+                  <Phone size={18} color="var(--fp-text-muted)" style={{ position: 'absolute', left: '12px', top: '13px' }} />
                   <input
                     type="tel"
+                    inputMode="tel"
                     required
                     value={contactPhone}
                     onChange={(e) => setContactPhone(e.target.value)}
                     placeholder="251711223344"
                     style={{
                       width: '100%',
-                      padding: '10px 14px 10px 38px',
+                      padding: '12px 14px 12px 38px',
                       borderRadius: '8px',
                       background: 'var(--fp-surface-2)',
                       border: '1px solid var(--fp-border)',
                       color: 'var(--fp-text-primary)',
-                      fontSize: '0.9rem',
+                      fontSize: '1rem',
                       fontFamily: 'var(--fp-font-mono)',
+                      minHeight: '44px',
+                      boxSizing: 'border-box',
                     }}
                   />
                 </div>
@@ -421,7 +450,7 @@ export default function MerchantAuthPage() {
                   Password (min 8 chars)
                 </label>
                 <div style={{ position: 'relative' }}>
-                  <LockKey size={18} color="var(--fp-text-muted)" style={{ position: 'absolute', left: '12px', top: '10px' }} />
+                  <LockKey size={18} color="var(--fp-text-muted)" style={{ position: 'absolute', left: '12px', top: '13px' }} />
                   <input
                     type="password"
                     required
@@ -431,12 +460,14 @@ export default function MerchantAuthPage() {
                     placeholder="••••••••••••"
                     style={{
                       width: '100%',
-                      padding: '10px 14px 10px 38px',
+                      padding: '12px 14px 12px 38px',
                       borderRadius: '8px',
                       background: 'var(--fp-surface-2)',
                       border: '1px solid var(--fp-border)',
                       color: 'var(--fp-text-primary)',
-                      fontSize: '0.9rem',
+                      fontSize: '1rem',
+                      minHeight: '44px',
+                      boxSizing: 'border-box',
                     }}
                   />
                 </div>
@@ -445,9 +476,11 @@ export default function MerchantAuthPage() {
               <button
                 type="submit"
                 disabled={loading}
+                className="fp-touch-target"
                 style={{
                   marginTop: '8px',
-                  padding: '12px',
+                  padding: '14px',
+                  minHeight: '48px',
                   borderRadius: '8px',
                   background: 'var(--fp-salary)',
                   color: '#060A14',

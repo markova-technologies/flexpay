@@ -177,19 +177,20 @@ export default function OrgDashboard() {
         style={{
           borderBottom: '1px solid var(--fp-border)',
           background: 'var(--fp-surface-1)',
-          padding: '16px 28px',
+          padding: '14px clamp(16px, 3vw, 28px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '16px',
+          gap: '14px',
+          minHeight: 'var(--fp-header-h-mob)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div
             style={{
-              width: '36px',
-              height: '36px',
+              width: '38px',
+              height: '38px',
               borderRadius: '10px',
               background: 'var(--fp-benefit)',
               display: 'flex',
@@ -197,28 +198,29 @@ export default function OrgDashboard() {
               justifyContent: 'center',
               fontWeight: 800,
               color: '#060A14',
+              flexShrink: 0,
             }}
           >
             F
           </div>
           <div>
-            <h1 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>
+            <h1 style={{ fontSize: 'clamp(1rem, 3vw, 1.15rem)', fontWeight: 800, margin: 0, lineHeight: 1.2 }}>
               {stats?.organization?.name || stats?.org?.name || user?.orgName || user?.organizationName || 'Corporate Admin'}
             </h1>
             <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-muted)' }}>
-              Organization Management Portal • Role: {user?.role || 'ORG_ADMIN'}
+              Organization Management Portal • {user?.role || 'ORG_ADMIN'}
             </span>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           {loading && (
             <div
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                padding: '6px 14px',
+                padding: '6px 12px',
                 borderRadius: '20px',
                 background: 'rgba(16, 185, 129, 0.1)',
                 border: '1px solid rgba(16, 185, 129, 0.25)',
@@ -236,7 +238,7 @@ export default function OrgDashboard() {
                   animation: 'fp-pulse 1.4s infinite',
                 }}
               />
-              <span>Syncing Live Ledger...</span>
+              <span>Syncing...</span>
             </div>
           )}
 
@@ -244,6 +246,7 @@ export default function OrgDashboard() {
             onClick={fetchOrgData}
             disabled={loading}
             title="Refresh ledger state"
+            className="fp-touch-target"
             style={{
               background: 'var(--fp-surface-2)',
               border: '1px solid var(--fp-border)',
@@ -255,14 +258,16 @@ export default function OrgDashboard() {
               alignItems: 'center',
               gap: '6px',
               fontSize: '0.85rem',
+              minHeight: 'var(--fp-touch-min)',
             }}
           >
             <ArrowsClockwise size={16} className={loading ? 'spin' : ''} />
-            <span>Sync</span>
+            <span style={{ display: 'inline' }}>Sync</span>
           </button>
 
           <button
             onClick={() => setShowAddModal(true)}
+            className="fp-touch-target"
             style={{
               padding: '9px 16px',
               borderRadius: '8px',
@@ -275,14 +280,16 @@ export default function OrgDashboard() {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
+              minHeight: 'var(--fp-touch-min)',
             }}
           >
             <UserPlus size={18} weight="bold" />
-            Add Employee
+            <span>Add Staff</span>
           </button>
 
           <button
             onClick={handleLogout}
+            className="fp-touch-target"
             style={{
               background: 'var(--fp-surface-2)',
               border: '1px solid var(--fp-border)',
@@ -294,23 +301,26 @@ export default function OrgDashboard() {
               alignItems: 'center',
               gap: '6px',
               fontSize: '0.85rem',
+              minHeight: 'var(--fp-touch-min)',
             }}
           >
             <SignOut size={16} />
-            Sign Out
+            <span>Exit</span>
           </button>
         </div>
       </header>
 
-      {/* Tabs Bar */}
+      {/* Tabs Bar with mobile-friendly horizontal touch scrolling */}
       <div
         style={{
           borderBottom: '1px solid var(--fp-border)',
           background: 'var(--fp-surface-1)',
-          padding: '0 28px',
+          padding: '0 clamp(16px, 3vw, 28px)',
           display: 'flex',
-          gap: '32px',
+          gap: 'clamp(12px, 3vw, 28px)',
           overflowX: 'auto',
+          scrollbarWidth: 'none',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         {[
@@ -326,8 +336,9 @@ export default function OrgDashboard() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
+            className="fp-touch-target"
             style={{
-              padding: '16px 0',
+              padding: '14px 4px',
               background: 'none',
               border: 'none',
               borderBottom: activeTab === tab.id ? '2px solid var(--fp-benefit)' : '2px solid transparent',
@@ -339,6 +350,7 @@ export default function OrgDashboard() {
               alignItems: 'center',
               gap: '8px',
               whiteSpace: 'nowrap',
+              minHeight: 'var(--fp-touch-comfortable)',
             }}
           >
             {tab.icon}
@@ -348,19 +360,19 @@ export default function OrgDashboard() {
       </div>
 
       {/* Main Tab Views */}
-      <main style={{ maxWidth: '1240px', margin: '0 auto', padding: '36px 24px' }}>
+      <main style={{ maxWidth: '1240px', margin: '0 auto', padding: 'clamp(20px, 4vw, 36px) clamp(16px, 3vw, 24px)' }}>
         {activeTab === 'overview' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             {/* KPI Cards / Shimmer Skeletons */}
             {loading && !stats ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '16px' }}>
                 <KPICardSkeleton />
                 <KPICardSkeleton />
                 <KPICardSkeleton />
                 <KPICardSkeleton />
               </div>
             ) : (
-              <div className="fp-page-enter" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
+              <div className="fp-page-enter" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '16px' }}>
                 <div style={{ background: 'var(--fp-surface-1)', border: '1px solid var(--fp-border)', borderRadius: '16px', padding: '24px' }}>
                   <span style={{ fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>Total Allocated Credit</span>
                   <div className="mono" style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '6px' }}>
@@ -511,8 +523,8 @@ export default function OrgDashboard() {
                   No employees onboarded yet. Click "Add Employee" to issue your first credit allowance.
                 </p>
               ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                <div className="fp-table-responsive">
+                  <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
                     <thead>
                       <tr style={{ borderBottom: '1px solid var(--fp-border)', color: 'var(--fp-text-muted)', textAlign: 'left' }}>
                         <th style={{ padding: '12px 14px' }}>Employee</th>
@@ -563,8 +575,8 @@ export default function OrgDashboard() {
                 gap: '16px',
               }}
             >
-              <div style={{ position: 'relative', width: '320px' }}>
-                <MagnifyingGlass size={18} color="var(--fp-text-muted)" style={{ position: 'absolute', left: '12px', top: '11px' }} />
+              <div style={{ position: 'relative', width: '100%', maxWidth: '380px' }}>
+                <MagnifyingGlass size={18} color="var(--fp-text-muted)" style={{ position: 'absolute', left: '12px', top: '13px' }} />
                 <input
                   type="text"
                   placeholder="Search staff by name, FP-ID or phone..."
@@ -572,30 +584,33 @@ export default function OrgDashboard() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '10px 14px 10px 38px',
+                    padding: '11px 14px 11px 38px',
                     borderRadius: '8px',
                     background: 'var(--fp-surface-2)',
                     border: '1px solid var(--fp-border)',
                     color: 'var(--fp-text-primary)',
-                    fontSize: '0.875rem',
+                    fontSize: '1rem',
+                    minHeight: 'var(--fp-touch-min)',
                   }}
                 />
               </div>
 
               <button
                 onClick={() => setShowAddModal(true)}
+                className="fp-touch-target"
                 style={{
                   padding: '10px 18px',
                   borderRadius: '8px',
                   background: 'var(--fp-benefit)',
                   color: '#060A14',
                   fontWeight: 700,
-                  fontSize: '0.85rem',
+                  fontSize: '0.875rem',
                   border: 'none',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
+                  minHeight: 'var(--fp-touch-min)',
                 }}
               >
                 <UserPlus size={18} weight="bold" />
@@ -610,8 +625,8 @@ export default function OrgDashboard() {
                 No employees matching criteria. Click "Add Employee" to onboard your staff.
               </p>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+              <div className="fp-table-responsive">
+                <table style={{ width: '100%', minWidth: '760px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--fp-border)', color: 'var(--fp-text-muted)', textAlign: 'left' }}>
                       <th style={{ padding: '12px 14px' }}>Employee</th>
@@ -706,28 +721,16 @@ export default function OrgDashboard() {
       {/* Edit Credit Limit Modal */}
       {editingEmp && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(6, 10, 20, 0.85)',
-            backdropFilter: 'blur(8px)',
-            zIndex: 150,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px',
-          }}
+          className="fp-modal-overlay"
+          onClick={() => setEditingEmp(null)}
+          style={{ zIndex: 150 }}
         >
           <div
-            style={{
-              width: '100%',
-              maxWidth: '420px',
-              background: 'var(--fp-surface-1)',
-              border: '1px solid var(--fp-border)',
-              borderRadius: '20px',
-              padding: '32px',
-            }}
+            className="fp-modal"
+            style={{ maxWidth: '420px', width: '100%' }}
+            onClick={(e) => e.stopPropagation()}
           >
+            <div className="fp-sheet-handle" />
             <h3 style={{ fontSize: '1.2rem', marginBottom: '8px' }}>Adjust Monthly Credit Limit</h3>
             <p style={{ color: 'var(--fp-text-secondary)', fontSize: '0.85rem', marginBottom: '20px' }}>
               Employee: <strong>{editingEmp.full_name || editingEmp.fullName}</strong> (
@@ -744,16 +747,19 @@ export default function OrgDashboard() {
                   min="500"
                   step="100"
                   required
+                  inputMode="decimal"
                   value={newCreditLimit}
                   onChange={(e) => setNewCreditLimit(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '10px 12px',
+                    padding: '12px 14px',
+                    minHeight: 'var(--fp-touch-min)',
                     borderRadius: '8px',
                     background: 'var(--fp-surface-2)',
                     border: '1px solid var(--fp-border)',
                     color: 'var(--fp-text-primary)',
                     fontFamily: 'var(--fp-font-mono)',
+                    fontSize: '1rem',
                   }}
                 />
               </div>
@@ -761,9 +767,11 @@ export default function OrgDashboard() {
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button
                   type="submit"
+                  className="fp-touch-target"
                   style={{
                     flex: 1,
-                    padding: '10px',
+                    padding: '12px',
+                    minHeight: 'var(--fp-touch-min)',
                     borderRadius: '8px',
                     background: 'var(--fp-benefit)',
                     color: '#060A14',
@@ -777,8 +785,10 @@ export default function OrgDashboard() {
                 <button
                   type="button"
                   onClick={() => setEditingEmp(null)}
+                  className="fp-touch-target"
                   style={{
-                    padding: '10px 16px',
+                    padding: '12px 16px',
+                    minHeight: 'var(--fp-touch-min)',
                     borderRadius: '8px',
                     background: 'transparent',
                     border: '1px solid var(--fp-border)',

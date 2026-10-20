@@ -271,7 +271,7 @@ export default function PayrollPreview() {
       )}
 
       {/* Overview Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '16px' }}>
         <div
           style={{
             background: 'var(--fp-surface-1)',
@@ -329,8 +329,10 @@ export default function PayrollPreview() {
           <button
             onClick={handleRunPayroll}
             disabled={runningPayroll || (preview?.totalMerchantDisbursements === 0)}
+            className="fp-touch-target"
             style={{
               padding: '14px',
+              minHeight: 'var(--fp-touch-comfortable)',
               borderRadius: '10px',
               background: (preview?.totalMerchantDisbursements === 0)
                 ? 'var(--fp-surface-3, #1E293B)'
@@ -389,30 +391,32 @@ export default function PayrollPreview() {
             </span>
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--fp-border)', color: 'var(--fp-text-muted)', textAlign: 'left' }}>
-                <th style={{ padding: '10px 14px' }}>Merchant</th>
-                <th style={{ padding: '10px 14px' }}>M-PESA Payout Till / Phone</th>
-                <th style={{ padding: '10px 14px' }}>Transactions</th>
-                <th style={{ padding: '10px 14px', textAlign: 'right' }}>Total Receivable Due</th>
-              </tr>
-            </thead>
-            <tbody>
-              {preview.merchantDisbursements.map((m) => (
-                <tr key={m.merchantId || m.merchant_id} style={{ borderBottom: '1px solid var(--fp-border-subtle)' }}>
-                  <td style={{ padding: '12px 14px', fontWeight: 600 }}>{m.merchantName || m.merchant_name || 'Merchant Partner'}</td>
-                  <td className="mono" style={{ padding: '12px 14px', color: 'var(--fp-salary)' }}>
-                    {m.mpesaPhone || m.merchantMpesaNumber || m.merchant_mpesa_snapshot || '—'}
-                  </td>
-                  <td style={{ padding: '12px 14px' }}>{m.transactionCount ?? m.transaction_count ?? 0}</td>
-                  <td className="mono" style={{ padding: '12px 14px', fontWeight: 800, textAlign: 'right' }}>
-                    ETB {(Number(m.totalPayable ?? m.totalOwed ?? m.amount ?? 0) || 0).toLocaleString()}
-                  </td>
+          <div className="fp-table-responsive">
+            <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--fp-border)', color: 'var(--fp-text-muted)', textAlign: 'left' }}>
+                  <th style={{ padding: '10px 14px' }}>Merchant</th>
+                  <th style={{ padding: '10px 14px' }}>M-PESA Payout Till / Phone</th>
+                  <th style={{ padding: '10px 14px' }}>Transactions</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'right' }}>Total Receivable Due</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {preview.merchantDisbursements.map((m) => (
+                  <tr key={m.merchantId || m.merchant_id} style={{ borderBottom: '1px solid var(--fp-border-subtle)' }}>
+                    <td style={{ padding: '12px 14px', fontWeight: 600 }}>{m.merchantName || m.merchant_name || 'Merchant Partner'}</td>
+                    <td className="mono" style={{ padding: '12px 14px', color: 'var(--fp-salary)' }}>
+                      {m.mpesaPhone || m.merchantMpesaNumber || m.merchant_mpesa_snapshot || '—'}
+                    </td>
+                    <td style={{ padding: '12px 14px' }}>{m.transactionCount ?? m.transaction_count ?? 0}</td>
+                    <td className="mono" style={{ padding: '12px 14px', fontWeight: 800, textAlign: 'right' }}>
+                      ETB {(Number(m.totalPayable ?? m.totalOwed ?? m.amount ?? 0) || 0).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -429,28 +433,30 @@ export default function PayrollPreview() {
         {(!preview?.employeeLines || preview.employeeLines.length === 0) ? (
           <p style={{ color: 'var(--fp-text-muted)', fontSize: '0.9rem' }}>No employee payroll lines recorded.</p>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--fp-border)', color: 'var(--fp-text-muted)', textAlign: 'left' }}>
-                <th style={{ padding: '10px 14px' }}>Employee</th>
-                <th style={{ padding: '10px 14px' }}>FP-ID</th>
-                <th style={{ padding: '10px 14px', textAlign: 'right' }}>Monthly Salary</th>
-                <th style={{ padding: '10px 14px', textAlign: 'right' }}>Credit Used</th>
-                <th style={{ padding: '10px 14px', textAlign: 'right' }}>Net to Pay</th>
-              </tr>
-            </thead>
-            <tbody>
-              {preview.employeeLines.map((line) => (
-                <tr key={line.employee_id} style={{ borderBottom: '1px solid var(--fp-border-subtle)' }}>
-                  <td style={{ padding: '12px 14px', fontWeight: 600 }}>{line.full_name}</td>
-                  <td className="mono" style={{ padding: '12px 14px', color: 'var(--fp-text-muted)' }}>{line.fp_employee_id}</td>
-                  <td className="mono" style={{ padding: '12px 14px', textAlign: 'right' }}>ETB {Number(line.monthly_salary).toFixed(2)}</td>
-                  <td className="mono" style={{ padding: '12px 14px', textAlign: 'right', color: 'var(--fp-benefit)' }}>ETB {Number(line.credit_used).toFixed(2)}</td>
-                  <td className="mono" style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 800 }}>ETB {Number(line.net_to_pay).toFixed(2)}</td>
+          <div className="fp-table-responsive">
+            <table style={{ width: '100%', minWidth: '680px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--fp-border)', color: 'var(--fp-text-muted)', textAlign: 'left' }}>
+                  <th style={{ padding: '10px 14px' }}>Employee</th>
+                  <th style={{ padding: '10px 14px' }}>FP-ID</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'right' }}>Monthly Salary</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'right' }}>Credit Used</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'right' }}>Net to Pay</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {preview.employeeLines.map((line) => (
+                  <tr key={line.employee_id} style={{ borderBottom: '1px solid var(--fp-border-subtle)' }}>
+                    <td style={{ padding: '12px 14px', fontWeight: 600 }}>{line.full_name}</td>
+                    <td className="mono" style={{ padding: '12px 14px', color: 'var(--fp-text-muted)' }}>{line.fp_employee_id}</td>
+                    <td className="mono" style={{ padding: '12px 14px', textAlign: 'right' }}>ETB {Number(line.monthly_salary).toFixed(2)}</td>
+                    <td className="mono" style={{ padding: '12px 14px', textAlign: 'right', color: 'var(--fp-benefit)' }}>ETB {Number(line.credit_used).toFixed(2)}</td>
+                    <td className="mono" style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 800 }}>ETB {Number(line.net_to_pay).toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -468,127 +474,118 @@ export default function PayrollPreview() {
             <ClockAfternoon size={20} color="var(--fp-benefit)" />
             <h3 style={{ fontSize: '1.1rem', margin: 0 }}>Past Settlement Cycles</h3>
           </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--fp-border)', color: 'var(--fp-text-muted)', textAlign: 'left' }}>
-                <th style={{ padding: '10px 14px' }}>Settlement ID</th>
-                <th style={{ padding: '10px 14px' }}>Total Amount</th>
-                <th style={{ padding: '10px 14px' }}>Status</th>
-                <th style={{ padding: '10px 14px' }}>Date</th>
-                <th style={{ padding: '10px 14px', textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {history.map((s) => {
-                const merchantTotal = Number(s.total_merchant_disbursements ?? s.total_amount ?? s.totalAmount ?? 0) || 0;
-                return (
-                  <tr key={s.id} style={{ borderBottom: '1px solid var(--fp-border-subtle)' }}>
-                    <td className="mono" style={{ padding: '12px 14px' }}>{s.id}</td>
-                    <td className="mono" style={{ padding: '12px 14px', fontWeight: 700, color: 'var(--fp-salary)' }}>
-                      ETB {merchantTotal.toLocaleString()}
-                    </td>
-                    <td style={{ padding: '12px 14px' }}>
-                      <span
-                        style={{
-                          padding: '3px 8px',
-                          borderRadius: '4px',
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          background: s.status === 'COMPLETED' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                          color: s.status === 'COMPLETED' ? 'var(--fp-benefit)' : 'var(--fp-salary)',
-                        }}
-                      >
-                        {s.status}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px 14px', color: 'var(--fp-text-muted)' }}>
-                      {new Date(s.created_at).toLocaleDateString()}
-                    </td>
-                    <td style={{ padding: '12px 14px', textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', gap: '8px' }}>
-                        {s.status === 'RUNNING' && (
-                          <button
-                            onClick={() => handleCompleteSettlement(s.id)}
-                            disabled={completingId === s.id}
-                            style={{
-                              padding: '6px 12px',
-                              borderRadius: '6px',
-                              background: 'var(--fp-benefit)',
-                              color: '#FFFFFF',
-                              border: 'none',
-                              fontSize: '0.75rem',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                            }}
-                          >
-                            {completingId === s.id ? 'Finalizing...' : 'Finalize Payouts'}
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleViewLines(s)}
+          <div className="fp-table-responsive">
+            <table style={{ width: '100%', minWidth: '620px', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--fp-border)', color: 'var(--fp-text-muted)', textAlign: 'left' }}>
+                  <th style={{ padding: '10px 14px' }}>Settlement ID</th>
+                  <th style={{ padding: '10px 14px' }}>Total Amount</th>
+                  <th style={{ padding: '10px 14px' }}>Status</th>
+                  <th style={{ padding: '10px 14px' }}>Date</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((s) => {
+                  const merchantTotal = Number(s.total_merchant_disbursements ?? s.total_amount ?? s.totalAmount ?? 0) || 0;
+                  return (
+                    <tr key={s.id} style={{ borderBottom: '1px solid var(--fp-border-subtle)' }}>
+                      <td className="mono" style={{ padding: '12px 14px' }}>{s.id}</td>
+                      <td className="mono" style={{ padding: '12px 14px', fontWeight: 700, color: 'var(--fp-salary)' }}>
+                        ETB {merchantTotal.toLocaleString()}
+                      </td>
+                      <td style={{ padding: '12px 14px' }}>
+                        <span
                           style={{
-                            padding: '6px 12px',
-                            borderRadius: '6px',
-                            background: 'var(--fp-surface-2)',
-                            color: 'var(--fp-text-primary, #F8FAFC)',
-                            border: '1px solid var(--fp-border)',
+                            padding: '3px 8px',
+                            borderRadius: '4px',
                             fontSize: '0.75rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
+                            fontWeight: 700,
+                            background: s.status === 'COMPLETED' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                            color: s.status === 'COMPLETED' ? 'var(--fp-benefit)' : 'var(--fp-salary)',
                           }}
                         >
-                          <Eye size={14} />
-                          Details
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                          {s.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 14px', color: 'var(--fp-text-muted)' }}>
+                        {new Date(s.created_at).toLocaleDateString()}
+                      </td>
+                      <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', gap: '8px' }}>
+                          {s.status === 'RUNNING' && (
+                            <button
+                              onClick={() => handleCompleteSettlement(s.id)}
+                              disabled={completingId === s.id}
+                              className="fp-touch-target"
+                              style={{
+                                padding: '8px 14px',
+                                minHeight: '38px',
+                                borderRadius: '6px',
+                                background: 'var(--fp-benefit)',
+                                color: '#FFFFFF',
+                                border: 'none',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              {completingId === s.id ? 'Finalizing...' : 'Finalize Payouts'}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleViewLines(s)}
+                            className="fp-touch-target"
+                            style={{
+                              padding: '8px 14px',
+                              minHeight: '38px',
+                              borderRadius: '6px',
+                              background: 'var(--fp-surface-2)',
+                              color: 'var(--fp-text-primary, #F8FAFC)',
+                              border: '1px solid var(--fp-border)',
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}
+                          >
+                            <Eye size={14} />
+                            Details
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* Accessible In-System Modal: Settlement Disbursement Lines Breakdown */}
       {selectedSettlement && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0, 0, 0, 0.75)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '20px',
-          }}
+          className="fp-modal-overlay"
           onClick={() => setSelectedSettlement(null)}
+          style={{ zIndex: 1000 }}
         >
           <div
+            className="fp-modal"
             style={{
-              background: 'var(--fp-surface-1, #0F172A)',
-              border: '1px solid var(--fp-border, #334155)',
-              borderRadius: '20px',
               maxWidth: '720px',
               width: '100%',
               maxHeight: '85vh',
               overflowY: 'auto',
-              padding: '28px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '20px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
+            <div className="fp-sheet-handle" />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#F8FAFC' }}>
+                <h3 style={{ margin: 0, fontSize: 'clamp(1.1rem, 3.5vw, 1.25rem)', color: '#F8FAFC' }}>
                   Settlement Breakdown Details
                 </h3>
                 <p className="mono" style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>
@@ -597,12 +594,19 @@ export default function PayrollPreview() {
               </div>
               <button
                 onClick={() => setSelectedSettlement(null)}
+                className="fp-touch-target"
+                aria-label="Close dialog"
                 style={{
                   background: 'transparent',
                   border: 'none',
                   color: 'var(--fp-text-muted)',
                   cursor: 'pointer',
-                  padding: '4px',
+                  padding: '8px',
+                  minWidth: 'var(--fp-touch-min)',
+                  minHeight: 'var(--fp-touch-min)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
                 <X size={22} />
@@ -619,8 +623,8 @@ export default function PayrollPreview() {
                 No disbursement line items found for this settlement.
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+              <div className="fp-table-responsive">
+                <table style={{ width: '100%', minWidth: '560px', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--fp-border)', color: 'var(--fp-text-muted)', textAlign: 'left' }}>
                       <th style={{ padding: '8px 12px' }}>Type</th>
@@ -679,8 +683,10 @@ export default function PayrollPreview() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '12px' }}>
               <button
                 onClick={() => setSelectedSettlement(null)}
+                className="fp-touch-target"
                 style={{
-                  padding: '8px 18px',
+                  padding: '10px 22px',
+                  minHeight: 'var(--fp-touch-min)',
                   borderRadius: '8px',
                   background: 'var(--fp-surface-2)',
                   border: '1px solid var(--fp-border)',

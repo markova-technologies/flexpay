@@ -113,35 +113,22 @@ export function ToastProvider({ children }) {
       {/* In-system Confirmation Modal */}
       {confirmDialog && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(6, 10, 20, 0.85)',
-            backdropFilter: 'blur(8px)',
-            zIndex: 10000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px',
-            animation: 'fp-toast-in 180ms ease-out both',
-          }}
+          className="fp-modal-overlay"
+          style={{ zIndex: 10000 }}
           onClick={(e) => {
             if (e.target === e.currentTarget) handleConfirmClose(false);
           }}
         >
           <div
+            className="fp-modal"
             style={{
               width: '100%',
               maxWidth: '460px',
-              background: 'var(--fp-surface-1)',
-              border: '1px solid var(--fp-border-strong)',
-              borderRadius: '20px',
-              padding: '28px',
-              boxShadow: 'var(--fp-shadow-lg)',
-              position: 'relative',
             }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '20px' }}>
+            <div className="fp-sheet-handle" />
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', marginBottom: '16px' }}>
               <div
                 style={{
                   width: '44px',
@@ -177,12 +164,14 @@ export function ToastProvider({ children }) {
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px', flexWrap: 'wrap' }}>
               <button
                 type="button"
                 onClick={() => handleConfirmClose(false)}
+                className="fp-touch-target"
                 style={{
-                  padding: '10px 18px',
+                  padding: '12px 18px',
+                  minHeight: 'var(--fp-touch-min)',
                   borderRadius: '8px',
                   background: 'var(--fp-surface-2)',
                   border: '1px solid var(--fp-border)',
@@ -190,6 +179,7 @@ export function ToastProvider({ children }) {
                   fontWeight: 600,
                   fontSize: '0.875rem',
                   cursor: 'pointer',
+                  flex: '1 1 120px',
                 }}
               >
                 {confirmDialog.cancelText}
@@ -198,8 +188,10 @@ export function ToastProvider({ children }) {
                 type="button"
                 autoFocus
                 onClick={() => handleConfirmClose(true)}
+                className="fp-touch-target"
                 style={{
-                  padding: '10px 20px',
+                  padding: '12px 20px',
+                  minHeight: 'var(--fp-touch-min)',
                   borderRadius: '8px',
                   background:
                     confirmDialog.variant === 'danger'
@@ -212,6 +204,7 @@ export function ToastProvider({ children }) {
                   fontSize: '0.875rem',
                   border: 'none',
                   cursor: 'pointer',
+                  flex: '1 1 140px',
                   boxShadow:
                     confirmDialog.variant === 'danger'
                       ? '0 4px 16px rgba(239, 68, 68, 0.3)'

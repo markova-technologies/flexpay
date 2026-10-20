@@ -31,11 +31,15 @@ export function CreditRing({
         alignItems: 'center',
         justifyContent: 'center',
         position: 'relative',
-        width: size,
-        height: size,
+        width: '100%',
+        maxWidth: size,
+        aspectRatio: '1',
       }}
     >
-      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+      <svg
+        viewBox={`0 0 ${size} ${size}`}
+        style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}
+      >
         {/* Background track */}
         <circle
           cx={size / 2}

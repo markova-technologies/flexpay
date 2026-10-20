@@ -63,30 +63,20 @@ export function AddEmployeeForm({ onClose, onCreated }) {
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(6, 10, 20, 0.85)',
-        backdropFilter: 'blur(8px)',
-        zIndex: 150,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '20px',
-      }}
+      className="fp-modal-overlay"
+      onClick={onClose}
+      style={{ zIndex: 150 }}
     >
       <div
+        className="fp-modal"
         style={{
           width: '100%',
           maxWidth: '480px',
-          background: 'var(--fp-surface-1)',
-          border: '1px solid var(--fp-border)',
-          borderRadius: '20px',
-          padding: '32px',
-          boxShadow: 'var(--fp-shadow-lg)',
         }}
+        onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <div className="fp-sheet-handle" />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{
@@ -97,12 +87,13 @@ export function AddEmployeeForm({ onClose, onCreated }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                flexShrink: 0,
               }}
             >
               <UserPlus size={22} color="var(--fp-benefit)" weight="bold" />
             </div>
             <div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Add Employee to Plan</h3>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0 }}>Add Employee to Plan</h3>
               <span style={{ fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>
                 Generates Luhn FP-ID & 16-Char Credential
               </span>
@@ -110,12 +101,19 @@ export function AddEmployeeForm({ onClose, onCreated }) {
           </div>
           <button
             onClick={onClose}
+            className="fp-touch-target"
+            aria-label="Close dialog"
             style={{
               background: 'none',
               border: 'none',
               color: 'var(--fp-text-muted)',
               cursor: 'pointer',
-              padding: '6px',
+              padding: '8px',
+              minWidth: 'var(--fp-touch-min)',
+              minHeight: 'var(--fp-touch-min)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
             <X size={20} />
@@ -131,20 +129,20 @@ export function AddEmployeeForm({ onClose, onCreated }) {
               borderRadius: '8px',
               color: '#EF4444',
               fontSize: '0.85rem',
-              marginBottom: '20px',
+              marginBottom: '16px',
             }}
           >
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.825rem', color: 'var(--fp-text-secondary)', marginBottom: '6px' }}>
               Employee Full Name
             </label>
             <div style={{ position: 'relative' }}>
-              <User size={18} color="var(--fp-text-muted)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+              <User size={18} color="var(--fp-text-muted)" style={{ position: 'absolute', left: '12px', top: '13px' }} />
               <input
                 type="text"
                 required
@@ -158,7 +156,8 @@ export function AddEmployeeForm({ onClose, onCreated }) {
                   background: 'var(--fp-surface-2)',
                   border: '1px solid var(--fp-border)',
                   color: 'var(--fp-text-primary)',
-                  fontSize: '0.9rem',
+                  fontSize: '1rem',
+                  minHeight: 'var(--fp-touch-min)',
                 }}
               />
             </div>
@@ -169,10 +168,11 @@ export function AddEmployeeForm({ onClose, onCreated }) {
               Safaricom Phone Number (251...)
             </label>
             <div style={{ position: 'relative' }}>
-              <Phone size={18} color="var(--fp-text-muted)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+              <Phone size={18} color="var(--fp-text-muted)" style={{ position: 'absolute', left: '12px', top: '13px' }} />
               <input
                 type="text"
                 required
+                inputMode="tel"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 placeholder="251711223344"
@@ -183,14 +183,15 @@ export function AddEmployeeForm({ onClose, onCreated }) {
                   background: 'var(--fp-surface-2)',
                   border: '1px solid var(--fp-border)',
                   color: 'var(--fp-text-primary)',
-                  fontSize: '0.9rem',
+                  fontSize: '1rem',
                   fontFamily: 'var(--fp-font-mono)',
+                  minHeight: 'var(--fp-touch-min)',
                 }}
               />
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '12px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.825rem', color: 'var(--fp-text-secondary)', marginBottom: '6px' }}>
                 Department
@@ -208,7 +209,8 @@ export function AddEmployeeForm({ onClose, onCreated }) {
                   background: 'var(--fp-surface-2)',
                   border: '1px solid var(--fp-border)',
                   color: 'var(--fp-text-primary)',
-                  fontSize: '0.9rem',
+                  fontSize: '1rem',
+                  minHeight: 'var(--fp-touch-min)',
                 }}
               />
             </div>
@@ -229,7 +231,8 @@ export function AddEmployeeForm({ onClose, onCreated }) {
                   background: 'var(--fp-surface-2)',
                   border: '1px solid var(--fp-border)',
                   color: 'var(--fp-text-primary)',
-                  fontSize: '0.9rem',
+                  fontSize: '1rem',
+                  minHeight: 'var(--fp-touch-min)',
                 }}
               />
             </div>
@@ -240,12 +243,13 @@ export function AddEmployeeForm({ onClose, onCreated }) {
               Monthly Salary (ETB) <span style={{ color: 'var(--fp-danger, #EF4444)' }}>*</span>
             </label>
             <div style={{ position: 'relative' }}>
-              <CreditCard size={18} color="var(--fp-benefit)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+              <CreditCard size={18} color="var(--fp-benefit)" style={{ position: 'absolute', left: '12px', top: '13px' }} />
               <input
                 type="number"
                 min="1"
                 step="0.01"
                 required
+                inputMode="decimal"
                 value={monthlySalary}
                 onChange={(e) => handleSalaryChange(e.target.value)}
                 placeholder="e.g. 15000"
@@ -256,8 +260,9 @@ export function AddEmployeeForm({ onClose, onCreated }) {
                   background: 'var(--fp-surface-2)',
                   border: '1px solid var(--fp-border)',
                   color: 'var(--fp-text-primary)',
-                  fontSize: '0.9rem',
+                  fontSize: '1rem',
                   fontFamily: 'var(--fp-font-mono)',
+                  minHeight: 'var(--fp-touch-min)',
                 }}
               />
             </div>
@@ -274,6 +279,7 @@ export function AddEmployeeForm({ onClose, onCreated }) {
               type="number"
               min="0"
               step="0.01"
+              inputMode="decimal"
               value={creditLimit}
               onChange={(e) => handleLimitChange(e.target.value)}
               placeholder="Defaults to Monthly Salary"
@@ -284,8 +290,9 @@ export function AddEmployeeForm({ onClose, onCreated }) {
                 background: 'var(--fp-surface-2)',
                 border: '1px solid var(--fp-border)',
                 color: 'var(--fp-text-primary)',
-                fontSize: '0.9rem',
+                fontSize: '1rem',
                 fontFamily: 'var(--fp-font-mono)',
+                minHeight: 'var(--fp-touch-min)',
               }}
             />
           </div>
@@ -293,14 +300,16 @@ export function AddEmployeeForm({ onClose, onCreated }) {
           <button
             type="submit"
             disabled={loading}
+            className="fp-touch-target"
             style={{
-              marginTop: '10px',
-              padding: '13px',
+              marginTop: '8px',
+              padding: '14px',
+              minHeight: 'var(--fp-touch-comfortable)',
               borderRadius: '8px',
               background: 'var(--fp-benefit)',
               color: '#060A14',
               fontWeight: 700,
-              fontSize: '0.95rem',
+              fontSize: '1rem',
               border: 'none',
               cursor: loading ? 'not-allowed' : 'pointer',
               boxShadow: '0 4px 16px rgba(16, 185, 129, 0.25)',

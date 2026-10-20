@@ -51,15 +51,17 @@ export default function AuthHub() {
       {/* Top Bar */}
       <header
         style={{
-          padding: '20px 32px',
+          padding: 'clamp(14px, 3vw, 20px) clamp(16px, 4vw, 32px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           borderBottom: '1px solid var(--fp-border)',
+          minHeight: 'var(--fp-header-h-mob)',
         }}
       >
         <button
           onClick={() => navigate('/')}
+          className="fp-touch-target"
           style={{
             background: 'none',
             border: 'none',
@@ -103,20 +105,22 @@ export default function AuthHub() {
         style={{
           flex: 1,
           maxWidth: '1100px',
+          width: '100%',
           margin: '0 auto',
-          padding: '60px 24px 80px',
+          padding: 'clamp(32px, 6vw, 64px) clamp(16px, 4vw, 32px) clamp(48px, 8vw, 80px)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
+          boxSizing: 'border-box',
         }}
       >
-        <div style={{ textAlign: 'center', maxWidth: '640px', marginBottom: '56px' }}>
+        <div style={{ textAlign: 'center', maxWidth: '640px', marginBottom: 'clamp(32px, 6vw, 56px)' }}>
           <div
             style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '4px 12px',
+              padding: '6px 14px',
               borderRadius: '999px',
               background: 'rgba(255, 255, 255, 0.05)',
               border: '1px solid var(--fp-border)',
@@ -128,10 +132,10 @@ export default function AuthHub() {
             <ShieldCheck size={16} color="var(--fp-benefit)" />
             Institutional Access Hub
           </div>
-          <h1 style={{ fontSize: '2.4rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '16px' }}>
+          <h1 style={{ fontSize: 'clamp(1.75rem, 5vw, 2.4rem)', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '16px', lineHeight: 1.2 }}>
             Choose Your FlexPay Portal
           </h1>
-          <p style={{ color: 'var(--fp-text-secondary)', fontSize: '1.05rem', lineHeight: 1.6 }}>
+          <p style={{ color: 'var(--fp-text-secondary)', fontSize: 'clamp(0.925rem, 2.5vw, 1.05rem)', lineHeight: 1.6 }}>
             Select your account type to access real-time benefits management, retail checkout, or your personal digital wallet.
           </p>
         </div>
@@ -140,8 +144,8 @@ export default function AuthHub() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))',
-            gap: '28px',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+            gap: 'clamp(16px, 3vw, 28px)',
             width: '100%',
           }}
         >
@@ -153,7 +157,7 @@ export default function AuthHub() {
                 background: 'var(--fp-surface-1)',
                 border: '1px solid var(--fp-border)',
                 borderRadius: '20px',
-                padding: '36px 28px',
+                padding: 'clamp(22px, 4vw, 36px) clamp(18px, 4vw, 28px)',
                 cursor: 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
@@ -162,6 +166,8 @@ export default function AuthHub() {
                 boxShadow: 'var(--fp-shadow-md)',
                 position: 'relative',
                 overflow: 'hidden',
+                minHeight: '260px',
+                WebkitTapHighlightColor: 'transparent',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-4px)';

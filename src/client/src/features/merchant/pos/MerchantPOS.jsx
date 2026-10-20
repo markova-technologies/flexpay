@@ -153,7 +153,7 @@ export function MerchantPOS() {
       <div className="pos__mode-toggle">
         <button
           type="button"
-          className={mode === 'qr' ? 'active' : ''}
+          className={`fp-touch-target ${mode === 'qr' ? 'active' : ''}`}
           onClick={() => {
             setMode('qr');
             setVerified(null);
@@ -163,7 +163,7 @@ export function MerchantPOS() {
         </button>
         <button
           type="button"
-          className={mode === 'manual' ? 'active' : ''}
+          className={`fp-touch-target ${mode === 'manual' ? 'active' : ''}`}
           onClick={() => {
             setMode('manual');
             setScanning(false);
@@ -177,7 +177,7 @@ export function MerchantPOS() {
       {!verified && mode === 'qr' && (
         <div className="pos__scanner">
           {!scanning ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px', textAlign: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px', textAlign: 'center', width: '100%' }}>
               <div style={{ fontSize: '2.5rem' }}>📷</div>
               <h3 style={{ margin: 0, color: 'var(--text-primary, #F8FAFC)', fontSize: '1.15rem' }}>
                 Camera QR Code Verification
@@ -187,8 +187,8 @@ export function MerchantPOS() {
               </p>
               <button
                 type="button"
-                className="btn btn--primary btn--lg"
-                style={{ marginTop: '6px' }}
+                className="btn btn--primary btn--lg fp-touch-target"
+                style={{ marginTop: '6px', minHeight: '48px', width: '100%', maxWidth: '320px' }}
                 onClick={() => setScanning(true)}
               >
                 Start Camera Scan
@@ -202,8 +202,8 @@ export function MerchantPOS() {
               <div id="qr-reader" />
               <button
                 type="button"
-                className="btn btn--ghost"
-                style={{ marginTop: '14px' }}
+                className="btn btn--ghost fp-touch-target"
+                style={{ marginTop: '14px', minHeight: '44px' }}
                 onClick={() => setScanning(false)}
               >
                 ✕ Close Scanner
@@ -219,15 +219,24 @@ export function MerchantPOS() {
             Enter Employee FlexPay ID
           </label>
           <input
-            className="form-input"
+            className="form-input fp-touch-target"
             placeholder="FP-ETH-2026-XXXXX-X"
             value={fpIdInput}
-            onChange={(e) => setFpIdInput(e.target.value)}
+            onChange={(e) => setFpIdInput(e.target.value.toUpperCase())}
+            autoCapitalize="characters"
+            autoCorrect="off"
+            spellCheck="false"
+            style={{ minHeight: '48px', fontSize: '1rem', width: '100%', boxSizing: 'border-box' }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') verifyManual();
             }}
           />
-          <button type="button" className="btn btn--primary" onClick={verifyManual}>
+          <button
+            type="button"
+            className="btn btn--primary fp-touch-target"
+            style={{ minHeight: '48px' }}
+            onClick={verifyManual}
+          >
             Verify Employee
           </button>
         </div>
@@ -251,13 +260,15 @@ export function MerchantPOS() {
             Total Purchase Amount (ETB)
           </label>
           <input
-            className="form-input form-input--lg"
+            className="form-input form-input--lg fp-touch-target"
             type="number"
+            inputMode="decimal"
             min="1"
             step="0.01"
             placeholder="Amount (ETB)"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
+            style={{ minHeight: '52px', fontSize: '1.25rem', width: '100%', boxSizing: 'border-box' }}
           />
 
           {amount && parseFloat(amount) > Number(verified.availableCredit || 0) && (
@@ -268,14 +279,16 @@ export function MerchantPOS() {
 
           <button
             type="button"
-            className="btn btn--primary btn--lg"
+            className="btn btn--primary btn--lg fp-touch-target"
+            style={{ minHeight: '48px' }}
             onClick={confirmPayment}
           >
             Authorize Payment
           </button>
           <button
             type="button"
-            className="btn btn--ghost"
+            className="btn btn--ghost fp-touch-target"
+            style={{ minHeight: '44px' }}
             onClick={() => {
               setVerified(null);
               setFpIdInput('');

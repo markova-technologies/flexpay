@@ -5,7 +5,11 @@
   color: var(--text-primary, #F8FAFC);
 }
 
-.merchant-sidebar {
+.merchant-mobile-header {
+  display: none;
+}
+
+.merchant-nav {
   width: 250px;
   background: var(--bg-surface, var(--fp-surface-1, #0C1322));
   border-right: 1px solid var(--border, var(--fp-border, rgba(255, 255, 255, 0.08)));
@@ -14,6 +18,13 @@
   flex-direction: column;
   gap: 8px;
   flex-shrink: 0;
+}
+
+.merchant-nav__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
 }
 
 .sidebar__brand {
@@ -78,17 +89,94 @@
   max-width: 1200px;
 }
 
+.merchant-signout-btn {
+  background: var(--fp-surface-2);
+  border: 1px solid var(--fp-border);
+  color: var(--fp-text-secondary);
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
 @media (max-width: 768px) {
   .merchant-layout {
     flex-direction: column;
   }
-  .merchant-sidebar {
+
+  .desktop-only {
+    display: none !important;
+  }
+
+  .merchant-mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: clamp(10px, 2.5vw, 14px) 16px;
+    background: var(--fp-surface-1);
+    border-bottom: 1px solid var(--fp-border);
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    min-height: var(--fp-header-h-mob);
+  }
+
+  .merchant-mobile-header .sidebar__brand {
+    padding: 0;
+    margin: 0;
+    border-bottom: none;
+    font-size: 1.1rem;
+  }
+
+  .merchant-nav {
     width: 100%;
     border-right: none;
     border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.08));
-    padding: 16px;
+    padding: 8px 12px;
+    position: sticky;
+    top: var(--fp-header-h-mob);
+    z-index: 30;
+    background: var(--fp-surface-1);
+    backdrop-filter: blur(8px);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
+
+  .merchant-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .merchant-nav__list {
+    flex-direction: row;
+    width: max-content;
+    gap: 6px;
+  }
+
+  .sidebar__item {
+    width: auto;
+    white-space: nowrap;
+    padding: 8px 14px;
+    min-height: 44px;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    gap: 6px;
+    background: var(--fp-surface-2);
+  }
+
+  .sidebar__item.active {
+    box-shadow: none;
+    background: var(--fp-benefit);
+    color: #060A14;
+    font-weight: 700;
+  }
+
   .merchant-main {
-    padding: 20px;
+    padding: clamp(16px, 4vw, 24px) clamp(12px, 3vw, 20px) calc(28px + var(--fp-safe-bottom));
+    width: 100%;
+    box-sizing: border-box;
   }
 }

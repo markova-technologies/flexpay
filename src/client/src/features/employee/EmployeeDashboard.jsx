@@ -77,13 +77,14 @@ export default function EmployeeDashboard() {
         style={{
           borderBottom: '1px solid var(--fp-border)',
           background: 'var(--fp-surface-1)',
-          padding: '16px 28px',
+          padding: 'clamp(12px, 3vw, 16px) clamp(16px, 4vw, 28px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          minHeight: 'var(--fp-header-h-mob)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div
             style={{
               width: '34px',
@@ -95,34 +96,37 @@ export default function EmployeeDashboard() {
               justifyContent: 'center',
               fontWeight: 800,
               color: '#060A14',
+              flexShrink: 0,
             }}
           >
             F
           </div>
           <div>
-            <h1 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>FlexPay Wallet</h1>
+            <h1 style={{ fontSize: 'clamp(1rem, 3vw, 1.15rem)', fontWeight: 800, margin: 0, lineHeight: 1.2 }}>FlexPay Wallet</h1>
             <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-muted)' }}>
               {data?.employee?.organizationName || 'Corporate Partner'} • Employee Portal
             </span>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(10px, 3vw, 16px)' }}>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>
+            <div style={{ fontSize: '0.875rem', fontWeight: 700 }}>
               {data?.employee?.fullName || user?.fullName || 'Employee'}
             </div>
-            <div className="mono" style={{ fontSize: '0.75rem', color: 'var(--fp-text-secondary)' }}>
+            <div className="mono" style={{ fontSize: '0.725rem', color: 'var(--fp-text-secondary)' }}>
               {data?.employee?.fpEmployeeId || user?.fpEmployeeId}
             </div>
           </div>
           <button
             onClick={handleLogout}
+            className="fp-touch-target"
             style={{
               background: 'var(--fp-surface-2)',
               border: '1px solid var(--fp-border)',
               borderRadius: '8px',
               padding: '8px 12px',
+              minHeight: '40px',
               color: 'var(--fp-text-secondary)',
               cursor: 'pointer',
               display: 'flex',
@@ -132,13 +136,13 @@ export default function EmployeeDashboard() {
             }}
           >
             <SignOut size={16} />
-            Sign Out
+            <span className="fp-hide-on-tiny">Sign Out</span>
           </button>
         </div>
       </header>
 
       {/* Main Content */}
-      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '36px 24px' }}>
+      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: 'clamp(20px, 4vw, 36px) clamp(14px, 4vw, 24px)', boxSizing: 'border-box' }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--fp-text-muted)' }}>
             <ArrowsClockwise size={36} className="spin" style={{ marginBottom: '12px' }} />
@@ -149,7 +153,7 @@ export default function EmployeeDashboard() {
             {error}
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(20px, 4vw, 32px)' }}>
             {/* Top Row: Gauge & Balances */}
             {(() => {
               const emp = data?.employee || {};
@@ -167,8 +171,8 @@ export default function EmployeeDashboard() {
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                    gap: '24px',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+                    gap: 'clamp(16px, 3vw, 24px)',
                     alignItems: 'stretch',
                   }}
                 >
@@ -178,11 +182,12 @@ export default function EmployeeDashboard() {
                       background: 'var(--fp-surface-1)',
                       border: '1px solid var(--fp-border)',
                       borderRadius: '20px',
-                      padding: '28px',
+                      padding: 'clamp(20px, 4vw, 28px)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       boxShadow: 'var(--fp-shadow-md)',
+                      boxSizing: 'border-box',
                     }}
                   >
                     <CreditRing
@@ -200,7 +205,7 @@ export default function EmployeeDashboard() {
                         background: 'var(--fp-surface-1)',
                         border: '1px solid var(--fp-border)',
                         borderRadius: '16px',
-                        padding: '20px 24px',
+                        padding: 'clamp(14px, 3vw, 20px) clamp(16px, 3vw, 24px)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
@@ -220,7 +225,7 @@ export default function EmployeeDashboard() {
                         background: 'rgba(16, 185, 129, 0.08)',
                         border: '1px solid rgba(16, 185, 129, 0.25)',
                         borderRadius: '16px',
-                        padding: '20px 24px',
+                        padding: 'clamp(14px, 3vw, 20px) clamp(16px, 3vw, 24px)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
@@ -240,7 +245,7 @@ export default function EmployeeDashboard() {
                         background: 'var(--fp-surface-1)',
                         border: '1px solid var(--fp-border)',
                         borderRadius: '16px',
-                        padding: '20px 24px',
+                        padding: 'clamp(14px, 3vw, 20px) clamp(16px, 3vw, 24px)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
@@ -268,15 +273,16 @@ export default function EmployeeDashboard() {
                 background: 'var(--fp-surface-1)',
                 border: '1px solid var(--fp-border)',
                 borderRadius: '20px',
-                padding: '28px',
+                padding: 'clamp(18px, 4vw, 28px)',
+                boxSizing: 'border-box',
               }}
             >
               <h3 style={{ fontSize: '1.15rem', marginBottom: '20px' }}>Spending by Category</h3>
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                  gap: '16px',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))',
+                  gap: 'clamp(10px, 2.5vw, 16px)',
                 }}
               >
                 {Object.entries(data.spendingByCategory || {}).map(([cat, amount]) => (
@@ -286,7 +292,7 @@ export default function EmployeeDashboard() {
                       background: 'var(--fp-surface-2)',
                       border: '1px solid var(--fp-border)',
                       borderRadius: '12px',
-                      padding: '16px',
+                      padding: '14px 16px',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
@@ -295,7 +301,7 @@ export default function EmployeeDashboard() {
                         {cat}
                       </span>
                     </div>
-                    <div className="mono" style={{ fontSize: '1.2rem', fontWeight: 700 }}>
+                    <div className="mono" style={{ fontSize: '1.15rem', fontWeight: 700 }}>
                       ETB {Number(amount).toLocaleString()}
                     </div>
                   </div>
@@ -309,7 +315,8 @@ export default function EmployeeDashboard() {
                 background: 'var(--fp-surface-1)',
                 border: '1px solid var(--fp-border)',
                 borderRadius: '20px',
-                padding: '28px',
+                padding: 'clamp(18px, 4vw, 28px)',
+                boxSizing: 'border-box',
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -324,40 +331,40 @@ export default function EmployeeDashboard() {
                   No transactions recorded yet this cycle. Scan your QR code at a certified merchant to begin!
                 </div>
               ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                <div className="fp-table-responsive" style={{ WebkitOverflowScrolling: 'touch' }}>
+                  <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
                     <thead>
                       <tr style={{ borderBottom: '1px solid var(--fp-border)', color: 'var(--fp-text-muted)', textAlign: 'left' }}>
-                        <th style={{ padding: '12px 16px' }}>Merchant</th>
-                        <th style={{ padding: '12px 16px' }}>Category</th>
-                        <th style={{ padding: '12px 16px' }}>Total</th>
-                        <th style={{ padding: '12px 16px' }}>FlexPay Credit</th>
-                        <th style={{ padding: '12px 16px' }}>M-PESA Co-Pay</th>
-                        <th style={{ padding: '12px 16px' }}>Status</th>
+                        <th style={{ padding: '12px 14px' }}>Merchant</th>
+                        <th style={{ padding: '12px 14px' }}>Category</th>
+                        <th style={{ padding: '12px 14px' }}>Total</th>
+                        <th style={{ padding: '12px 14px' }}>FlexPay Credit</th>
+                        <th style={{ padding: '12px 14px' }}>M-PESA Co-Pay</th>
+                        <th style={{ padding: '12px 14px' }}>Status</th>
                       </tr>
                     </thead>
                     <tbody>
                       {data.recentTransactions.map((tx) => (
                         <tr key={tx.id} style={{ borderBottom: '1px solid var(--fp-border-subtle)' }}>
-                          <td style={{ padding: '14px 16px', fontWeight: 600 }}>
+                          <td style={{ padding: '12px 14px', fontWeight: 600 }}>
                             {tx.merchant_name_snapshot || 'Merchant'}
                           </td>
-                          <td style={{ padding: '14px 16px' }}>
+                          <td style={{ padding: '12px 14px' }}>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                               {getCategoryIcon(tx.category_snapshot)}
                               {tx.category_snapshot || 'GENERAL'}
                             </span>
                           </td>
-                          <td className="mono" style={{ padding: '14px 16px', fontWeight: 700 }}>
+                          <td className="mono" style={{ padding: '12px 14px', fontWeight: 700 }}>
                             ETB {Number(tx.total_amount).toLocaleString()}
                           </td>
-                          <td className="mono" style={{ padding: '14px 16px', color: 'var(--fp-benefit)' }}>
+                          <td className="mono" style={{ padding: '12px 14px', color: 'var(--fp-benefit)' }}>
                             ETB {Number(tx.credit_portion).toLocaleString()}
                           </td>
-                          <td className="mono" style={{ padding: '14px 16px', color: 'var(--fp-salary)' }}>
+                          <td className="mono" style={{ padding: '12px 14px', color: 'var(--fp-salary)' }}>
                             ETB {Number(tx.copay_portion).toLocaleString()}
                           </td>
-                          <td style={{ padding: '14px 16px' }}>
+                          <td style={{ padding: '12px 14px' }}>
                             <span
                               style={{
                                 display: 'inline-flex',

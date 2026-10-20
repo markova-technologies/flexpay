@@ -34,23 +34,42 @@ export function MerchantLayout() {
 
   return (
     <div className="merchant-layout">
-      <nav className="merchant-sidebar">
+      {/* Mobile Top Bar */}
+      <header className="merchant-mobile-header">
         <div className="sidebar__brand">
+          FlexPay <span>Merchant POS</span>
+        </div>
+        <button
+          type="button"
+          className="fp-touch-target merchant-signout-btn"
+          onClick={handleLogout}
+          aria-label="Sign Out"
+        >
+          <span>🚪</span>
+          <span className="fp-hide-on-tiny">Sign Out</span>
+        </button>
+      </header>
+
+      {/* Navigation (Sidebar on desktop, horizontal scrollable pills on mobile) */}
+      <nav className="merchant-nav">
+        <div className="sidebar__brand desktop-only">
           FlexPay <span>Merchant</span>
         </div>
-        {NAV_ITEMS.map((item) => (
-          <button
-            key={item.key}
-            type="button"
-            className={`sidebar__item ${active === item.key ? 'active' : ''}`}
-            onClick={() => setActive(item.key)}
-          >
-            <span>{item.icon}</span>
-            <span>{item.label}</span>
-          </button>
-        ))}
+        <div className="merchant-nav__list">
+          {NAV_ITEMS.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              className={`sidebar__item fp-touch-target ${active === item.key ? 'active' : ''}`}
+              onClick={() => setActive(item.key)}
+            >
+              <span className="nav-icon">{item.icon}</span>
+              <span className="nav-label">{item.label}</span>
+            </button>
+          ))}
+        </div>
 
-        <div className="sidebar__footer">
+        <div className="sidebar__footer desktop-only">
           <button
             type="button"
             className="sidebar__item"

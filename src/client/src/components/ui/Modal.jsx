@@ -45,6 +45,7 @@ export function Modal({
         onClick={(e) => e.stopPropagation()}
         ref={modalRef}
       >
+        <div className="fp-sheet-handle" aria-hidden="true" />
         <div className="fp-modal-card__header">
           <h3 id="modal-title" className="fp-modal-card__title">
             {title}

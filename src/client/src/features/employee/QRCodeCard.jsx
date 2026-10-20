@@ -74,12 +74,14 @@ export function QRCodeCard({ employee }) {
         background: 'var(--fp-surface-1)',
         border: '1px solid var(--fp-border)',
         borderRadius: '20px',
-        padding: '28px',
+        padding: 'clamp(20px, 4vw, 28px)',
         boxShadow: 'var(--fp-shadow-md)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         textAlign: 'center',
+        width: '100%',
+        boxSizing: 'border-box',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
@@ -94,8 +96,9 @@ export function QRCodeCard({ employee }) {
       {/* QR Display Container */}
       <div
         style={{
-          width: '210px',
-          height: '210px',
+          width: '100%',
+          maxWidth: '210px',
+          aspectRatio: '1',
           background: '#FFFFFF',
           borderRadius: '16px',
           padding: '12px',
@@ -104,6 +107,7 @@ export function QRCodeCard({ employee }) {
           justifyContent: 'center',
           boxShadow: '0 8px 30px rgba(0, 0, 0, 0.4)',
           position: 'relative',
+          boxSizing: 'border-box',
         }}
       >
         {loading && !isReady ? (
@@ -169,9 +173,11 @@ export function QRCodeCard({ employee }) {
         <button
           onClick={downloadQR}
           disabled={!isReady}
+          className="fp-touch-target"
           style={{
             flex: 1,
             padding: '10px 14px',
+            minHeight: '44px',
             borderRadius: '8px',
             background: isReady ? 'var(--fp-surface-2)' : 'rgba(255, 255, 255, 0.05)',
             border: '1px solid var(--fp-border-strong)',
@@ -192,14 +198,20 @@ export function QRCodeCard({ employee }) {
           onClick={fetchQRCode}
           disabled={loading}
           title="Refresh QR Code"
+          className="fp-touch-target"
           style={{
             padding: '10px 14px',
+            minHeight: '44px',
+            minWidth: '44px',
             borderRadius: '8px',
             background: 'transparent',
             border: '1px solid var(--fp-border)',
             color: 'var(--fp-text-secondary)',
             fontSize: '0.85rem',
             cursor: loading ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           <ArrowsClockwise size={18} className={loading ? 'spin' : ''} />

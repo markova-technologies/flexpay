@@ -87,12 +87,12 @@ export default function PasswordResetRequests({ onPasswordGenerated }) {
         background: 'var(--fp-surface-1)',
         border: '1px solid var(--fp-border)',
         borderRadius: '20px',
-        padding: '28px',
+        padding: 'clamp(18px, 3.5vw, 28px)',
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0 }}>Password Reset Approval Queue</h3>
+          <h3 style={{ fontSize: 'clamp(1.1rem, 3.5vw, 1.25rem)', fontWeight: 700, margin: 0 }}>Password Reset Approval Queue</h3>
           <p style={{ color: 'var(--fp-text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>
             Employees who forgot their credentials submit requests here. Approving generates a new 16-character password.
           </p>
@@ -100,17 +100,19 @@ export default function PasswordResetRequests({ onPasswordGenerated }) {
         <button
           onClick={fetchRequests}
           disabled={loading}
+          className="fp-touch-target"
           style={{
             background: 'var(--fp-surface-2)',
             border: '1px solid var(--fp-border)',
             borderRadius: '8px',
-            padding: '8px 12px',
+            padding: '8px 14px',
             color: 'var(--fp-text-secondary)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
             fontSize: '0.85rem',
+            minHeight: 'var(--fp-touch-min)',
           }}
         >
           <ArrowsClockwise size={16} />
@@ -140,8 +142,8 @@ export default function PasswordResetRequests({ onPasswordGenerated }) {
           </span>
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+        <div className="fp-table-responsive">
+          <table style={{ width: '100%', minWidth: '700px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--fp-border)', color: 'var(--fp-text-muted)', textAlign: 'left' }}>
                 <th style={{ padding: '12px 14px' }}>Employee</th>
@@ -199,8 +201,10 @@ export default function PasswordResetRequests({ onPasswordGenerated }) {
                           <button
                             onClick={() => handleApprove(req)}
                             disabled={actionLoadingId === reqId}
+                            className="fp-touch-target"
                             style={{
-                              padding: '6px 14px',
+                              padding: '8px 14px',
+                              minHeight: '38px',
                               borderRadius: '6px',
                               background: 'var(--fp-benefit)',
                               color: '#060A14',
@@ -215,8 +219,10 @@ export default function PasswordResetRequests({ onPasswordGenerated }) {
                           <button
                             onClick={() => handleReject(req)}
                             disabled={actionLoadingId === reqId}
+                            className="fp-touch-target"
                             style={{
-                              padding: '6px 10px',
+                              padding: '8px 12px',
+                              minHeight: '38px',
                               borderRadius: '6px',
                               background: 'transparent',
                               border: '1px solid rgba(239, 68, 68, 0.3)',
