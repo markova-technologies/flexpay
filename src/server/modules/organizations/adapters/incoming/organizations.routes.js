@@ -283,6 +283,8 @@ async function organizationRoutes(fastify, options) {
             start: periodStart || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
             end: periodEnd || new Date().toISOString().slice(0, 10),
           },
+          transactions: transactions || [],
+          pendingTransactions: completedTxns || [],
           merchantDisbursements: Array.from(merchantMap.values()),
           employeeOutstandingBalances: Array.from(employeeBalanceMap.values()),
           employeeLines,
@@ -297,6 +299,8 @@ async function organizationRoutes(fastify, options) {
             start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
             end: new Date().toISOString().slice(0, 10),
           },
+          transactions: [],
+          pendingTransactions: [],
           merchantDisbursements: [],
           employeeOutstandingBalances: [],
           employeeLines: [],
@@ -315,7 +319,7 @@ async function organizationRoutes(fastify, options) {
     '/org/employees',
     { preHandler: [requireRole('ORG_ADMIN', 'ORG_CONTROLLER')] },
     async (request, reply) => {
-      const { orgId } = request.user;
+      const orgId = await resolveOrgId(request.user);
       const page = Number(request.query.page) || 1;
       const limit = Number(request.query.limit) || 20;
       const { search, department } = request.query;
@@ -327,7 +331,7 @@ async function organizationRoutes(fastify, options) {
         department,
       });
 
-      const employees = rawEmployees.map((e) => {
+      const employees = (rawEmployees || []).map((e) => {
         const entity = new Employee(e);
         return {
           id: entity.id,
@@ -364,7 +368,7 @@ async function organizationRoutes(fastify, options) {
         return reply.code(400).send({ error: 'Validation error', details: parse.error.issues });
       }
 
-      const { orgId } = request.user;
+      const orgId = await resolveOrgId(request.user);
       const { fullName, phoneNumber, department, jobTitle, monthlySalary, creditLimitOverride, creditLimit, sendSms } = parse.data;
       const effectiveLimit = creditLimitOverride !== undefined ? creditLimitOverride : creditLimit;
 
@@ -414,9 +418,10 @@ async function organizationRoutes(fastify, options) {
     { preHandler: [requireRole('ORG_ADMIN', 'ORG_CONTROLLER')] },
     async (request, reply) => {
       const { fpId } = request.params;
+      const orgId = await resolveOrgId(request.user);
       const employeeRaw = await employeeRepo.findByFpId(fpId);
 
-      if (!employeeRaw || employeeRaw.organization_id !== request.user.orgId) {
+      if (!employeeRaw || (employeeRaw.organization_id !== orgId && request.user.role !== 'SUPER_ADMIN' && request.user.role !== 'ADMIN')) {
         return reply.code(404).send({ error: 'Employee not found in your organization' });
       }
 
@@ -445,6 +450,7 @@ async function organizationRoutes(fastify, options) {
   // --------------------------------------------------------------------------
   const handleCreditUpdate = async (request, reply) => {
     const { fpId } = request.params;
+    const orgId = await resolveOrgId(request.user);
     const parse = updateCreditSchema.safeParse(request.body);
     if (!parse.success) {
       return reply.code(400).send({ error: 'Validation error', details: parse.error.issues });
@@ -457,7 +463,7 @@ async function organizationRoutes(fastify, options) {
 
     const employeeRaw = await employeeRepo.findByFpId(fpId);
 
-    if (!employeeRaw || employeeRaw.organization_id !== request.user.orgId) {
+    if (!employeeRaw || (employeeRaw.organization_id !== orgId && request.user.role !== 'SUPER_ADMIN' && request.user.role !== 'ADMIN')) {
       return reply.code(404).send({ error: 'Employee not found in your organization' });
     }
 
@@ -488,8 +494,8 @@ async function organizationRoutes(fastify, options) {
     '/org/password-reset-requests',
     { preHandler: [requireRole('ORG_ADMIN', 'ORG_CONTROLLER')] },
     async (request, reply) => {
-      const { orgId } = request.user;
-      const requests = await employeeRepo.listPasswordResetRequests(orgId, 'PENDING');
+      const orgId = await resolveOrgId(request.user);
+      const requests = (await employeeRepo.listPasswordResetRequests(orgId, 'PENDING')) || [];
       return reply.send({ requests });
     }
   );
@@ -508,8 +514,9 @@ async function organizationRoutes(fastify, options) {
       return reply.code(400).send({ error: 'Validation error', details: parse.error.issues });
     }
 
+    const orgId = await resolveOrgId(request.user);
     const resetReq = await employeeRepo.findPasswordResetRequestById(id);
-    if (!resetReq || resetReq.organizationId !== request.user.orgId) {
+    if (!resetReq || (resetReq.organizationId !== orgId && request.user.role !== 'SUPER_ADMIN' && request.user.role !== 'ADMIN')) {
       return reply.code(404).send({ error: 'Password reset request not found' });
     }
 
@@ -620,7 +627,7 @@ async function organizationRoutes(fastify, options) {
     '/org/merchants/:merchantId',
     { preHandler: [requireRole('ORG_ADMIN', 'ORG_CONTROLLER'), validateUUIDParams(['merchantId'])] },
     async (request, reply) => {
-      const { orgId } = request.user;
+      const orgId = await resolveOrgId(request.user);
       const { merchantId } = request.params;
       const { page, limit } = request.query;
 
@@ -639,7 +646,7 @@ async function organizationRoutes(fastify, options) {
     '/org/merchants/:merchantId/statement',
     { preHandler: [requireRole('ORG_ADMIN', 'ORG_CONTROLLER'), validateUUIDParams(['merchantId'])] },
     async (request, reply) => {
-      const { orgId } = request.user;
+      const orgId = await resolveOrgId(request.user);
       const { merchantId } = request.params;
 
       const detail = await getOrgMerchantDetailUseCase.execute({

@@ -16,16 +16,20 @@ export default function ProtectedRoute({ children, allowedRoles }) {
       if (userRole === target) return true;
       if (['ADMIN', 'FLEXPAY_ADMIN', 'SUPER_ADMIN'].includes(userRole)) return true;
       if (
-        (target === 'MERCHANT' || target.startsWith('MERCHANT_')) &&
-        (userRole === 'MERCHANT' || userRole.startsWith('MERCHANT_') || Boolean(user.merchantId))
+        (target === 'MERCHANT' || target.startsWith('MERCHANT_'))
       ) {
-        return true;
+        if (['EMPLOYEE', 'WORKER'].includes(userRole)) return false;
+        if (userRole === 'MERCHANT' || userRole.startsWith('MERCHANT_') || Boolean(user.merchantId)) {
+          return true;
+        }
       }
       if (
-        (target.startsWith('ORG_') || target === 'EMPLOYER_ADMIN' || target === 'ORGANIZATION') &&
-        (userRole.startsWith('ORG_') || userRole === 'EMPLOYER_ADMIN' || userRole === 'ORGANIZATION' || Boolean(user.orgId || user.organizationId))
+        (target.startsWith('ORG_') || target === 'EMPLOYER_ADMIN' || target === 'ORGANIZATION')
       ) {
-        return true;
+        if (['EMPLOYEE', 'WORKER'].includes(userRole)) return false;
+        if (userRole.startsWith('ORG_') || userRole === 'EMPLOYER_ADMIN' || userRole === 'ORGANIZATION' || Boolean(user.orgId || user.organizationId)) {
+          return true;
+        }
       }
       if (
         (target === 'EMPLOYEE' || target === 'WORKER') &&

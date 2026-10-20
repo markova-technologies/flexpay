@@ -14,6 +14,7 @@ import {
 } from '@phosphor-icons/react';
 import api from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
+import MerchantDetailDrawer from './MerchantDetailDrawer';
 
 export default function PayrollPreview() {
   const toast = useToast();
@@ -25,6 +26,10 @@ export default function PayrollPreview() {
   const [finalizingAll, setFinalizingAll] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Merchant detail drawer state
+  const [drawerMerchant, setDrawerMerchant] = useState(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   // Modal breakdown state
   const [selectedSettlement, setSelectedSettlement] = useState(null);
@@ -44,6 +49,8 @@ export default function PayrollPreview() {
               merchantDisbursements: [],
               employeeOutstandingBalances: [],
               employeeLines: [],
+              transactions: [],
+              pendingTransactions: [],
               totalMerchantDisbursements: 0,
               totalCreditUsed: 0,
               totalEmployeeSettlements: 0,
@@ -57,6 +64,8 @@ export default function PayrollPreview() {
           merchantDisbursements: [],
           employeeOutstandingBalances: [],
           employeeLines: [],
+          transactions: [],
+          pendingTransactions: [],
           totalMerchantDisbursements: 0,
           totalCreditUsed: 0,
           totalEmployeeSettlements: 0,
@@ -430,13 +439,14 @@ export default function PayrollPreview() {
           </div>
         ) : (
           <div className="fp-table-responsive">
-            <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+            <table style={{ width: '100%', minWidth: '680px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--fp-border)', color: 'var(--fp-text-muted)', textAlign: 'left' }}>
                   <th style={{ padding: '10px 14px' }}>Merchant</th>
                   <th style={{ padding: '10px 14px' }}>M-PESA Payout Till / Phone</th>
                   <th style={{ padding: '10px 14px' }}>Transactions</th>
                   <th style={{ padding: '10px 14px', textAlign: 'right' }}>Total Receivable Due</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -450,8 +460,135 @@ export default function PayrollPreview() {
                     <td className="mono" style={{ padding: '12px 14px', fontWeight: 800, textAlign: 'right' }}>
                       ETB {(Number(m.totalPayable ?? m.totalOwed ?? m.amount ?? 0) || 0).toLocaleString()}
                     </td>
+                    <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDrawerMerchant({
+                            id: m.merchantId || m.merchant_id,
+                            businessName: m.merchantName || m.merchant_name || 'Merchant Partner',
+                            ...m,
+                          });
+                          setDrawerOpen(true);
+                        }}
+                        className="fp-touch-target"
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          background: 'var(--fp-surface-2)',
+                          border: '1px solid var(--fp-border)',
+                          color: 'var(--fp-text-primary)',
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
+                        <Eye size={14} />
+                        <span>Store Details</span>
+                      </button>
+                    </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Recent Employee Credit Purchases & Transactions Stream */}
+      <div
+        style={{
+          background: 'var(--fp-surface-1)',
+          border: '1px solid var(--fp-border)',
+          borderRadius: '16px',
+          padding: '24px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+          <div>
+            <h3 style={{ fontSize: '1.1rem', margin: 0, fontWeight: 700 }}>Recent Employee Credit Transactions</h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--fp-text-secondary)', margin: '4px 0 0 0' }}>
+              Live transaction stream of staff benefits and credit purchases made at certified merchant partners.
+            </p>
+          </div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-muted)' }}>
+            {(preview?.transactions || []).length} recorded transaction(s)
+          </span>
+        </div>
+
+        {(!preview?.transactions || preview.transactions.length === 0) ? (
+          <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--fp-text-muted)' }}>
+            <Receipt size={32} style={{ opacity: 0.4, marginBottom: '8px' }} />
+            <p style={{ margin: 0, fontWeight: 600, color: 'var(--fp-text-secondary)' }}>
+              No employee credit transactions recorded yet.
+            </p>
+            <span style={{ fontSize: '0.8rem' }}>
+              When employees make purchases at certified merchant tills, real-time transaction records will appear here.
+            </span>
+          </div>
+        ) : (
+          <div className="fp-table-responsive">
+            <table style={{ width: '100%', minWidth: '740px', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--fp-border)', color: 'var(--fp-text-muted)', textAlign: 'left' }}>
+                  <th style={{ padding: '10px 14px' }}>Date & Ref</th>
+                  <th style={{ padding: '10px 14px' }}>Employee</th>
+                  <th style={{ padding: '10px 14px' }}>Merchant</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'right' }}>Credit Portion</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'right' }}>Co-pay</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'right' }}>Total</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'right' }}>Settlement Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {preview.transactions.map((t) => {
+                  const isSettled = Boolean(t.settlement_id);
+                  return (
+                    <tr key={t.id} style={{ borderBottom: '1px solid var(--fp-border-subtle)' }}>
+                      <td style={{ padding: '12px 14px' }}>
+                        <div style={{ fontWeight: 600 }}>{new Date(t.created_at).toLocaleDateString()}</div>
+                        <div className="mono" style={{ fontSize: '0.72rem', color: 'var(--fp-text-muted)' }}>
+                          {t.fp_transaction_ref || (t.id ? t.id.slice(0, 13) : 'TXN')}
+                        </div>
+                      </td>
+                      <td style={{ padding: '12px 14px' }}>
+                        <div style={{ fontWeight: 600 }}>{t.employee_name_snapshot || 'Employee'}</div>
+                        <div className="mono" style={{ fontSize: '0.72rem', color: 'var(--fp-benefit)' }}>
+                          {t.employee_fp_id_snapshot || 'FP-ID'}
+                        </div>
+                      </td>
+                      <td style={{ padding: '12px 14px' }}>
+                        <div style={{ fontWeight: 600 }}>{t.merchant_name_snapshot || 'Merchant Partner'}</div>
+                      </td>
+                      <td className="mono" style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 700, color: 'var(--fp-salary)' }}>
+                        ETB {Number(t.credit_portion || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="mono" style={{ padding: '12px 14px', textAlign: 'right', color: 'var(--fp-text-muted)' }}>
+                        ETB {Number(t.copay_portion || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="mono" style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 800 }}>
+                        ETB {Number(t.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                        <span
+                          style={{
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            background: isSettled ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.15)',
+                            color: isSettled ? 'var(--fp-benefit)' : 'var(--fp-salary)',
+                          }}
+                        >
+                          {isSettled ? '✓ SETTLED' : 'PENDING SETTLEMENT'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -498,20 +635,36 @@ export default function PayrollPreview() {
         )}
       </div>
 
-      {/* Settlement History */}
-      {history.length > 0 && (
-        <div
-          style={{
-            background: 'var(--fp-surface-1)',
-            border: '1px solid var(--fp-border)',
-            borderRadius: '16px',
-            padding: '24px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+      {/* Settlement History (Always visible with empty state fallback) */}
+      <div
+        style={{
+          background: 'var(--fp-surface-1)',
+          border: '1px solid var(--fp-border)',
+          borderRadius: '16px',
+          padding: '24px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <ClockAfternoon size={20} color="var(--fp-benefit)" />
-            <h3 style={{ fontSize: '1.1rem', margin: 0 }}>Past Settlement Cycles</h3>
+            <h3 style={{ fontSize: '1.1rem', margin: 0, fontWeight: 700 }}>Past Settlement Cycles</h3>
           </div>
+          <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-muted)' }}>
+            {history.length} cycle(s) recorded
+          </span>
+        </div>
+
+        {history.length === 0 ? (
+          <div style={{ padding: '36px 16px', textAlign: 'center', color: 'var(--fp-text-muted)' }}>
+            <ClockAfternoon size={32} style={{ opacity: 0.4, marginBottom: '8px' }} />
+            <p style={{ margin: 0, fontWeight: 600, color: 'var(--fp-text-secondary)' }}>
+              No past settlement cycles executed yet.
+            </p>
+            <span style={{ fontSize: '0.8rem' }}>
+              Executed month-end payroll settlements and their immutable disbursement records will appear here.
+            </span>
+          </div>
+        ) : (
           <div className="fp-table-responsive">
             <table style={{ width: '100%', minWidth: '620px', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
               <thead>
@@ -600,8 +753,8 @@ export default function PayrollPreview() {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Accessible In-System Modal: Settlement Disbursement Lines Breakdown */}
       {selectedSettlement && (() => {
@@ -965,6 +1118,18 @@ export default function PayrollPreview() {
           </div>
         );
       })()}
+
+      {/* Slide-in Merchant Detail Drawer */}
+      {drawerMerchant && (
+        <MerchantDetailDrawer
+          merchant={drawerMerchant}
+          open={drawerOpen}
+          onClose={() => {
+            setDrawerOpen(false);
+            setDrawerMerchant(null);
+          }}
+        />
+      )}
     </div>
   );
 }

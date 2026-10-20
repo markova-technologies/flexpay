@@ -387,6 +387,63 @@ export default function OrgDashboard() {
         </div>
       </header>
 
+      {/* Session Conflict Notification Banner */}
+      {['EMPLOYEE', 'WORKER'].includes((user?.role || '').toUpperCase()) && (
+        <div
+          style={{
+            background: 'linear-gradient(90deg, rgba(245, 158, 11, 0.16) 0%, rgba(217, 119, 6, 0.08) 100%)',
+            borderBottom: '1px solid rgba(245, 158, 11, 0.35)',
+            padding: '12px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#D97706', fontSize: '0.88rem', fontWeight: 600 }}>
+            <span style={{ fontSize: '1.1rem' }}>⚠️</span>
+            <span>
+              You are currently signed in with an <strong>Employee session</strong> ({user?.name || user?.fullName || user?.role}). Corporate admin endpoints require an <strong>Organization Admin</strong> account.
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              type="button"
+              onClick={() => navigate('/worker')}
+              style={{
+                background: 'transparent',
+                border: '1px solid #D97706',
+                color: '#D97706',
+                padding: '6px 12px',
+                borderRadius: '6px',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Go to Employee Portal →
+            </button>
+            <button
+              type="button"
+              onClick={handleLogout}
+              style={{
+                background: '#D97706',
+                color: '#FFFFFF',
+                border: 'none',
+                padding: '6px 14px',
+                borderRadius: '6px',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Sign In as Org Admin
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Desktop Horizontal Tabs */}
       <nav className="org-tabs-desktop" aria-label="Organization Dashboard Tabs">
         {TABS.map((tab) => (

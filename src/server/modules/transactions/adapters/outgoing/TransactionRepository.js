@@ -183,6 +183,7 @@ class TransactionRepository {
   }
 
   async listRecentByOrg(orgId, limit = 20) {
+    if (!orgId) return [];
     return this.db
       .selectFrom('transactions')
       .selectAll()
@@ -193,6 +194,7 @@ class TransactionRepository {
   }
 
   async listRecentByMerchant(merchantId, limit = 20) {
+    if (!merchantId) return [];
     return this.db
       .selectFrom('transactions')
       .selectAll()
@@ -203,6 +205,7 @@ class TransactionRepository {
   }
 
   async getMerchantSummaryForOrg(orgId, merchantId) {
+    if (!orgId || !merchantId) return { totalCredit: 0, uniqueEmployeesCount: 0 };
     const txns = await this.db
       .selectFrom('transactions')
       .selectAll()
@@ -226,6 +229,7 @@ class TransactionRepository {
   }
 
   async getTransactionsByOrgAndMerchant(orgId, merchantId, limit = 20, offset = 0) {
+    if (!orgId || !merchantId) return [];
     return this.db
       .selectFrom('transactions')
       .selectAll()
@@ -238,6 +242,7 @@ class TransactionRepository {
   }
 
   async getTransactionsByEmployeeForMerchant(orgId, merchantId) {
+    if (!orgId || !merchantId) return [];
     const txns = await this.db
       .selectFrom('transactions')
       .selectAll()

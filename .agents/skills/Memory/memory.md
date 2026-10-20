@@ -2890,3 +2890,41 @@ Diagnosed and resolved the root cause of the `"Failed to load payroll preview ca
    - Pushed all commits to [`origin/main`](https://github.com/markova-technologies/flexpay).
 
 ---
+
+#### Turn 27 (Step 27)
+##### 👤 User Prompt:
+```text
+why th transaction history (settlmnt) and also it down't work like it dosnt show th transaction whn ther is lik bfor, so i want th prvious fuctionality anddata(history)
+man pls hurry up i hav no time
+cont
+```
+
+##### 🤖 Agent Response:
+Diagnosed and resolved the root causes of the missing settlement history, missing transaction log, and cross-portal session collision between Employee and Organization portals:
+
+1. **Root Cause Analysis**:
+   - **Cross-Portal Session Collision**: In [`ProtectedRoute.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/components/layout/ProtectedRoute.jsx), corporate route access was granted if `Boolean(user.orgId || user.organizationId)`. Because all employee accounts belong to an organization, an employee session (e.g. from testing the Employee Portal in another browser tab) was allowed into `/org`. However, the backend (`organizations.routes.js`, `payroll.routes.js`) strictly enforces `requireRole('ORG_ADMIN', 'ORG_CONTROLLER')`, which correctly rejected `EMPLOYEE` tokens with HTTP 403 Forbidden.
+   - **Hidden Tables on Empty States**: When 403 or empty responses occurred, [`PayrollPreview.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/organization/PayrollPreview.jsx) had `{history.length > 0 && (...)`, which completely hid the "Past Settlement Cycles" section from the DOM.
+   - **Missing Transaction Activity Stream**: While `/org/payroll/preview` grouped transactions for settlement calculation, it previously omitted the raw transaction stream from the payload, preventing the organization from viewing the detailed log of individual employee POS credit purchases.
+   - **Orphaned Merchant Drawer**: [`MerchantDetailDrawer.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/organization/MerchantDetailDrawer.jsx) was created with employee breakdowns and receipt downloads, but lacked entry points in the Organization portal.
+
+2. **Backend Organization Resolution & Transaction Stream**:
+   - **`organizations.routes.js`**: Upgraded all remaining routes (`/org/merchants/:merchantId`, `/org/merchants/:merchantId/statement`, `/org/employees`, `/org/employees/:fpId`, `/org/employees/:fpId/credit`, `/org/password-reset-requests`) to resolve `orgId` via `resolveOrgId(request.user)`.
+   - **`organizations.routes.js`**: Enriched `GET /org/payroll/preview` to return `transactions: transactions || []` and `pendingTransactions: completedTxns || []` alongside calculation summaries.
+   - **`TransactionRepository.js`**: Added defensive falsy guards (`if (!orgId) return [];`) in `listRecentByOrg`, `listRecentByMerchant`, `getMerchantSummaryForOrg`, `getTransactionsByOrgAndMerchant`, and `getTransactionsByEmployeeForMerchant` to eliminate UUID syntax errors.
+
+3. **Frontend Role Isolation, Live Transactions & Persistent History**:
+   - **`ProtectedRoute.jsx`**: Isolated portal routing by explicitly disallowing `EMPLOYEE` and `WORKER` roles from navigating to `/org` and `/merchant` routes, eliminating false-positive session collisions.
+   - **`OrgDashboard.jsx`**: Added a session collision warning banner if an employee session visits `/org`, with direct navigation buttons to switch to the Employee Portal or sign in as Org Admin.
+   - **`PayrollPreview.jsx`**:
+     - Made `Past Settlement Cycles` permanent: always renders the card, displaying the cycles table when records exist or an informative empty state when no cycles have run.
+     - Added the `Recent Employee Credit Transactions` section: renders date, transaction reference, employee name & FP-ID, merchant name, credit portion, co-pay portion, total, and settlement status (`✓ SETTLED` vs `PENDING SETTLEMENT`).
+     - Integrated `MerchantDetailDrawer`: added a `Store Details` action button in the Merchant Disbursement Breakdown table to open the slide-in drawer showing per-employee breakdowns and downloadable statement PDFs.
+
+4. **Testing, Build & Git Push**:
+   - Ran all unit tests (`npm run test:unit`): **81 passing tests across 31 suites, 0 failures**.
+   - Built frontend client (`npm --prefix src/client run build`): Compiled cleanly in 13.75s with 0 errors.
+   - Pushed all commits to [`origin/main`](https://github.com/markova-technologies/flexpay).
+
+---
+
