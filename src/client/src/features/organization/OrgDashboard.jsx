@@ -11,15 +11,20 @@ import {
   MagnifyingGlass,
   CheckCircle,
   PencilSimple,
-  ArrowsClockwise
+  ArrowsClockwise,
+  List,
+  CaretDown,
+  CaretRight
 } from '@phosphor-icons/react';
 import api from '../../services/api';
 import { useAuthStore } from '../../stores/authStore';
 import { useToast } from '../../contexts/ToastContext';
+import { Drawer } from '../../components/ui/Drawer';
 import AddEmployeeForm from './AddEmployeeForm';
 import PasswordDisplay from './PasswordDisplay';
 import PasswordResetRequests from './PasswordResetRequests';
 import PayrollPreview from './PayrollPreview';
+import './OrgDashboard.css';
 
 function KPICardSkeleton() {
   return (
@@ -79,6 +84,7 @@ export default function OrgDashboard() {
   const { user, clearAuth } = useAuthStore();
 
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'employees' | 'resets' | 'payroll'
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [stats, setStats] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -169,24 +175,49 @@ export default function OrgDashboard() {
   const utilizationPct = stats?.utilizationPercentage ?? stats?.stats?.utilizationPercentage ?? 
     (totalAllocated > 0 ? Math.round((totalSpent / totalAllocated) * 100) : 0);
   const pendingSettlement = Number(stats?.pendingSettlementAmount ?? stats?.stats?.pendingSettlementAmount ?? totalSpent);
+  const pendingResetCount = Number(stats?.stats?.pendingPasswordResets ?? stats?.pendingPasswordResets ?? 0);
+
+  const TABS = [
+    {
+      id: 'overview',
+      label: 'Overview & Analytics',
+      shortLabel: 'Overview',
+      icon: <Buildings size={18} />,
+      desc: 'Live credit limits & workforce snapshot',
+    },
+    {
+      id: 'employees',
+      label: 'Staff & Allowances',
+      shortLabel: 'Staff',
+      icon: <Users size={18} />,
+      desc: 'Manage roster, salary allowances & FP-IDs',
+      badge: loading && employees.length === 0 ? null : employees.length,
+    },
+    {
+      id: 'resets',
+      label: 'Password Reset Queue',
+      shortLabel: 'Resets',
+      icon: <Key size={18} />,
+      desc: 'Employee verification & credential approvals',
+      badge: pendingResetCount > 0 ? pendingResetCount : null,
+      badgeColor: 'var(--fp-salary)',
+    },
+    {
+      id: 'payroll',
+      label: 'Automated Payroll & Wires',
+      shortLabel: 'Payroll',
+      icon: <CurrencyDollar size={18} />,
+      desc: 'Month-end salary settlement & merchant wires',
+    },
+  ];
+
+  const currentTabObj = TABS.find((t) => t.id === activeTab) || TABS[0];
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--fp-bg)', color: 'var(--fp-text-primary)' }}>
-      {/* Navbar */}
-      <header
-        style={{
-          borderBottom: '1px solid var(--fp-border)',
-          background: 'var(--fp-surface-1)',
-          padding: '14px clamp(16px, 3vw, 28px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '14px',
-          minHeight: 'var(--fp-header-h-mob)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      {/* Top Header */}
+      <header className="org-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
           <div
             style={{
               width: '38px',
@@ -203,17 +234,18 @@ export default function OrgDashboard() {
           >
             F
           </div>
-          <div>
-            <h1 style={{ fontSize: 'clamp(1rem, 3vw, 1.15rem)', fontWeight: 800, margin: 0, lineHeight: 1.2 }}>
+          <div style={{ minWidth: 0 }}>
+            <h1 style={{ fontSize: 'clamp(0.95rem, 3vw, 1.15rem)', fontWeight: 800, margin: 0, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {stats?.organization?.name || stats?.org?.name || user?.orgName || user?.organizationName || 'Corporate Admin'}
             </h1>
-            <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-muted)' }}>
-              Organization Management Portal • {user?.role || 'ORG_ADMIN'}
+            <span style={{ fontSize: '0.72rem', color: 'var(--fp-text-muted)', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              Org Management • {user?.role || 'ORG_ADMIN'}
             </span>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        {/* Desktop Header Actions */}
+        <div className="org-header-desktop-actions">
           {loading && (
             <div
               style={{
@@ -262,7 +294,7 @@ export default function OrgDashboard() {
             }}
           >
             <ArrowsClockwise size={16} className={loading ? 'spin' : ''} />
-            <span style={{ display: 'inline' }}>Sync</span>
+            <span>Sync</span>
           </button>
 
           <button
@@ -308,107 +340,334 @@ export default function OrgDashboard() {
             <span>Exit</span>
           </button>
         </div>
-      </header>
 
-      {/* Tabs Bar with mobile-friendly horizontal touch scrolling */}
-      <div
-        style={{
-          borderBottom: '1px solid var(--fp-border)',
-          background: 'var(--fp-surface-1)',
-          padding: '0 clamp(16px, 3vw, 28px)',
-          display: 'flex',
-          gap: 'clamp(12px, 3vw, 28px)',
-          overflowX: 'auto',
-          scrollbarWidth: 'none',
-          WebkitOverflowScrolling: 'touch',
-        }}
-      >
-        {[
-          { id: 'overview', label: 'Overview & Analytics', icon: <Buildings size={18} /> },
-          {
-            id: 'employees',
-            label: `Staff & Allowances (${loading && employees.length === 0 ? '...' : employees.length})`,
-            icon: <Users size={18} />,
-          },
-          { id: 'resets', label: 'Password Reset Queue', icon: <Key size={18} /> },
-          { id: 'payroll', label: 'Automated Payroll & Wires', icon: <CurrencyDollar size={18} /> },
-        ].map((tab) => (
+        {/* Mobile Header Actions: Sync icon, + Staff quick action, Menu toggle */}
+        <div className="org-header-mobile-actions">
           <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={fetchOrgData}
+            disabled={loading}
+            title="Sync Ledger"
+            aria-label="Sync ledger data"
             className="fp-touch-target"
             style={{
-              padding: '14px 4px',
-              background: 'none',
-              border: 'none',
-              borderBottom: activeTab === tab.id ? '2px solid var(--fp-benefit)' : '2px solid transparent',
-              color: activeTab === tab.id ? 'var(--fp-text-primary)' : 'var(--fp-text-muted)',
-              fontWeight: activeTab === tab.id ? 700 : 500,
-              fontSize: '0.9rem',
+              background: 'var(--fp-surface-2)',
+              border: '1px solid var(--fp-border)',
+              borderRadius: '8px',
+              padding: '8px',
+              color: 'var(--fp-text-secondary)',
+              minHeight: '44px',
+              minWidth: '44px',
               cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              whiteSpace: 'nowrap',
-              minHeight: 'var(--fp-touch-comfortable)',
             }}
           >
+            <ArrowsClockwise size={18} className={loading ? 'spin' : ''} />
+          </button>
+
+          <button
+            onClick={() => setShowAddModal(true)}
+            aria-label="Add Staff Member"
+            className="fp-touch-target"
+            style={{
+              background: 'var(--fp-benefit)',
+              color: '#060A14',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '8px 12px',
+              fontWeight: 700,
+              fontSize: '0.82rem',
+              minHeight: '44px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              cursor: 'pointer',
+            }}
+          >
+            <UserPlus size={16} weight="bold" />
+            <span>+ Staff</span>
+          </button>
+
+          <button
+            type="button"
+            className="org-menu-btn"
+            onClick={() => setMobileNavOpen(true)}
+            aria-label="Open Navigation Menu"
+            aria-expanded={mobileNavOpen}
+          >
+            <List size={20} weight="bold" />
+            <span>Menu</span>
+            {pendingResetCount > 0 && <span className="org-menu-badge" title="Pending password resets" />}
+          </button>
+        </div>
+      </header>
+
+      {/* Desktop Horizontal Tabs */}
+      <nav className="org-tabs-desktop" aria-label="Organization Dashboard Tabs">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={`org-tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+          >
             {tab.icon}
-            {tab.label}
+            <span>{tab.label}</span>
+            {tab.badge !== null && tab.badge !== undefined && (
+              <span
+                className="org-tab-badge"
+                style={tab.badgeColor ? { background: 'rgba(245, 158, 11, 0.15)', color: tab.badgeColor } : undefined}
+              >
+                {tab.badge}
+              </span>
+            )}
           </button>
         ))}
+      </nav>
+
+      {/* Mobile Active Section Sub-Bar */}
+      <div className="org-mobile-subbar">
+        <div className="org-mobile-subbar__current">
+          {currentTabObj.icon}
+          <span>{currentTabObj.label}</span>
+        </div>
+        <button
+          type="button"
+          className="org-mobile-subbar__btn"
+          onClick={() => setMobileNavOpen(true)}
+          aria-label="Switch dashboard section"
+        >
+          <span>Switch</span>
+          <CaretDown size={12} weight="bold" />
+        </button>
       </div>
 
+      {/* Mobile Navigation Drawer */}
+      <Drawer
+        open={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+        title="Organization Menu"
+        width="min(88vw, 360px)"
+        side="right"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Org Profile Header Card */}
+          <div
+            style={{
+              background: 'var(--fp-surface-2)',
+              border: '1px solid var(--fp-border)',
+              borderRadius: '14px',
+              padding: '16px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  background: 'var(--fp-benefit)',
+                  color: '#060A14',
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1rem',
+                  flexShrink: 0,
+                }}
+              >
+                F
+              </div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--fp-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {stats?.organization?.name || stats?.org?.name || user?.orgName || 'Corporate Admin'}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--fp-benefit)', fontWeight: 600 }}>
+                  {user?.role || 'ORG_ADMIN'} • Active Employer
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Nav Items */}
+          <div>
+            <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--fp-text-muted)', fontWeight: 700, marginBottom: '8px', paddingLeft: '4px' }}>
+              Dashboard Portals
+            </div>
+            <div className="org-drawer-nav-list">
+              {TABS.map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    className={`org-drawer-nav-item ${isActive ? 'active' : ''}`}
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      setMobileNavOpen(false);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                  >
+                    <div className="org-drawer-nav-item__icon">
+                      {tab.icon}
+                    </div>
+                    <div className="org-drawer-nav-item__text">
+                      <div className="org-drawer-nav-item__title">{tab.label}</div>
+                      <div className="org-drawer-nav-item__desc">{tab.desc}</div>
+                    </div>
+                    {tab.badge !== null && tab.badge !== undefined && (
+                      <span
+                        className="org-tab-badge"
+                        style={tab.badgeColor ? { background: 'rgba(245, 158, 11, 0.2)', color: tab.badgeColor } : undefined}
+                      >
+                        {tab.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div style={{ height: '1px', background: 'var(--fp-border)' }} />
+
+          {/* Quick Actions in Drawer */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--fp-text-muted)', fontWeight: 700, paddingLeft: '4px' }}>
+              Quick Actions
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setMobileNavOpen(false);
+                setShowAddModal(true);
+              }}
+              style={{
+                width: '100%',
+                padding: '12px 14px',
+                borderRadius: '10px',
+                background: 'var(--fp-benefit)',
+                color: '#060A14',
+                fontWeight: 700,
+                fontSize: '0.88rem',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                justifyContent: 'center',
+                minHeight: '46px',
+              }}
+            >
+              <UserPlus size={18} weight="bold" />
+              <span>Add New Employee</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                fetchOrgData();
+                setMobileNavOpen(false);
+              }}
+              style={{
+                width: '100%',
+                padding: '11px 14px',
+                borderRadius: '10px',
+                background: 'var(--fp-surface-2)',
+                border: '1px solid var(--fp-border)',
+                color: 'var(--fp-text-primary)',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                justifyContent: 'center',
+                minHeight: '44px',
+              }}
+            >
+              <ArrowsClockwise size={16} className={loading ? 'spin' : ''} />
+              <span>Sync Ledger State</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              style={{
+                width: '100%',
+                padding: '11px 14px',
+                borderRadius: '10px',
+                background: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.2)',
+                color: 'var(--fp-danger)',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                justifyContent: 'center',
+                minHeight: '44px',
+                marginTop: '8px',
+              }}
+            >
+              <SignOut size={16} />
+              <span>Sign Out / Exit</span>
+            </button>
+          </div>
+        </div>
+      </Drawer>
+
       {/* Main Tab Views */}
-      <main style={{ maxWidth: '1240px', margin: '0 auto', padding: 'clamp(20px, 4vw, 36px) clamp(16px, 3vw, 24px)' }}>
+      <main style={{ maxWidth: '1240px', margin: '0 auto', padding: 'clamp(16px, 3.5vw, 36px) clamp(14px, 3vw, 24px)' }}>
         {activeTab === 'overview' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
             {/* KPI Cards / Shimmer Skeletons */}
             {loading && !stats ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '16px' }}>
+              <div className="org-kpi-grid">
                 <KPICardSkeleton />
                 <KPICardSkeleton />
                 <KPICardSkeleton />
                 <KPICardSkeleton />
               </div>
             ) : (
-              <div className="fp-page-enter" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '16px' }}>
-                <div style={{ background: 'var(--fp-surface-1)', border: '1px solid var(--fp-border)', borderRadius: '16px', padding: '24px' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>Total Allocated Credit</span>
-                  <div className="mono" style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '6px' }}>
+              <div className="org-kpi-grid fp-page-enter">
+                <div className="org-kpi-card">
+                  <span className="org-kpi-label">Total Allocated</span>
+                  <div className="org-kpi-value mono">
                     ETB {Number(totalAllocated).toLocaleString()}
                   </div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-secondary)', marginTop: '4px', display: 'block' }}>
-                    Across {employees.length} enrolled staff members
+                  <span className="org-kpi-sub">
+                    Across {employees.length} enrolled staff
                   </span>
                 </div>
 
-                <div style={{ background: 'var(--fp-surface-1)', border: '1px solid var(--fp-border)', borderRadius: '16px', padding: '24px' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>Credit Spent This Cycle</span>
-                  <div className="mono" style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--fp-salary)', marginTop: '6px' }}>
+                <div className="org-kpi-card">
+                  <span className="org-kpi-label">Credit Spent</span>
+                  <div className="org-kpi-value mono" style={{ color: 'var(--fp-salary)' }}>
                     ETB {Number(totalSpent).toLocaleString()}
                   </div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-secondary)', marginTop: '4px', display: 'block' }}>
-                    {utilizationPct}% overall company utilization
+                  <span className="org-kpi-sub">
+                    {utilizationPct}% company utilization
                   </span>
                 </div>
 
-                <div style={{ background: 'var(--fp-surface-1)', border: '1px solid var(--fp-border)', borderRadius: '16px', padding: '24px' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>Pending Merchant Payables</span>
-                  <div className="mono" style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--fp-benefit)', marginTop: '6px' }}>
+                <div className="org-kpi-card">
+                  <span className="org-kpi-label">Pending Payables</span>
+                  <div className="org-kpi-value mono" style={{ color: 'var(--fp-benefit)' }}>
                     ETB {Number(pendingSettlement).toLocaleString()}
                   </div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-secondary)', marginTop: '4px', display: 'block' }}>
-                    To be wired at month-end payroll
+                  <span className="org-kpi-sub">
+                    To be wired at month-end
                   </span>
                 </div>
 
-                <div style={{ background: 'var(--fp-surface-1)', border: '1px solid var(--fp-border)', borderRadius: '16px', padding: '24px' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--fp-text-muted)' }}>Active Workforce</span>
-                  <div className="mono" style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '6px' }}>
+                <div className="org-kpi-card">
+                  <span className="org-kpi-label">Active Workforce</span>
+                  <div className="org-kpi-value mono">
                     {employees.length}
                   </div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--fp-benefit)', marginTop: '4px', display: 'block' }}>
+                  <span className="org-kpi-sub" style={{ color: 'var(--fp-benefit)' }}>
                     100% Luhn-verified FP-IDs
                   </span>
                 </div>
@@ -523,34 +782,69 @@ export default function OrgDashboard() {
                   No employees onboarded yet. Click "Add Employee" to issue your first credit allowance.
                 </p>
               ) : (
-                <div className="fp-table-responsive">
-                  <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid var(--fp-border)', color: 'var(--fp-text-muted)', textAlign: 'left' }}>
-                        <th style={{ padding: '12px 14px' }}>Employee</th>
-                        <th style={{ padding: '12px 14px' }}>FP-ID</th>
-                        <th style={{ padding: '12px 14px' }}>Credit Limit</th>
-                        <th style={{ padding: '12px 14px' }}>Available Balance</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {employees.slice(0, 5).map((emp) => (
-                        <tr key={emp.id} style={{ borderBottom: '1px solid var(--fp-border-subtle)' }}>
-                          <td style={{ padding: '14px', fontWeight: 600 }}>{emp.full_name || emp.fullName}</td>
-                          <td className="mono" style={{ padding: '14px', color: 'var(--fp-benefit)' }}>
-                            {emp.fp_employee_id || emp.fpEmployeeId}
-                          </td>
-                          <td className="mono" style={{ padding: '14px', fontWeight: 700 }}>
-                            ETB {Number(emp.credit_limit || emp.creditLimit).toLocaleString()}
-                          </td>
-                          <td className="mono" style={{ padding: '14px', color: 'var(--fp-benefit)' }}>
-                            ETB {Number(emp.available_credit ?? emp.availableCredit).toLocaleString()}
-                          </td>
+                <>
+                  {/* Desktop Table View */}
+                  <div className="org-staff-table-desktop fp-table-responsive">
+                    <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid var(--fp-border)', color: 'var(--fp-text-muted)', textAlign: 'left' }}>
+                          <th style={{ padding: '12px 14px' }}>Employee</th>
+                          <th style={{ padding: '12px 14px' }}>FP-ID</th>
+                          <th style={{ padding: '12px 14px' }}>Credit Limit</th>
+                          <th style={{ padding: '12px 14px' }}>Available Balance</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {employees.slice(0, 5).map((emp) => (
+                          <tr key={emp.id} style={{ borderBottom: '1px solid var(--fp-border-subtle)' }}>
+                            <td style={{ padding: '14px', fontWeight: 600 }}>{emp.full_name || emp.fullName}</td>
+                            <td className="mono" style={{ padding: '14px', color: 'var(--fp-benefit)' }}>
+                              {emp.fp_employee_id || emp.fpEmployeeId}
+                            </td>
+                            <td className="mono" style={{ padding: '14px', fontWeight: 700 }}>
+                              ETB {Number(emp.credit_limit || emp.creditLimit).toLocaleString()}
+                            </td>
+                            <td className="mono" style={{ padding: '14px', color: 'var(--fp-benefit)' }}>
+                              ETB {Number(emp.available_credit ?? emp.availableCredit).toLocaleString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile Staff Cards View */}
+                  <div className="org-staff-cards-mobile">
+                    {employees.slice(0, 5).map((emp) => (
+                      <div key={emp.id} className="org-staff-card">
+                        <div className="org-staff-card__header">
+                          <div>
+                            <div className="org-staff-card__name">{emp.full_name || emp.fullName}</div>
+                            <div className="org-staff-card__dept">{emp.department || 'Staff Member'}</div>
+                          </div>
+                          <span style={{ fontSize: '0.72rem', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--fp-benefit)', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                            ACTIVE
+                          </span>
+                        </div>
+                        <div className="org-staff-card__fpid">
+                          {emp.fp_employee_id || emp.fpEmployeeId}
+                        </div>
+                        <div className="org-staff-card__metrics">
+                          <div>
+                            <div className="org-staff-card__metric-label">Credit Limit</div>
+                            <div className="org-staff-card__metric-val">ETB {Number(emp.credit_limit || emp.creditLimit).toLocaleString()}</div>
+                          </div>
+                          <div>
+                            <div className="org-staff-card__metric-label">Available</div>
+                            <div className="org-staff-card__metric-val" style={{ color: 'var(--fp-benefit)' }}>
+                              ETB {Number(emp.available_credit ?? emp.availableCredit).toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -562,7 +856,7 @@ export default function OrgDashboard() {
               background: 'var(--fp-surface-1)',
               border: '1px solid var(--fp-border)',
               borderRadius: '20px',
-              padding: '28px',
+              padding: 'clamp(16px, 3.5vw, 28px)',
             }}
           >
             <div
@@ -625,68 +919,130 @@ export default function OrgDashboard() {
                 No employees matching criteria. Click "Add Employee" to onboard your staff.
               </p>
             ) : (
-              <div className="fp-table-responsive">
-                <table style={{ width: '100%', minWidth: '760px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid var(--fp-border)', color: 'var(--fp-text-muted)', textAlign: 'left' }}>
-                      <th style={{ padding: '12px 14px' }}>Employee</th>
-                      <th style={{ padding: '12px 14px' }}>FP-ID</th>
-                      <th style={{ padding: '12px 14px' }}>Department</th>
-                      <th style={{ padding: '12px 14px' }}>Safaricom Phone</th>
-                      <th style={{ padding: '12px 14px' }}>Credit Limit</th>
-                      <th style={{ padding: '12px 14px' }}>Available</th>
-                      <th style={{ padding: '12px 14px', textAlign: 'right' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredEmployees.map((emp) => (
-                      <tr key={emp.id} style={{ borderBottom: '1px solid var(--fp-border-subtle)' }}>
-                        <td style={{ padding: '14px', fontWeight: 600 }}>
-                          {emp.full_name || emp.fullName}
-                        </td>
-                        <td className="mono" style={{ padding: '14px', color: 'var(--fp-benefit)' }}>
-                          {emp.fp_employee_id || emp.fpEmployeeId}
-                        </td>
-                        <td style={{ padding: '14px', color: 'var(--fp-text-secondary)' }}>
-                          {emp.department || 'General'}
-                        </td>
-                        <td className="mono" style={{ padding: '14px' }}>
-                          {emp.phone_number || emp.phoneNumber}
-                        </td>
-                        <td className="mono" style={{ padding: '14px', fontWeight: 700 }}>
-                          ETB {Number(emp.credit_limit || emp.creditLimit).toLocaleString()}
-                        </td>
-                        <td className="mono" style={{ padding: '14px', color: 'var(--fp-benefit)' }}>
-                          ETB {Number(emp.available_credit ?? emp.availableCredit).toLocaleString()}
-                        </td>
-                        <td style={{ padding: '14px', textAlign: 'right' }}>
-                          <button
-                            onClick={() => {
-                              setEditingEmp(emp);
-                              setNewCreditLimit(emp.credit_limit || emp.creditLimit);
-                            }}
-                            style={{
-                              background: 'var(--fp-surface-2)',
-                              border: '1px solid var(--fp-border)',
-                              borderRadius: '6px',
-                              padding: '6px 10px',
-                              color: 'var(--fp-text-primary)',
-                              fontSize: '0.8rem',
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                            }}
-                          >
-                            <PencilSimple size={14} />
-                            Limit
-                          </button>
-                        </td>
+              <>
+                {/* Desktop Table View */}
+                <div className="org-staff-table-desktop fp-table-responsive">
+                  <table style={{ width: '100%', minWidth: '760px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--fp-border)', color: 'var(--fp-text-muted)', textAlign: 'left' }}>
+                        <th style={{ padding: '12px 14px' }}>Employee</th>
+                        <th style={{ padding: '12px 14px' }}>FP-ID</th>
+                        <th style={{ padding: '12px 14px' }}>Department</th>
+                        <th style={{ padding: '12px 14px' }}>Safaricom Phone</th>
+                        <th style={{ padding: '12px 14px' }}>Credit Limit</th>
+                        <th style={{ padding: '12px 14px' }}>Available</th>
+                        <th style={{ padding: '12px 14px', textAlign: 'right' }}>Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {filteredEmployees.map((emp) => (
+                        <tr key={emp.id} style={{ borderBottom: '1px solid var(--fp-border-subtle)' }}>
+                          <td style={{ padding: '14px', fontWeight: 600 }}>
+                            {emp.full_name || emp.fullName}
+                          </td>
+                          <td className="mono" style={{ padding: '14px', color: 'var(--fp-benefit)' }}>
+                            {emp.fp_employee_id || emp.fpEmployeeId}
+                          </td>
+                          <td style={{ padding: '14px', color: 'var(--fp-text-secondary)' }}>
+                            {emp.department || 'General'}
+                          </td>
+                          <td className="mono" style={{ padding: '14px' }}>
+                            {emp.phone_number || emp.phoneNumber}
+                          </td>
+                          <td className="mono" style={{ padding: '14px', fontWeight: 700 }}>
+                            ETB {Number(emp.credit_limit || emp.creditLimit).toLocaleString()}
+                          </td>
+                          <td className="mono" style={{ padding: '14px', color: 'var(--fp-benefit)' }}>
+                            ETB {Number(emp.available_credit ?? emp.availableCredit).toLocaleString()}
+                          </td>
+                          <td style={{ padding: '14px', textAlign: 'right' }}>
+                            <button
+                              onClick={() => {
+                                setEditingEmp(emp);
+                                setNewCreditLimit(emp.credit_limit || emp.creditLimit);
+                              }}
+                              style={{
+                                background: 'var(--fp-surface-2)',
+                                border: '1px solid var(--fp-border)',
+                                borderRadius: '6px',
+                                padding: '6px 10px',
+                                color: 'var(--fp-text-primary)',
+                                fontSize: '0.8rem',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                              }}
+                            >
+                              <PencilSimple size={14} />
+                              Limit
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Staff Cards View */}
+                <div className="org-staff-cards-mobile">
+                  {filteredEmployees.map((emp) => (
+                    <div key={emp.id} className="org-staff-card">
+                      <div className="org-staff-card__header">
+                        <div>
+                          <div className="org-staff-card__name">{emp.full_name || emp.fullName}</div>
+                          <div className="org-staff-card__dept">{emp.department || 'General'} • {emp.phone_number || emp.phoneNumber}</div>
+                        </div>
+                        <span style={{ fontSize: '0.72rem', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--fp-benefit)', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                          ACTIVE
+                        </span>
+                      </div>
+                      <div className="org-staff-card__fpid">
+                        {emp.fp_employee_id || emp.fpEmployeeId}
+                      </div>
+                      <div className="org-staff-card__metrics">
+                        <div>
+                          <div className="org-staff-card__metric-label">Credit Limit</div>
+                          <div className="org-staff-card__metric-val">ETB {Number(emp.credit_limit || emp.creditLimit).toLocaleString()}</div>
+                        </div>
+                        <div>
+                          <div className="org-staff-card__metric-label">Available</div>
+                          <div className="org-staff-card__metric-val" style={{ color: 'var(--fp-benefit)' }}>
+                            ETB {Number(emp.available_credit ?? emp.availableCredit).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingEmp(emp);
+                          setNewCreditLimit(emp.credit_limit || emp.creditLimit);
+                        }}
+                        className="fp-touch-target"
+                        style={{
+                          width: '100%',
+                          padding: '10px 14px',
+                          background: 'var(--fp-surface-3)',
+                          border: '1px solid var(--fp-border)',
+                          borderRadius: '8px',
+                          color: 'var(--fp-text-primary)',
+                          fontSize: '0.85rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          minHeight: '44px',
+                        }}
+                      >
+                        <PencilSimple size={15} />
+                        <span>Adjust Credit Allowance</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         )}

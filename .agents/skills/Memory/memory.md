@@ -2585,5 +2585,51 @@ Staged all changes for merchant dashboard synchronization, settlement payout tra
 
 ---
 
+#### Turn 19 (Step 19)
+##### 👤 User Prompt:
+```text
+The mobile view of the org's dashboard and merchants dashboard looks awfull on a mobile view. And instead of horizonal scrollable tabs, make it a menue navigation bar that works perfectly and also finally test it in a browser or i don't know how but just it and verify that it works and if there is any problem fix it. And then finally push it
+
+2. Organization Login:
+    TIN Number: 0012345678
+    Password: SecurePass123!
+Merchant Login:
+    M-PESA Till / Paybill Number: 174379
+    Password: MerchantPass123!
+
+use these credeential and continue exactly where you left off
+```
+
+##### 🤖 Agent Response:
+Overhauled the mobile UI/UX and navigation architecture for both the Organization Management Portal and Merchant POS Portal, replacing horizontal scrollable tabs with an ergonomic Mobile Menu Navigation Bar, off-canvas slide-out drawers, responsive 2x2 metric grids, and clean mobile card layouts for financial tables:
+
+1. **Mobile Menu Navigation Architecture**:
+   - [`src/client/src/components/ui/Drawer.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/components/ui/Drawer.jsx) & [`Drawer.css`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/components/ui/Drawer.css): Added bidirectional slide drawer support (`side = 'left' | 'right'`), enhanced overlay backdrop blurring, elevated z-index (950), and touch manipulation safeguards.
+   - **Organization Portal Navigation** ([`OrgDashboard.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/organization/OrgDashboard.jsx) & [`OrgDashboard.css`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/organization/OrgDashboard.css)):
+     - Completely eliminated squashed horizontal scrollable tab strips on mobile viewports (`< 768px`).
+     - Replaced with `.org-header-mobile-actions` (`Sync`, `+ Staff`, `☰ Menu`), sticky `.org-mobile-subbar` showing current tab with `Switch ▾` dropdown trigger, and an off-canvas slide-out `<Drawer>` containing full section items (Overview & Analytics, Staff & Allowances, Password Reset Queue with pending badge, Automated Payroll & Wires), quick actions, and sign out button.
+   - **Merchant Portal Navigation** ([`MerchantLayout.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/merchant/MerchantLayout.jsx) & [`MerchantLayout.css`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/merchant/MerchantLayout.css)):
+     - Completely hid the awkward horizontal scrolling tab pill strip on mobile (`@media (max-width: 768px) { display: none !important; }`).
+     - Added mobile top bar with `💳 POS` quick-launcher and `☰ Menu` button, sticky `.merchant-mobile-subbar` displaying active section and `Switch ▾`, and off-canvas slide-out `<Drawer>` housing store/till info, 7 navigation links with emerald active indicators, and sign out button.
+
+2. **Responsive Fintech Layouts (2x2 KPI Grids & Mobile Cards)**:
+   - **2x2 KPI Metric Grids**: Replaced single-column vertical card stacks with `.org-kpi-grid` and `.merchant-kpi-grid` (`grid-template-columns: repeat(2, 1fr)` on `< 640px`), allowing all key financial metrics to fit in the initial handheld viewport without scrolling.
+   - **Workforce Allocation Snapshot & Staff Roster** ([`OrgDashboard.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/organization/OrgDashboard.jsx)): Multi-column tables hide on `< 640px` and render as `.org-staff-cards-mobile` featuring employee name, department/job title, FP-ID with copy button, credit limit / available balance grid, and "Adjust Credit Allowance" touch button.
+   - **Corporate Settlements & POS Transactions** ([`MerchantDashboard.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/merchant/MerchantDashboard.jsx) & [`MerchantSettlements.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/merchant/MerchantSettlements.jsx)): Multi-column fintech tables with 28-character hashes (`MP_B2C_...`, `FP-TXN-...`) render as `.merchant-cards-mobile` with dedicated metadata rows, status badges (`✓ WIRED`), and one-touch PDF download triggers.
+
+3. **End-to-End Browser Testing & Visual Verification**:
+   - Used `browser_subagent` at mobile viewport `390x844`.
+   - Authenticated into Organization Portal (`0012345678` / `SecurePass123!`), verified zero overlapping tabs, tested `☰ Menu` drawer opening and switching to `Staff & Allowances`, confirmed 2x2 KPI cards and responsive mobile cards.
+   - Authenticated into Merchant Portal (`174379` / `MerchantPass123!`), verified removal of scrollable tabs, tested `☰ Menu` drawer opening and navigating to `Settlements`, confirmed 2x2 KPI cards and mobile settlement cards with zero overflow.
+   - Session recording captured and stored to artifacts.
+
+4. **Testing, Build & Git Push**:
+   - Verified all 81 unit tests across 31 test suites pass with 0 failures (`npm run test:unit`).
+   - Verified Vite production build completes cleanly (`npm --prefix src/client run build`).
+   - Staged all changes, created an authoritative git commit, and pushed to `origin/main`.
+
+---
+
+
 
 

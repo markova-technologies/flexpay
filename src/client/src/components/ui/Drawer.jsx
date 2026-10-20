@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import './Drawer.css';
 
-export function Drawer({ open, onClose, title, children, width = '520px' }) {
+export function Drawer({ open, onClose, title, children, width = '520px', side = 'right' }) {
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape' && open) onClose();
@@ -29,7 +29,7 @@ export function Drawer({ open, onClose, title, children, width = '520px' }) {
         aria-hidden="true"
       />
       <aside
-        className={`drawer ${open ? 'open' : ''}`}
+        className={`drawer drawer--${side} ${open ? 'open' : ''}`}
         style={{ width, maxWidth: '100vw' }}
         role="dialog"
         aria-modal="true"

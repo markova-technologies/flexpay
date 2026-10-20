@@ -81,43 +81,43 @@ export function MerchantDashboard({ onNavigateToPos, onNavigateToSettlements }) 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* 4 Primary Top KPI Metric Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+      <div className="merchant-kpi-grid">
         {/* Card 1: Pending Receivables */}
-        <div style={{ background: 'var(--bg-surface, #0C1322)', border: '1px solid var(--border, rgba(255, 255, 255, 0.08))', borderRadius: '16px', padding: '20px' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #94A3B8)' }}>Pending Receivables</span>
-          <div className="mono" style={{ fontSize: 'clamp(1.5rem, 4vw, 1.75rem)', fontWeight: 800, color: 'var(--accent-primary, #10B981)', marginTop: '4px' }}>
+        <div className="merchant-kpi-card">
+          <span className="merchant-kpi-label">Pending Receivables</span>
+          <div className="mono merchant-kpi-val" style={{ color: 'var(--accent-primary, #10B981)' }}>
             ETB {pendingReceivables.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted, #64748B)' }}>Owed by partner employers</span>
+          <span className="merchant-kpi-sub">Owed by partner employers</span>
         </div>
 
         {/* Card 2: Settled Payouts Received */}
-        <div style={{ background: 'var(--bg-surface, #0C1322)', border: '1px solid var(--border, rgba(255, 255, 255, 0.08))', borderRadius: '16px', padding: '20px' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #94A3B8)' }}>Settled Payouts Received</span>
-          <div className="mono" style={{ fontSize: 'clamp(1.5rem, 4vw, 1.75rem)', fontWeight: 800, color: 'var(--text-primary, #F8FAFC)', marginTop: '4px' }}>
+        <div className="merchant-kpi-card">
+          <span className="merchant-kpi-label">Settled Payouts</span>
+          <div className="mono merchant-kpi-val" style={{ color: 'var(--text-primary, #F8FAFC)' }}>
             ETB {totalSettled.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--accent-primary, #10B981)', display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-            <CheckCircle size={13} weight="fill" /> Paid via M-PESA B2C Wire
+          <span className="merchant-kpi-sub" style={{ color: 'var(--accent-primary, #10B981)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <CheckCircle size={13} weight="fill" /> Paid via M-PESA Wire
           </span>
         </div>
 
         {/* Card 3: Partner Organizations */}
-        <div style={{ background: 'var(--bg-surface, #0C1322)', border: '1px solid var(--border, rgba(255, 255, 255, 0.08))', borderRadius: '16px', padding: '20px' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #94A3B8)' }}>Partner Organizations</span>
-          <div className="mono" style={{ fontSize: 'clamp(1.5rem, 4vw, 1.75rem)', fontWeight: 800, marginTop: '4px', color: 'var(--text-primary, #F8FAFC)' }}>
+        <div className="merchant-kpi-card">
+          <span className="merchant-kpi-label">Partner Employers</span>
+          <div className="mono merchant-kpi-val" style={{ color: 'var(--text-primary, #F8FAFC)' }}>
             {partnerOrgs}
           </div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted, #64748B)' }}>Active billing partnerships</span>
+          <span className="merchant-kpi-sub">Active billing partnerships</span>
         </div>
 
         {/* Card 4: Total In-Store Transactions */}
-        <div style={{ background: 'var(--bg-surface, #0C1322)', border: '1px solid var(--border, rgba(255, 255, 255, 0.08))', borderRadius: '16px', padding: '20px' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #94A3B8)' }}>Total Transactions</span>
-          <div className="mono" style={{ fontSize: 'clamp(1.5rem, 4vw, 1.75rem)', fontWeight: 800, marginTop: '4px', color: 'var(--text-primary, #F8FAFC)' }}>
+        <div className="merchant-kpi-card">
+          <span className="merchant-kpi-label">Transactions</span>
+          <div className="mono merchant-kpi-val" style={{ color: 'var(--text-primary, #F8FAFC)' }}>
             {totalTxnCount}
           </div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted, #64748B)' }}>Completed POS checkouts</span>
+          <span className="merchant-kpi-sub">Completed POS checkouts</span>
         </div>
       </div>
 
@@ -182,121 +182,213 @@ export function MerchantDashboard({ onNavigateToPos, onNavigateToSettlements }) 
             </p>
           </div>
         ) : (
-          <div className="fp-table-responsive">
-            <table style={{ width: '100%', minWidth: '640px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border, rgba(255, 255, 255, 0.08))', color: 'var(--text-muted, #64748B)', textAlign: 'left' }}>
-                  <th style={{ padding: '10px 12px' }}>Date</th>
-                  <th style={{ padding: '10px 12px' }}>M-PESA Receipt</th>
-                  <th style={{ padding: '10px 12px' }}>Paying Employer</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>Amount Paid</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'center' }}>Status</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'center' }}>Receipt</th>
-                </tr>
-              </thead>
-              <tbody>
-                {settlements.map((s) => {
-                  const isComp = (s.status || 'COMPLETED') === 'COMPLETED';
-                  const receiptNo = s.mpesaReceipt || s.mpesa_receipt || (s.id || '').slice(0, 8);
-                  const dateStr = s.completedAt ? new Date(s.completedAt).toLocaleDateString() : new Date().toLocaleDateString();
+          <>
+            {/* Desktop Table View */}
+            <div className="merchant-table-desktop fp-table-responsive">
+              <table style={{ width: '100%', minWidth: '640px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border, rgba(255, 255, 255, 0.08))', color: 'var(--text-muted, #64748B)', textAlign: 'left' }}>
+                    <th style={{ padding: '10px 12px' }}>Date</th>
+                    <th style={{ padding: '10px 12px' }}>M-PESA Receipt</th>
+                    <th style={{ padding: '10px 12px' }}>Paying Employer</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'right' }}>Amount Paid</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'center' }}>Status</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'center' }}>Receipt</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {settlements.map((s) => {
+                    const isComp = (s.status || 'COMPLETED') === 'COMPLETED';
+                    const receiptNo = s.mpesaReceipt || s.mpesa_receipt || (s.id || '').slice(0, 8);
+                    const dateStr = s.completedAt ? new Date(s.completedAt).toLocaleDateString() : new Date().toLocaleDateString();
 
-                  return (
-                    <tr key={s.id} style={{ borderBottom: '1px solid var(--border, rgba(255, 255, 255, 0.04))' }}>
-                      <td style={{ padding: '12px' }}>{dateStr}</td>
-                      <td className="mono" style={{ padding: '12px', fontWeight: 700, color: 'var(--accent-primary, #10B981)' }}>
-                        {receiptNo}
-                      </td>
-                      <td style={{ padding: '12px', fontWeight: 600 }}>
-                        {s.organizationName || s.organization?.name || 'Corporate Employer'}
-                      </td>
-                      <td className="mono" style={{ padding: '12px', textAlign: 'right', fontWeight: 800, color: 'var(--text-primary, #F8FAFC)' }}>
-                        ETB {Number(s.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
-                      <td style={{ padding: '12px', textAlign: 'center' }}>
-                        {isComp ? (
-                          <span
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              background: 'rgba(16, 185, 129, 0.1)',
-                              color: 'var(--accent-primary, #10B981)',
-                              padding: '4px 8px',
-                              borderRadius: '6px',
-                              fontSize: '0.75rem',
-                              fontWeight: 700,
-                            }}
-                          >
-                            <CheckCircle size={14} weight="fill" />
-                            WIRED
-                          </span>
-                        ) : (
-                          <span
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              background: 'rgba(245, 158, 11, 0.1)',
-                              color: 'var(--fp-salary, #F59E0B)',
-                              padding: '4px 8px',
-                              borderRadius: '6px',
-                              fontSize: '0.75rem',
-                              fontWeight: 700,
-                            }}
-                          >
-                            <Clock size={14} />
-                            PENDING
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ padding: '12px', textAlign: 'center' }}>
-                        <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
-                          <button
-                            type="button"
-                            className="fp-touch-target"
-                            onClick={() => handleOpenSettlementReceipt(s)}
-                            style={{
-                              background: 'rgba(16, 185, 129, 0.12)',
-                              border: '1px solid rgba(16, 185, 129, 0.3)',
-                              color: 'var(--accent-primary, #10B981)',
-                              padding: '6px 12px',
-                              minHeight: '36px',
-                              borderRadius: '6px',
-                              fontSize: '0.8rem',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                            }}
-                          >
-                            View Receipt
-                          </button>
-                          <button
-                            type="button"
-                            className="fp-touch-target"
-                            onClick={() => handleDownloadSettlementPdf(s)}
-                            aria-label="Download Settlement PDF"
-                            style={{
-                              background: 'rgba(255, 255, 255, 0.05)',
-                              border: '1px solid var(--border, rgba(255, 255, 255, 0.08))',
-                              color: 'var(--text-secondary, #94A3B8)',
-                              padding: '6px 10px',
-                              minHeight: '36px',
-                              borderRadius: '6px',
-                              cursor: 'pointer',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            <DownloadSimple size={15} />
-                          </button>
+                    return (
+                      <tr key={s.id} style={{ borderBottom: '1px solid var(--border, rgba(255, 255, 255, 0.04))' }}>
+                        <td style={{ padding: '12px' }}>{dateStr}</td>
+                        <td className="mono" style={{ padding: '12px', fontWeight: 700, color: 'var(--accent-primary, #10B981)' }}>
+                          {receiptNo}
+                        </td>
+                        <td style={{ padding: '12px', fontWeight: 600 }}>
+                          {s.organizationName || s.organization?.name || 'Corporate Employer'}
+                        </td>
+                        <td className="mono" style={{ padding: '12px', textAlign: 'right', fontWeight: 800, color: 'var(--text-primary, #F8FAFC)' }}>
+                          ETB {Number(s.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                        <td style={{ padding: '12px', textAlign: 'center' }}>
+                          {isComp ? (
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                background: 'rgba(16, 185, 129, 0.1)',
+                                color: 'var(--accent-primary, #10B981)',
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                              }}
+                            >
+                              <CheckCircle size={14} weight="fill" />
+                              WIRED
+                            </span>
+                          ) : (
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                background: 'rgba(245, 158, 11, 0.1)',
+                                color: 'var(--fp-salary, #F59E0B)',
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                              }}
+                            >
+                              <Clock size={14} />
+                              PENDING
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ padding: '12px', textAlign: 'center' }}>
+                          <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+                            <button
+                              type="button"
+                              className="fp-touch-target"
+                              onClick={() => handleOpenSettlementReceipt(s)}
+                              style={{
+                                background: 'rgba(16, 185, 129, 0.12)',
+                                border: '1px solid rgba(16, 185, 129, 0.3)',
+                                color: 'var(--accent-primary, #10B981)',
+                                padding: '6px 12px',
+                                minHeight: '36px',
+                                borderRadius: '6px',
+                                fontSize: '0.8rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              View Receipt
+                            </button>
+                            <button
+                              type="button"
+                              className="fp-touch-target"
+                              onClick={() => handleDownloadSettlementPdf(s)}
+                              aria-label="Download Settlement PDF"
+                              style={{
+                                background: 'rgba(255, 255, 255, 0.05)',
+                                border: '1px solid var(--border, rgba(255, 255, 255, 0.08))',
+                                color: 'var(--text-secondary, #94A3B8)',
+                                padding: '6px 10px',
+                                minHeight: '36px',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              <DownloadSimple size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards View */}
+            <div className="merchant-cards-mobile">
+              {settlements.map((s) => {
+                const isComp = (s.status || 'COMPLETED') === 'COMPLETED';
+                const receiptNo = s.mpesaReceipt || s.mpesa_receipt || (s.id || '').slice(0, 8);
+                const dateStr = s.completedAt ? new Date(s.completedAt).toLocaleDateString() : new Date().toLocaleDateString();
+
+                return (
+                  <div key={s.id} className="merchant-card-item">
+                    <div className="merchant-card-item__header">
+                      <div>
+                        <div className="merchant-card-item__title">
+                          {s.organizationName || s.organization?.name || 'Corporate Employer'}
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        <div className="merchant-card-item__sub">{dateStr}</div>
+                      </div>
+                      {isComp ? (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-primary, #10B981)', padding: '3px 8px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700 }}>
+                          <CheckCircle size={13} weight="fill" /> WIRED
+                        </span>
+                      ) : (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(245, 158, 11, 0.1)', color: 'var(--fp-salary, #F59E0B)', padding: '3px 8px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700 }}>
+                          <Clock size={13} /> PENDING
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="merchant-card-item__meta">
+                      <div>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted, #64748B)', display: 'block', textTransform: 'uppercase' }}>M-PESA Receipt</span>
+                        <span className="mono" style={{ fontWeight: 700, color: 'var(--accent-primary, #10B981)', fontSize: '0.85rem' }}>{receiptNo}</span>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted, #64748B)', display: 'block', textTransform: 'uppercase' }}>Amount Paid</span>
+                        <span className="mono merchant-card-item__amount">
+                          ETB {Number(s.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="merchant-card-item__actions">
+                      <button
+                        type="button"
+                        className="fp-touch-target"
+                        onClick={() => handleOpenSettlementReceipt(s)}
+                        style={{
+                          flex: 1,
+                          background: 'rgba(16, 185, 129, 0.12)',
+                          border: '1px solid rgba(16, 185, 129, 0.3)',
+                          color: 'var(--accent-primary, #10B981)',
+                          padding: '8px 14px',
+                          minHeight: '40px',
+                          borderRadius: '8px',
+                          fontSize: '0.82rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        View Receipt
+                      </button>
+                      <button
+                        type="button"
+                        className="fp-touch-target"
+                        onClick={() => handleDownloadSettlementPdf(s)}
+                        aria-label="Download Settlement PDF"
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid var(--border, rgba(255, 255, 255, 0.08))',
+                          color: 'var(--text-secondary, #94A3B8)',
+                          padding: '8px 14px',
+                          minHeight: '40px',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          fontSize: '0.82rem',
+                        }}
+                      >
+                        <DownloadSimple size={15} />
+                        <span>PDF</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
 
@@ -341,51 +433,110 @@ export function MerchantDashboard({ onNavigateToPos, onNavigateToSettlements }) 
         {recent.length === 0 ? (
           <p style={{ color: 'var(--text-muted, #64748B)', fontSize: '0.875rem' }}>No recent customer transactions recorded.</p>
         ) : (
-          <div className="fp-table-responsive">
-            <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border, rgba(255, 255, 255, 0.08))', color: 'var(--text-muted, #64748B)', textAlign: 'left' }}>
-                  <th style={{ padding: '10px 12px' }}>Date</th>
-                  <th style={{ padding: '10px 12px' }}>Reference</th>
-                  <th style={{ padding: '10px 12px' }}>Customer</th>
-                  <th style={{ padding: '10px 12px' }}>Employer</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>Total</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'center' }}>Receipt</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recent.map((t) => (
-                  <tr key={t.id} style={{ borderBottom: '1px solid var(--border, rgba(255, 255, 255, 0.04))' }}>
-                    <td style={{ padding: '12px' }}>{new Date(t.created_at).toLocaleDateString()}</td>
-                    <td className="mono" style={{ padding: '12px' }}>{t.fp_transaction_ref || t.id.slice(0, 8)}</td>
-                    <td style={{ padding: '12px', fontWeight: 600 }}>{t.employee_name_snapshot || 'Customer'}</td>
-                    <td style={{ padding: '12px', color: 'var(--text-secondary, #94A3B8)' }}>{t.org_name_snapshot || 'Corporate Partner'}</td>
-                    <td className="mono" style={{ padding: '12px', textAlign: 'right', fontWeight: 700 }}>
-                      ETB {Number(t.total_amount).toFixed(2)}
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'center' }}>
-                      <button
-                        type="button"
-                        onClick={() => handleDownloadTxnReceipt(t.id, t.fp_transaction_ref)}
-                        className="fp-touch-target"
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.05)',
-                          border: '1px solid var(--border, rgba(255, 255, 255, 0.08))',
-                          color: 'var(--text-secondary, #94A3B8)',
-                          padding: '4px 10px',
-                          borderRadius: '6px',
-                          fontSize: '0.75rem',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        PDF
-                      </button>
-                    </td>
+          <>
+            {/* Desktop Table View */}
+            <div className="merchant-table-desktop fp-table-responsive">
+              <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border, rgba(255, 255, 255, 0.08))', color: 'var(--text-muted, #64748B)', textAlign: 'left' }}>
+                    <th style={{ padding: '10px 12px' }}>Date</th>
+                    <th style={{ padding: '10px 12px' }}>Reference</th>
+                    <th style={{ padding: '10px 12px' }}>Customer</th>
+                    <th style={{ padding: '10px 12px' }}>Employer</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'right' }}>Total</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'center' }}>Receipt</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {recent.map((t) => (
+                    <tr key={t.id} style={{ borderBottom: '1px solid var(--border, rgba(255, 255, 255, 0.04))' }}>
+                      <td style={{ padding: '12px' }}>{new Date(t.created_at).toLocaleDateString()}</td>
+                      <td className="mono" style={{ padding: '12px' }}>{t.fp_transaction_ref || t.id.slice(0, 8)}</td>
+                      <td style={{ padding: '12px', fontWeight: 600 }}>{t.employee_name_snapshot || 'Customer'}</td>
+                      <td style={{ padding: '12px', color: 'var(--text-secondary, #94A3B8)' }}>{t.org_name_snapshot || 'Corporate Partner'}</td>
+                      <td className="mono" style={{ padding: '12px', textAlign: 'right', fontWeight: 700 }}>
+                        ETB {Number(t.total_amount).toFixed(2)}
+                      </td>
+                      <td style={{ padding: '12px', textAlign: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadTxnReceipt(t.id, t.fp_transaction_ref)}
+                          className="fp-touch-target"
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.05)',
+                            border: '1px solid var(--border, rgba(255, 255, 255, 0.08))',
+                            color: 'var(--text-secondary, #94A3B8)',
+                            padding: '4px 10px',
+                            borderRadius: '6px',
+                            fontSize: '0.75rem',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          PDF
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards View */}
+            <div className="merchant-cards-mobile">
+              {recent.map((t) => (
+                <div key={t.id} className="merchant-card-item">
+                  <div className="merchant-card-item__header">
+                    <div>
+                      <div className="merchant-card-item__title">{t.employee_name_snapshot || 'Customer'}</div>
+                      <div className="merchant-card-item__sub">{t.org_name_snapshot || 'Corporate Partner'}</div>
+                    </div>
+                    <div className="mono merchant-card-item__amount" style={{ color: 'var(--text-primary, #F8FAFC)' }}>
+                      ETB {Number(t.total_amount).toFixed(2)}
+                    </div>
+                  </div>
+
+                  <div className="merchant-card-item__meta">
+                    <div>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted, #64748B)', display: 'block', textTransform: 'uppercase' }}>Reference</span>
+                      <span className="mono" style={{ fontSize: '0.78rem', color: 'var(--text-secondary, #94A3B8)' }}>
+                        {t.fp_transaction_ref ? `${t.fp_transaction_ref.slice(0, 16)}...` : t.id.slice(0, 8)}
+                      </span>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted, #64748B)', display: 'block', textTransform: 'uppercase' }}>Date</span>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary, #94A3B8)' }}>
+                        {new Date(t.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadTxnReceipt(t.id, t.fp_transaction_ref)}
+                    className="fp-touch-target"
+                    style={{
+                      width: '100%',
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid var(--border, rgba(255, 255, 255, 0.08))',
+                      color: 'var(--text-secondary, #94A3B8)',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      fontSize: '0.82rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      minHeight: '40px',
+                    }}
+                  >
+                    <DownloadSimple size={15} />
+                    <span>Download Receipt (PDF)</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
