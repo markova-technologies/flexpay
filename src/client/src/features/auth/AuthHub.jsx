@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Buildings, Storefront, User, ArrowRight, ShieldCheck, ArrowLeft } from '@phosphor-icons/react';
+import { FlexPayLogo } from '../../components/ui/FlexPayLogo';
 
 export default function AuthHub() {
   const navigate = useNavigate();
@@ -11,9 +12,9 @@ export default function AuthHub() {
       title: 'Organization / Employer',
       badge: 'HR & FINANCE',
       desc: 'Register corporate account, onboard staff, set category credit policies, approve credentials, and execute automated payroll settlement.',
-      icon: <Buildings size={36} weight="bold" color="var(--fp-benefit)" />,
+      icon: <Buildings size={36} weight="bold" color="var(--fp-orange, #FF4D26)" />,
       route: '/auth/organization',
-      accent: 'var(--fp-benefit)',
+      accent: 'var(--fp-orange, #FF4D26)',
       buttonText: 'Organization Portal',
     },
     {
@@ -21,19 +22,19 @@ export default function AuthHub() {
       title: 'Merchant Partner',
       badge: 'POS & RETAIL',
       desc: 'Register retail store, verify employee benefits by FP-ID or QR scan, initiate split checkout, and receive direct M-PESA wire settlements.',
-      icon: <Storefront size={36} weight="bold" color="var(--fp-salary)" />,
+      icon: <Storefront size={36} weight="bold" color="#F59E0B" />,
       route: '/auth/merchant',
-      accent: 'var(--fp-salary)',
+      accent: '#F59E0B',
       buttonText: 'Merchant Portal',
     },
     {
       id: 'employee',
       title: 'Employee Portal',
-      badge: 'SELF-SERVICE',
+      badge: 'DIGITAL WALLET',
       desc: 'Sign in using your organization-issued Luhn FP-ID and 16-character secure credential to access your QR payment card and live credit balance.',
-      icon: <User size={36} weight="bold" color="#38BDF8" />,
+      icon: <User size={36} weight="bold" color="var(--fp-orange, #FF4D26)" />,
       route: '/auth/employee',
-      accent: '#38BDF8',
+      accent: 'var(--fp-orange, #FF4D26)',
       buttonText: 'Employee Login',
     },
   ];
@@ -80,24 +81,7 @@ export default function AuthHub() {
           Back to Home
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div
-            style={{
-              width: '28px',
-              height: '28px',
-              borderRadius: '8px',
-              background: 'var(--fp-benefit)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 800,
-              color: '#060A14',
-            }}
-          >
-            F
-          </div>
-          <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>FlexPay</span>
-        </div>
+        <FlexPayLogo variant="compact" size={28} onClick={() => navigate('/')} style={{ cursor: 'pointer' }} />
       </header>
 
       {/* Main Container */}

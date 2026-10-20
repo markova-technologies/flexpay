@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Buildings, ArrowLeft, LockKey, Phone, IdentificationCard, ShieldCheck } from '@phosphor-icons/react';
+import { FlexPayLogo } from '../../components/ui/FlexPayLogo';
 import api from '../../services/api';
 import { useAuthStore } from '../../stores/authStore';
 
@@ -131,9 +132,11 @@ export default function OrgAuthPage() {
           <ArrowLeft size={18} />
           Back to Portals
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Buildings size={22} color="var(--fp-benefit)" />
-          <span style={{ fontWeight: 700 }}>Organization Portal</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <FlexPayLogo variant="compact" size={26} onClick={() => navigate('/')} style={{ cursor: 'pointer' }} />
+          <span style={{ fontSize: '0.78rem', background: 'rgba(255, 77, 38, 0.12)', color: 'var(--fp-orange, #FF4D26)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+            Org Portal
+          </span>
         </div>
       </header>
 
@@ -167,15 +170,15 @@ export default function OrgAuthPage() {
                 width: '56px',
                 height: '56px',
                 borderRadius: '16px',
-                background: 'rgba(16, 185, 129, 0.12)',
-                border: '1px solid rgba(16, 185, 129, 0.25)',
+                background: 'rgba(255, 77, 38, 0.12)',
+                border: '1px solid rgba(255, 77, 38, 0.28)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginBottom: '16px',
               }}
             >
-              <Buildings size={32} color="var(--fp-benefit)" weight="bold" />
+              <Buildings size={32} color="var(--fp-orange, #FF4D26)" weight="bold" />
             </div>
             <h2 style={{ fontSize: 'clamp(1.35rem, 4vw, 1.6rem)', fontWeight: 800 }}>
               {mode === 'login' ? 'Organization Sign In' : 'Register Organization'}
@@ -320,14 +323,14 @@ export default function OrgAuthPage() {
                   padding: '14px',
                   minHeight: '48px',
                   borderRadius: '8px',
-                  background: 'var(--fp-benefit)',
-                  color: '#060A14',
+                  background: 'var(--fp-orange, #FF4D26)',
+                  color: '#080B10',
                   fontWeight: 700,
                   fontSize: '0.95rem',
                   border: 'none',
                   cursor: loading ? 'not-allowed' : 'pointer',
                   opacity: loading ? 0.7 : 1,
-                  boxShadow: '0 4px 16px rgba(16, 185, 129, 0.25)',
+                  boxShadow: '0 4px 16px var(--fp-orange-glow, rgba(255, 77, 38, 0.25))',
                 }}
               >
                 {loading ? 'Authenticating...' : 'Sign In to Org Portal'}

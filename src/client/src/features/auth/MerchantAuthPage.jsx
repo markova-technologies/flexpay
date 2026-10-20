@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Storefront, ArrowLeft, LockKey, Phone, IdentificationCard } from '@phosphor-icons/react';
+import { FlexPayLogo } from '../../components/ui/FlexPayLogo';
 import api from '../../services/api';
 import { useAuthStore } from '../../stores/authStore';
 
@@ -127,9 +128,11 @@ export default function MerchantAuthPage() {
           <ArrowLeft size={18} />
           Back to Portals
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Storefront size={22} color="var(--fp-salary)" />
-          <span style={{ fontWeight: 700 }}>Merchant POS Portal</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <FlexPayLogo variant="compact" size={26} onClick={() => navigate('/')} style={{ cursor: 'pointer' }} />
+          <span style={{ fontSize: '0.78rem', background: 'rgba(245, 158, 11, 0.14)', color: '#F59E0B', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+            Merchant POS
+          </span>
         </div>
       </header>
 

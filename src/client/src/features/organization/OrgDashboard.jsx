@@ -20,6 +20,7 @@ import api from '../../services/api';
 import { useAuthStore } from '../../stores/authStore';
 import { useToast } from '../../contexts/ToastContext';
 import { Drawer } from '../../components/ui/Drawer';
+import { FlexPayLogo } from '../../components/ui/FlexPayLogo';
 import AddEmployeeForm from './AddEmployeeForm';
 import PasswordDisplay from './PasswordDisplay';
 import PasswordResetRequests from './PasswordResetRequests';
@@ -218,22 +219,7 @@ export default function OrgDashboard() {
       {/* Top Header */}
       <header className="org-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-          <div
-            style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '10px',
-              background: 'var(--fp-benefit)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 800,
-              color: '#060A14',
-              flexShrink: 0,
-            }}
-          >
-            F
-          </div>
+          <FlexPayLogo variant="mark" size={36} onClick={() => navigate('/')} style={{ cursor: 'pointer', flexShrink: 0 }} />
           <div style={{ minWidth: 0 }}>
             <h1 style={{ fontSize: 'clamp(0.95rem, 3vw, 1.15rem)', fontWeight: 800, margin: 0, lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {stats?.organization?.name || stats?.org?.name || user?.orgName || user?.organizationName || 'Corporate Admin'}
@@ -303,8 +289,8 @@ export default function OrgDashboard() {
             style={{
               padding: '9px 16px',
               borderRadius: '8px',
-              background: 'var(--fp-benefit)',
-              color: '#060A14',
+              background: 'var(--fp-orange, #FF4D26)',
+              color: '#080B10',
               fontWeight: 700,
               fontSize: '0.85rem',
               border: 'none',
@@ -313,6 +299,7 @@ export default function OrgDashboard() {
               alignItems: 'center',
               gap: '6px',
               minHeight: 'var(--fp-touch-min)',
+              boxShadow: '0 2px 12px var(--fp-orange-glow, rgba(255, 77, 38, 0.25))',
             }}
           >
             <UserPlus size={18} weight="bold" />
@@ -459,23 +446,7 @@ export default function OrgDashboard() {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '10px',
-                  background: 'var(--fp-benefit)',
-                  color: '#060A14',
-                  fontWeight: 800,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1rem',
-                  flexShrink: 0,
-                }}
-              >
-                F
-              </div>
+              <FlexPayLogo variant="mark" size={32} style={{ flexShrink: 0 }} />
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--fp-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {stats?.organization?.name || stats?.org?.name || user?.orgName || 'Corporate Admin'}

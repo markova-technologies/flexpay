@@ -85,7 +85,7 @@ export function MerchantDashboard({ onNavigateToPos, onNavigateToSettlements }) 
         {/* Card 1: Pending Receivables */}
         <div className="merchant-kpi-card">
           <span className="merchant-kpi-label">Pending Receivables</span>
-          <div className="mono merchant-kpi-val" style={{ color: 'var(--accent-primary, #10B981)' }}>
+          <div className="mono merchant-kpi-val" style={{ color: 'var(--fp-orange, #FF4D26)' }}>
             ETB {pendingReceivables.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <span className="merchant-kpi-sub">Owed by partner employers</span>

@@ -16,11 +16,15 @@ export function CreditRing({
   const strokeDashoffset = circumference - (utilizationPercent / 100) * circumference;
 
   // Dynamic status color based on utilization
-  let strokeColor = '#10B981'; // Green (< 65%)
+  // Brand Electric Orange for healthy (<65%), Amber for moderate, Red for critical
+  let strokeColor = 'url(#fp-credit-orange-grad)';
+  let badgeColor = '#FF4D26';
   if (utilizationPercent >= 85) {
     strokeColor = '#EF4444'; // Red (Critical)
+    badgeColor = '#EF4444';
   } else if (utilizationPercent >= 65) {
     strokeColor = '#F59E0B'; // Amber (Moderate)
+    badgeColor = '#F59E0B';
   }
 
   return (
@@ -40,6 +44,12 @@ export function CreditRing({
         viewBox={`0 0 ${size} ${size}`}
         style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}
       >
+        <defs>
+          <linearGradient id="fp-credit-orange-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FF623D" />
+            <stop offset="100%" stopColor="#FF4D26" />
+          </linearGradient>
+        </defs>
         {/* Background track */}
         <circle
           cx={size / 2}
@@ -95,12 +105,13 @@ export function CreditRing({
         <span
           style={{
             fontSize: '0.75rem',
-            fontWeight: 600,
-            color: strokeColor,
+            fontWeight: 700,
+            color: badgeColor,
             marginTop: '4px',
             background: 'var(--fp-surface-2)',
             padding: '2px 8px',
             borderRadius: '999px',
+            border: `1px solid ${badgeColor}33`,
           }}
         >
           {utilizationPercent}% Used

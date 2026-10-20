@@ -2630,6 +2630,53 @@ Overhauled the mobile UI/UX and navigation architecture for both the Organizatio
 
 ---
 
+#### Turn 20 (Step 20)
+##### 👤 User Prompt:
+```text
+Okay now we are gonna make a ui transformation. So i gave you a logo so You gonna use that and also for the favicon and transform the ui of the whole thing (landing page, the three dashboards) with this theme (organge, black, white (cream)) and from d/t designing libraries like 21st.dev, https://feralui.dev, and so on just search them and also by using thee designing skills that you have, i want you to make  a modern, good looking, with animation and scroll effects, and so on (be creative and amaze me) that when a user see flex pay for the first time, they would fall in love. And also search for what a design that make it look like ai generated (especially in redit) and avoid those. And after verifying that it work and everythign is fine push it.
+```
 
+##### 🤖 Agent Response:
+Comprehensive visual and architectural UI transformation of FlexPay across the brand identity, public landing page, authentication hub, and all three core dashboards (Organization Management, Employee Digital Wallet, and Merchant POS & Settlements):
 
+1. **Brand Identity & Logo Integration**:
+   - **Official Logo Asset**: Installed the brand mark (`flexpay-logo.png`) in [`src/client/public/`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/public/) featuring the signature interlocking ribbon mark and tagline *"Your Salary. More Possibilities."*.
+   - **Vector Favicon**: Generated a clean, scalable SVG favicon in [`src/client/public/favicon.svg`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/public/favicon.svg) with orange gradient and cream counter-loop geometry on an obsidian (`#080B10`) background.
+   - **Adaptive Brand Logo Component**: Created [`src/client/src/components/ui/FlexPayLogo.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/components/ui/FlexPayLogo.jsx) supporting `variant="full" | "compact" | "mark" | "image"`, dynamic dark/light theme switching, and drop-shadow glowing orange accents.
+   - **HTML Metadata**: Updated [`src/client/index.html`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/index.html) with `#080B10` theme color, SVG favicon linking, and Plus Jakarta Sans + JetBrains Mono typography preconnects.
 
+2. **Elevated Design System (Electric Orange + Obsidian Ink + Warm Cream)**:
+   - Updated [`src/client/src/styles/tokens.css`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/styles/tokens.css):
+     - **Primary Electric Orange**: `--fp-orange: #FF4D26`, `--fp-orange-hover: #FF623D`, `--fp-orange-glow: rgba(255, 77, 38, 0.25)`, `--fp-orange-dim: rgba(255, 77, 38, 0.12)`.
+     - **Deep Obsidian Surfaces**: `--fp-bg: #080B10`, `--fp-surface-1: #0E131C`, `--fp-surface-2: #151C28`, `--fp-surface-3: #1C2638`.
+     - **Warm Alabaster Cream**: `--fp-cream: #FAF7F2`, `--fp-cream-pure: #FDFBF7`, `--fp-cream-text: #FAF8F5`, `--fp-cream-muted: #A19A91`.
+     - **Financial Status Accents**: `#10B981` (Wired Settlements / Double-Entry Match), `#F59E0B` (Salary Accruals / Pending), `#38BDF8` (M-PESA Co-Pay).
+     - Full backward compatibility aliases preserved to protect existing components.
+
+3. **Anti-AI-Slop Landing Page Overhaul ([`LandingPage.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/landing/LandingPage.jsx) & [`LandingPage.css`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/landing/LandingPage.css))**:
+   - **Proactively Avoided Reddit "AI Slop / v0" Tells**:
+     - *Banned*: Centered hero with generic buzzwords, fake macOS 3-dot window mockup, pervasive purple blur orbs, 3 generic identical pricing cards with green checkmarks, repetitive section eyebrows.
+     - *Built*: Asymmetric split-screen layout anchored by the official brand mark and authentic Ethiopian fintech domain depth.
+   - **Interactive SplitEngine™ Live Simulator**: Real-time interactive widget where visitors drag an ETB range slider or click meal/groceries/clinic presets to watch the live SplitEngine rebalance between accrued Employer Allowance (`ETB 1,800` in orange) and Safaricom M-PESA Co-Pay (`ETB 700` in sky blue) with spring motion and live ledger verification equation (`1800 + 700 === 2500 ETB`).
+   - **Three-Phase Real Flow**: Accrual, Instant POS Split, and Payroll Reconciliation with clear visual hierarchy.
+   - **Three Ecosystem Pillars**: Dedicated interactive cards for Organizations (HR payroll), Employees (QR wallet), and Merchants (till POS).
+   - **High-Impact Editorial Cream Section**: Premium `#FAF7F2` cream card with obsidian typography and NBE compliance architecture.
+
+4. **Auth Hub & Portal Login Pages**:
+   - [`AuthHub.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/auth/AuthHub.jsx): Upgraded with `<FlexPayLogo variant="compact" />`, glowing hairlines, and orange/amber/cream cards.
+   - [`OrgAuthPage.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/auth/OrgAuthPage.jsx): Integrated `<FlexPayLogo />`, electric orange building mark, active tab indicator, and orange submit button.
+   - [`MerchantAuthPage.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/auth/MerchantAuthPage.jsx): Integrated `<FlexPayLogo />`, amber POS mark, and glowing inputs.
+   - [`EmployeeLoginPage.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/auth/EmployeeLoginPage.jsx): Integrated `<FlexPayLogo />`, electric orange access button, and Luhn FP-ID focus styling.
+
+5. **The Three Core Dashboards**:
+   - **Organization Dashboard** ([`OrgDashboard.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/organization/OrgDashboard.jsx) & [`OrgDashboard.css`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/organization/OrgDashboard.css)): Replaced `F` placeholder boxes with `<FlexPayLogo variant="mark" />` in header and mobile drawer, updated active tab indicators to electric orange, and styled `+ Staff` action button in brand orange.
+   - **Employee Dashboard** ([`EmployeeDashboard.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/employee/EmployeeDashboard.jsx) & [`CreditRing.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/employee/CreditRing.jsx)): Integrated `<FlexPayLogo />` and transformed `CreditRing` with an Electric Orange gradient arc (`#FF623D` &rarr; `#FF4D26`), glowing shadow, and warm cream monetary display.
+   - **Merchant Layout & Dashboard** ([`MerchantLayout.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/merchant/MerchantLayout.jsx), [`MerchantLayout.css`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/merchant/MerchantLayout.css), [`MerchantDashboard.jsx`](file:///d:/Projects/Markova%20Projects/Flex%20Pay/src/client/src/features/merchant/MerchantDashboard.jsx)): Updated sidebar and mobile headers with `<FlexPayLogo />`, styled active items with electric orange indicator, and styled Pending Receivables KPI in brand orange.
+
+6. **Browser Verification, Unit Tests & Git Push**:
+   - Tested in browser via `browser_subagent` across desktop and mobile. Captured screenshots for landing page, interactive SplitEngine simulator, editorial cream card, auth hub, org login, and merchant login.
+   - Verified clean production build (`npm --prefix src/client run build`) with zero errors.
+   - Verified all 81 unit tests across 31 suites pass with 0 failures (`npm run test:unit`).
+   - Staged all files, created authoritative commit, and pushed to `origin/main`.
+
+---

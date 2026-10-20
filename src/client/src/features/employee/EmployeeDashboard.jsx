@@ -17,6 +17,7 @@ import {
 } from '@phosphor-icons/react';
 import api from '../../services/api';
 import { useAuthStore } from '../../stores/authStore';
+import { FlexPayLogo } from '../../components/ui/FlexPayLogo';
 import CreditRing from './CreditRing';
 import QRCodeCard from './QRCodeCard';
 
@@ -85,22 +86,7 @@ export default function EmployeeDashboard() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div
-            style={{
-              width: '34px',
-              height: '34px',
-              borderRadius: '9px',
-              background: 'var(--fp-benefit)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 800,
-              color: '#060A14',
-              flexShrink: 0,
-            }}
-          >
-            F
-          </div>
+          <FlexPayLogo variant="mark" size={32} onClick={() => navigate('/')} style={{ cursor: 'pointer', flexShrink: 0 }} />
           <div>
             <h1 style={{ fontSize: 'clamp(1rem, 3vw, 1.15rem)', fontWeight: 800, margin: 0, lineHeight: 1.2 }}>FlexPay Wallet</h1>
             <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-muted)' }}>

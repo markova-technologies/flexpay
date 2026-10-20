@@ -4,6 +4,7 @@ import { List, CaretDown, CreditCard, SignOut } from '@phosphor-icons/react';
 import { useAuthStore } from '../../stores/authStore';
 import api from '../../services/api';
 import { Drawer } from '../../components/ui/Drawer';
+import { FlexPayLogo } from '../../components/ui/FlexPayLogo';
 import MerchantDashboard from './MerchantDashboard';
 import MerchantSettlements from './MerchantSettlements';
 import MerchantOrgs from './MerchantOrgs';
@@ -43,9 +44,7 @@ export function MerchantLayout() {
     <div className="merchant-layout">
       {/* Mobile Top Header */}
       <header className="merchant-mobile-header">
-        <div className="sidebar__brand">
-          FlexPay <span>Merchant POS</span>
-        </div>
+        <FlexPayLogo variant="compact" size={26} onClick={() => navigate('/')} style={{ cursor: 'pointer' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
             type="button"
@@ -110,8 +109,8 @@ export function MerchantLayout() {
                   width: '38px',
                   height: '38px',
                   borderRadius: '10px',
-                  background: 'rgba(16, 185, 129, 0.15)',
-                  color: 'var(--fp-benefit)',
+                  background: 'rgba(255, 77, 38, 0.15)',
+                  color: 'var(--fp-orange, #FF4D26)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -125,7 +124,7 @@ export function MerchantLayout() {
                 <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--fp-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {user?.businessName || user?.merchantName || user?.name || 'Retail Merchant'}
                 </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--fp-benefit)', fontWeight: 600 }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--fp-orange, #FF4D26)', fontWeight: 600 }}>
                   Till: {user?.tillNumber || user?.safaricomShortcode || 'M-PESA POS'} • Active Partner
                 </div>
               </div>
@@ -199,7 +198,7 @@ export function MerchantLayout() {
       {/* Navigation (Sidebar on desktop, horizontal scrollable pills on mobile) */}
       <nav className="merchant-nav">
         <div className="sidebar__brand desktop-only">
-          FlexPay <span>Merchant</span>
+          <FlexPayLogo variant="compact" size={28} onClick={() => navigate('/')} style={{ cursor: 'pointer' }} />
         </div>
         <div className="merchant-nav__list">
           {NAV_ITEMS.map((item) => (

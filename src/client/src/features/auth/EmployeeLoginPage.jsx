@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, ArrowLeft, LockKey, IdentificationCard, ShieldCheck, Phone, CheckCircle, Warning } from '@phosphor-icons/react';
+import { FlexPayLogo } from '../../components/ui/FlexPayLogo';
 import api from '../../services/api';
 import { useAuthStore } from '../../stores/authStore';
 
@@ -109,9 +110,11 @@ export default function EmployeeLoginPage() {
           <ArrowLeft size={18} />
           Back to Portals
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <User size={22} color="#38BDF8" />
-          <span style={{ fontWeight: 700 }}>Employee Access</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <FlexPayLogo variant="compact" size={26} onClick={() => navigate('/')} style={{ cursor: 'pointer' }} />
+          <span style={{ fontSize: '0.78rem', background: 'rgba(255, 77, 38, 0.12)', color: 'var(--fp-orange, #FF4D26)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}>
+            Employee Wallet
+          </span>
         </div>
       </header>
 
@@ -290,14 +293,14 @@ export default function EmployeeLoginPage() {
                 padding: '14px',
                 minHeight: '48px',
                 borderRadius: '8px',
-                background: '#38BDF8',
-                color: '#060A14',
+                background: 'var(--fp-orange, #FF4D26)',
+                color: '#080B10',
                 fontWeight: 700,
                 fontSize: '0.95rem',
                 border: 'none',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 opacity: loading ? 0.7 : 1,
-                boxShadow: '0 4px 16px rgba(56, 189, 248, 0.25)',
+                boxShadow: '0 4px 16px var(--fp-orange-glow, rgba(255, 77, 38, 0.25))',
               }}
             >
               {loading ? 'Verifying with Bank Invariant...' : 'Access My Benefits Portal'}

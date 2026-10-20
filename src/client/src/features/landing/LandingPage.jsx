@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   Buildings,
   Storefront,
@@ -15,844 +16,591 @@ import {
   ArrowRight,
   List,
   X,
+  Coins,
+  Receipt,
+  Sparkle,
+  CaretRight,
+  Check,
 } from '@phosphor-icons/react';
+import { FlexPayLogo } from '../../components/ui/FlexPayLogo';
+import './LandingPage.css';
 
 export default function LandingPage() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [splitAmount, setSplitAmount] = useState(2500);
-  const employeeCredit = 1800;
 
-  const creditPortion = Math.min(splitAmount, employeeCredit);
-  const copayPortion = Math.max(0, splitAmount - employeeCredit);
+  // Interactive SplitEngine™ Simulator state
+  const [purchaseAmount, setPurchaseAmount] = useState(2500);
+  const employeeAllowance = 1800; // Simulated available benefit balance
+
+  const benefitPortion = Math.min(purchaseAmount, employeeAllowance);
+  const copayPortion = Math.max(0, purchaseAmount - employeeAllowance);
+  const benefitPercent = purchaseAmount > 0 ? (benefitPortion / purchaseAmount) * 100 : 100;
+  const copayPercent = 100 - benefitPercent;
+
+  const quickPresets = [
+    { label: 'Lunch', amount: 450 },
+    { label: 'Groceries', amount: 1800 },
+    { label: 'Pharmacy', amount: 2500 },
+    { label: 'Appliances', amount: 6200 },
+  ];
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--fp-bg)', color: 'var(--fp-text-primary)', overflowX: 'hidden' }}>
-      {/* 1. Header / Navbar */}
-      <header
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 60,
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          background: 'rgba(6, 10, 20, 0.88)',
-          borderBottom: '1px solid var(--fp-border)',
-        }}
-      >
-        <div
-          style={{
-            maxWidth: '1200px',
-            margin: '0 auto',
-            padding: '12px 16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          {/* Logo */}
-          <div
+    <div className="landing-page">
+      {/* 1. Header Navigation */}
+      <header className="landing-header">
+        <div className="landing-nav-inner">
+          <FlexPayLogo
+            variant="compact"
+            size={32}
             onClick={() => navigate('/')}
-            style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
-          >
-            <div
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 800,
-                fontSize: '18px',
-                color: '#FFFFFF',
-                boxShadow: '0 0 16px rgba(16, 185, 129, 0.35)',
-              }}
-            >
-              F
-            </div>
-            <div>
-              <span style={{ fontSize: '1.2rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
-                Flex<span style={{ color: 'var(--fp-benefit)' }}>Pay</span>
-              </span>
-              <span
-                style={{
-                  fontSize: '0.625rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.12em',
-                  background: 'rgba(16, 185, 129, 0.15)',
-                  color: 'var(--fp-benefit)',
-                  padding: '2px 6px',
-                  borderRadius: '4px',
-                  marginLeft: '6px',
-                  fontWeight: 700,
-                }}
-              >
-                v2.0 ETH
-              </span>
-            </div>
-          </div>
+            style={{ cursor: 'pointer' }}
+          />
 
           {/* Desktop Navigation Links */}
-          <nav
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '28px',
-            }}
-            className="landing-desktop-nav"
-          >
-            <a
-              href="#how-it-works"
-              style={{ color: 'var(--fp-text-secondary)', fontSize: '0.9rem', fontWeight: 500 }}
-            >
+          <nav className="landing-nav-links">
+            <a href="#how-it-works" className="landing-nav-link">
               How It Works
             </a>
-            <a
-              href="#features"
-              style={{ color: 'var(--fp-text-secondary)', fontSize: '0.9rem', fontWeight: 500 }}
-            >
-              Features
-            </a>
-            <a
-              href="#pillars"
-              style={{ color: 'var(--fp-text-secondary)', fontSize: '0.9rem', fontWeight: 500 }}
-            >
+            <a href="#ecosystem" className="landing-nav-link">
               Ecosystem
+            </a>
+            <a href="#simulator" className="landing-nav-link">
+              SplitEngine™
+            </a>
+            <a href="#compliance" className="landing-nav-link">
+              NBE Compliance
             </a>
           </nav>
 
-          {/* CTA & Mobile Hamburger */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* Header Action Button & Mobile Toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <button
               onClick={() => navigate('/auth')}
-              style={{
-                padding: '10px 20px',
-                minHeight: 'var(--fp-touch-min, 44px)',
-                borderRadius: '8px',
-                background: 'var(--fp-benefit)',
-                color: '#060A14',
-                fontWeight: 700,
-                fontSize: '0.875rem',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                boxShadow: '0 0 20px rgba(16, 185, 129, 0.25)',
-                transition: 'all 0.2s ease',
-              }}
+              className="fp-btn-primary"
+              aria-label="Launch FlexPay Portals"
             >
-              <span>Get Started</span>
+              <span>Access Portals</span>
               <ArrowRight size={16} weight="bold" />
             </button>
 
-            {/* Mobile Hamburger Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="landing-mob-toggle"
               aria-label={mobileMenuOpen ? 'Close navigation' : 'Open navigation'}
-              style={{
-                background: 'var(--fp-surface-2)',
-                border: '1px solid var(--fp-border)',
-                borderRadius: '8px',
-                color: 'var(--fp-text-primary)',
-                minWidth: '44px',
-                minHeight: '44px',
-                display: 'none',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-              }}
             >
               {mobileMenuOpen ? <X size={20} /> : <List size={20} />}
             </button>
           </div>
         </div>
 
-        {/* Collapsible Mobile Menu */}
-        {mobileMenuOpen && (
-          <div
-            style={{
-              padding: '16px 20px 24px',
-              borderTop: '1px solid var(--fp-border)',
-              background: 'rgba(12, 19, 34, 0.98)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '16px',
-            }}
-          >
-            <a
-              href="#how-it-works"
-              onClick={() => setMobileMenuOpen(false)}
+        {/* Mobile Dropdown Menu */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
               style={{
-                color: 'var(--fp-text-primary)',
-                fontSize: '1rem',
-                fontWeight: 600,
-                padding: '8px 0',
+                borderTop: '1px solid var(--fp-border)',
+                background: 'rgba(8, 11, 16, 0.98)',
+                padding: '20px 24px 28px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
               }}
             >
-              How It Works
-            </a>
-            <a
-              href="#features"
-              onClick={() => setMobileMenuOpen(false)}
-              style={{
-                color: 'var(--fp-text-primary)',
-                fontSize: '1rem',
-                fontWeight: 600,
-                padding: '8px 0',
-              }}
-            >
-              Features
-            </a>
-            <a
-              href="#pillars"
-              onClick={() => setMobileMenuOpen(false)}
-              style={{
-                color: 'var(--fp-text-primary)',
-                fontSize: '1rem',
-                fontWeight: 600,
-                padding: '8px 0',
-              }}
-            >
-              Ecosystem
-            </a>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', paddingTop: '8px' }}>
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  navigate('/auth/organization');
-                }}
-                style={{
-                  padding: '12px',
-                  borderRadius: '8px',
-                  background: 'var(--fp-surface-2)',
-                  border: '1px solid var(--fp-border)',
-                  color: 'var(--fp-text-primary)',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
+              <a
+                href="#how-it-works"
+                onClick={() => setMobileMenuOpen(false)}
+                className="landing-nav-link"
+                style={{ fontSize: '1rem', padding: '6px 0' }}
               >
-                Organizations
-              </button>
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  navigate('/auth/employee');
-                }}
-                style={{
-                  padding: '12px',
-                  borderRadius: '8px',
-                  background: 'var(--fp-surface-2)',
-                  border: '1px solid var(--fp-border)',
-                  color: 'var(--fp-text-primary)',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
+                How It Works
+              </a>
+              <a
+                href="#ecosystem"
+                onClick={() => setMobileMenuOpen(false)}
+                className="landing-nav-link"
+                style={{ fontSize: '1rem', padding: '6px 0' }}
               >
-                Employees
-              </button>
-            </div>
-          </div>
-        )}
+                Ecosystem
+              </a>
+              <a
+                href="#simulator"
+                onClick={() => setMobileMenuOpen(false)}
+                className="landing-nav-link"
+                style={{ fontSize: '1rem', padding: '6px 0' }}
+              >
+                SplitEngine™ Simulator
+              </a>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', paddingTop: '10px' }}>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    navigate('/auth/organization');
+                  }}
+                  className="fp-btn-ghost"
+                  style={{ justifyContent: 'center', fontSize: '0.85rem' }}
+                >
+                  Organization
+                </button>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    navigate('/auth/merchant');
+                  }}
+                  className="fp-btn-ghost"
+                  style={{ justifyContent: 'center', fontSize: '0.85rem' }}
+                >
+                  Merchant POS
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
-      {/* 2. Hero Section */}
-      <section
-        style={{
-          position: 'relative',
-          padding: 'clamp(40px, 8vw, 80px) 16px clamp(48px, 10vw, 100px)',
-          maxWidth: '1200px',
-          margin: '0 auto',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))',
-          gap: ' clamp(32px, 6vw, 48px)',
-          alignItems: 'center',
-        }}
-      >
-        <div>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '6px 12px',
-              borderRadius: '999px',
-              background: 'rgba(16, 185, 129, 0.1)',
-              border: '1px solid rgba(16, 185, 129, 0.25)',
-              color: 'var(--fp-benefit)',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              marginBottom: '20px',
-            }}
-          >
-            <ShieldCheck size={18} weight="fill" />
-            <span>Safaricom M-PESA Ethiopia Integrated</span>
+      {/* 2. Asymmetric Split Hero Section */}
+      <section className="hero-section">
+        {/* Left Column: Authentic Domain Value Proposition */}
+        <motion.div
+          className="hero-content"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <div className="hero-pill-badge">
+            <ShieldCheck size={16} weight="fill" />
+            <span>Safaricom M-PESA Integrated • NBE EWA Framework</span>
           </div>
 
-          <h1
-            style={{
-              fontSize: 'clamp(2rem, 5.5vw, 3.6rem)',
-              lineHeight: 1.15,
-              fontWeight: 800,
-              letterSpacing: '-0.03em',
-              marginBottom: '20px',
-            }}
-          >
-            Employee Benefits, <br />
-            <span
-              style={{
-                background: 'linear-gradient(135deg, #10B981 0%, #38BDF8 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              Powered by M-PESA
-            </span>
+          <h1 className="hero-headline">
+            Your salary.{' '}
+            <span className="hero-headline-accent">Ready when life happens.</span>
           </h1>
 
-          <p
-            style={{
-              fontSize: 'clamp(0.95rem, 2.5vw, 1.125rem)',
-              color: 'var(--fp-text-secondary)',
-              lineHeight: 1.65,
-              marginBottom: '32px',
-              maxWidth: '520px',
-            }}
-          >
-            Institutional benefit allowances and salary-linked co-pays across verified merchants in
-            Ethiopia. Zero cash handling, instant QR verification, and automated payroll settlement.
+          <p className="hero-subtext">
+            FlexPay unlocks already-earned wages for everyday essentials. Zero predatory
+            interest, automatic employer benefit splits, and instant Safaricom M-PESA checkout.
           </p>
 
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '12px',
-            }}
-          >
+          <div className="hero-actions">
             <button
-              onClick={() => navigate('/auth/organization')}
-              style={{
-                padding: '14px 24px',
-                minHeight: 'var(--fp-touch-comfortable, 48px)',
-                borderRadius: '10px',
-                background: 'var(--fp-benefit)',
-                color: '#060A14',
-                fontWeight: 700,
-                fontSize: '0.95rem',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '10px',
-                boxShadow: '0 4px 24px rgba(16, 185, 129, 0.3)',
-                flex: '1 1 180px',
-              }}
+              onClick={() => navigate('/auth')}
+              className="fp-btn-primary"
             >
-              <Buildings size={20} weight="bold" />
-              For Organizations
+              <span>Explore All 3 Portals</span>
+              <ArrowRight size={18} weight="bold" />
             </button>
-            <button
-              onClick={() => navigate('/auth/merchant')}
-              style={{
-                padding: '14px 24px',
-                minHeight: 'var(--fp-touch-comfortable, 48px)',
-                borderRadius: '10px',
-                background: 'var(--fp-surface-2)',
-                color: 'var(--fp-text-primary)',
-                fontWeight: 600,
-                fontSize: '0.95rem',
-                border: '1px solid var(--fp-border-strong)',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '10px',
-                flex: '1 1 180px',
-              }}
-            >
-              <Storefront size={20} weight="bold" />
-              For Merchants
-            </button>
-            <button
-              onClick={() => navigate('/auth/employee')}
-              style={{
-                padding: '14px 24px',
-                minHeight: 'var(--fp-touch-comfortable, 48px)',
-                borderRadius: '10px',
-                background: 'transparent',
-                color: 'var(--fp-text-secondary)',
-                fontWeight: 600,
-                fontSize: '0.95rem',
-                border: '1px solid var(--fp-border)',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '10px',
-                flex: '1 1 180px',
-              }}
-            >
-              <User size={20} weight="bold" />
-              Employee Login
-            </button>
+            <a href="#simulator" className="fp-btn-ghost">
+              <span>Test SplitEngine™</span>
+            </a>
           </div>
-        </div>
 
-        {/* Interactive Payment Split Demo Widget */}
-        <div
-          style={{
-            background: 'var(--fp-surface-1)',
-            border: '1px solid var(--fp-border-strong)',
-            borderRadius: '20px',
-            padding: 'clamp(20px, 4vw, 32px)',
-            boxShadow: 'var(--fp-shadow-lg)',
-            position: 'relative',
-            width: '100%',
-          }}
+          <div className="hero-trust-metrics">
+            <div className="hero-trust-item">
+              <span className="hero-trust-number">0% APR</span>
+              <span className="hero-trust-label">Earned Wage Access</span>
+            </div>
+            <div style={{ width: '1px', height: '32px', background: 'var(--fp-border)' }} />
+            <div className="hero-trust-item">
+              <span className="hero-trust-number">&lt; 2s</span>
+              <span className="hero-trust-label">M-PESA STK Push</span>
+            </div>
+            <div style={{ width: '1px', height: '32px', background: 'var(--fp-border)' }} />
+            <div className="hero-trust-item">
+              <span className="hero-trust-number">100%</span>
+              <span className="hero-trust-label">Reconciled Payroll</span>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Right Column: Interactive SplitEngine™ Live Simulator */}
+        <motion.div
+          id="simulator"
+          className="split-simulator-card"
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
         >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '20px',
-              paddingBottom: '14px',
-              borderBottom: '1px solid var(--fp-border)',
-            }}
-          >
-            <div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-muted)', textTransform: 'uppercase' }}>
-                Live Demo
-              </span>
-              <h3 style={{ fontSize: '1.15rem', margin: '2px 0 0' }}>Automated SplitEngine™</h3>
+          <div className="split-card-header">
+            <div className="split-card-title">
+              <Coins size={20} color="var(--fp-orange)" weight="bold" />
+              <span>SplitEngine™ Live Calculator</span>
             </div>
-            <span
-              style={{
-                background: 'rgba(56, 189, 248, 0.15)',
-                color: '#38BDF8',
-                padding: '4px 10px',
-                borderRadius: '6px',
-                fontSize: '0.75rem',
-                fontWeight: 700,
-              }}
-            >
-              REAL-TIME
-            </span>
+            <span className="split-card-badge">Real-Time Ledger</span>
           </div>
 
-          <div style={{ marginBottom: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <span style={{ fontSize: '0.875rem', color: 'var(--fp-text-secondary)' }}>Purchase Order Total</span>
-              <span className="mono" style={{ fontSize: '1.2rem', fontWeight: 700 }}>
-                ETB {splitAmount.toLocaleString()}
+          {/* Interactive Amount Slider */}
+          <div className="split-slider-container">
+            <div className="split-slider-labels">
+              <span className="split-slider-label">Cart Checkout Total</span>
+              <span className="split-slider-amount">
+                ETB {purchaseAmount.toLocaleString()}
               </span>
             </div>
+
             <input
               type="range"
-              min="500"
-              max="5000"
-              step="100"
-              value={splitAmount}
-              onChange={(e) => setSplitAmount(Number(e.target.value))}
-              style={{
-                width: '100%',
-                accentColor: 'var(--fp-benefit)',
-                cursor: 'pointer',
-                height: '32px',
-              }}
+              min="200"
+              max="10000"
+              step="50"
+              value={purchaseAmount}
+              onChange={(e) => setPurchaseAmount(Number(e.target.value))}
+              className="split-range-input"
+              aria-label="Adjust checkout amount"
             />
+
+            {/* Quick Presets */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
+              {quickPresets.map((preset) => (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() => setPurchaseAmount(preset.amount)}
+                  style={{
+                    background: purchaseAmount === preset.amount ? 'var(--fp-orange)' : 'var(--fp-surface-2)',
+                    color: purchaseAmount === preset.amount ? '#080B10' : 'var(--fp-cream-muted)',
+                    border: '1px solid var(--fp-border)',
+                    borderRadius: '6px',
+                    padding: '4px 10px',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {preset.label} ({preset.amount} ETB)
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Visualization bar */}
-          <div
-            style={{
-              height: '14px',
-              borderRadius: '7px',
-              background: 'var(--fp-surface-3)',
-              display: 'flex',
-              overflow: 'hidden',
-              marginBottom: '20px',
-            }}
-          >
-            <div
-              style={{
-                width: `${(creditPortion / splitAmount) * 100}%`,
-                background: 'linear-gradient(90deg, #10B981, #059669)',
-                transition: 'width 0.2s ease',
-              }}
-            />
-            <div
-              style={{
-                width: `${(copayPortion / splitAmount) * 100}%`,
-                background: 'linear-gradient(90deg, #F59E0B, #D97706)',
-                transition: 'width 0.2s ease',
-              }}
-            />
+          {/* Split Ratio Bar */}
+          <div className="split-visual-bar-wrap">
+            <div className="split-visual-bar">
+              <div
+                className="split-bar-benefit"
+                style={{ width: `${benefitPercent}%` }}
+                title={`Employer Benefit: ${benefitPortion} ETB`}
+              />
+              <div
+                className="split-bar-copay"
+                style={{ width: `${copayPercent}%` }}
+                title={`M-PESA Co-Pay: ${copayPortion} ETB`}
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', color: 'var(--fp-cream-muted)' }}>
+              <span>Benefit Coverage: {Math.round(benefitPercent)}%</span>
+              <span>M-PESA Co-Pay: {Math.round(copayPercent)}%</span>
+            </div>
           </div>
 
-          {/* Breakdown cards */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))',
-              gap: '12px',
-            }}
-          >
-            <div
-              style={{
-                background: 'rgba(16, 185, 129, 0.08)',
-                border: '1px solid rgba(16, 185, 129, 0.2)',
-                borderRadius: '12px',
-                padding: '14px',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981', flexShrink: 0 }} />
-                <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-secondary)' }}>Employer Benefit</span>
+          {/* Split Breakdown Details */}
+          <div className="split-breakdown-grid">
+            <div className="split-breakdown-box">
+              <div className="split-box-label">
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--fp-orange)' }} />
+                <span>Employer Allowance</span>
               </div>
-              <div className="mono" style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--fp-benefit)' }}>
-                ETB {creditPortion.toLocaleString()}
+              <div className="split-box-amount" style={{ color: 'var(--fp-orange)' }}>
+                ETB {benefitPortion.toLocaleString()}
               </div>
-              <span style={{ fontSize: '0.7rem', color: 'var(--fp-text-muted)' }}>Covered 100% by Org</span>
+              <span className="split-box-note">Paid from accrued salary</span>
             </div>
 
-            <div
-              style={{
-                background: 'rgba(245, 158, 11, 0.08)',
-                border: '1px solid rgba(245, 158, 11, 0.2)',
-                borderRadius: '12px',
-                padding: '14px',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#F59E0B', flexShrink: 0 }} />
-                <span style={{ fontSize: '0.75rem', color: 'var(--fp-text-secondary)' }}>M-PESA Co-Pay</span>
+            <div className="split-breakdown-box">
+              <div className="split-box-label">
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#38BDF8' }} />
+                <span>M-PESA Co-Pay</span>
               </div>
-              <div className="mono" style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--fp-salary)' }}>
+              <div className="split-box-amount" style={{ color: '#38BDF8' }}>
                 ETB {copayPortion.toLocaleString()}
               </div>
-              <span style={{ fontSize: '0.7rem', color: 'var(--fp-text-muted)' }}>
-                {copayPortion > 0 ? 'Sent via STK Push' : 'Zero co-pay required'}
+              <span className="split-box-note">
+                {copayPortion > 0 ? 'Instant Daraja STK Push' : 'Fully covered (0 ETB)'}
               </span>
             </div>
           </div>
-        </div>
+
+          {/* Live Ledger Verification Status */}
+          <div className="split-stk-line">
+            <CheckCircle size={18} weight="fill" />
+            <span>
+              Double-entry invariant: {benefitPortion} + {copayPortion} === {purchaseAmount} ETB (Debits === Credits)
+            </span>
+          </div>
+        </motion.div>
       </section>
 
-      {/* 3. Stats Ticker */}
-      <section
-        style={{
-          borderTop: '1px solid var(--fp-border)',
-          borderBottom: '1px solid var(--fp-border)',
-          background: 'var(--fp-surface-1)',
-          padding: ' clamp(28px, 6vw, 40px) 16px',
-        }}
-      >
-        <div
-          style={{
-            maxWidth: '1200px',
-            margin: '0 auto',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))',
-            gap: '24px',
-            textAlign: 'center',
-          }}
-        >
-          <div>
-            <div className="mono" style={{ fontSize: 'clamp(1.75rem, 5vw, 2.5rem)', fontWeight: 800, color: 'var(--fp-benefit)' }}>
-              100%
-            </div>
-            <div style={{ fontSize: '0.8125rem', color: 'var(--fp-text-secondary)', marginTop: '4px' }}>
-              Audit Compliance Invariant
-            </div>
-          </div>
-          <div>
-            <div className="mono" style={{ fontSize: 'clamp(1.75rem, 5vw, 2.5rem)', fontWeight: 800, color: '#38BDF8' }}>
-              &lt; 1.2s
-            </div>
-            <div style={{ fontSize: '0.8125rem', color: 'var(--fp-text-secondary)', marginTop: '4px' }}>
-              M-PESA STK Push Latency
-            </div>
-          </div>
-          <div>
-            <div className="mono" style={{ fontSize: 'clamp(1.75rem, 5vw, 2.5rem)', fontWeight: 800, color: 'var(--fp-salary)' }}>
-              ETB 0.00
-            </div>
-            <div style={{ fontSize: '0.8125rem', color: 'var(--fp-text-secondary)', marginTop: '4px' }}>
-              Cash Handling Risk
-            </div>
-          </div>
-          <div>
-            <div className="mono" style={{ fontSize: 'clamp(1.75rem, 5vw, 2.5rem)', fontWeight: 800, color: '#A855F7' }}>
-              99.98%
-            </div>
-            <div style={{ fontSize: '0.8125rem', color: 'var(--fp-text-secondary)', marginTop: '4px' }}>
-              Ledger Settlement Reliability
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. How It Works */}
-      <section id="how-it-works" style={{ padding: 'clamp(48px, 8vw, 100px) 16px', maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 'clamp(36px, 6vw, 64px)' }}>
-          <span style={{ color: 'var(--fp-benefit)', fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em' }}>
-            WORKFLOW ARCHITECTURE
-          </span>
-          <h2 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.2rem)', marginTop: '8px' }}>
-            How FlexPay Works in 3 Steps
+      {/* 3. How It Works (Three-Phase Real Flow) */}
+      <section id="how-it-works" style={{ maxWidth: '1240px', margin: '0 auto', padding: '60px 24px' }}>
+        <div style={{ textAlign: 'center', maxWidth: '64ch', margin: '0 auto 48px' }}>
+          <h2 style={{ fontSize: 'clamp(1.8rem, 3.2vw, 2.6rem)', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--fp-cream-pure)', marginBottom: '10px' }}>
+            Earned Wage Access without payday debt.
           </h2>
+          <p style={{ color: 'var(--fp-cream-muted)', fontSize: '1.05rem', lineHeight: 1.6 }}>
+            FlexPay bridges daily living expenses and monthly payroll. No 300% micro-loan APR,
+            no predatory collection agents—just simple access to what you have already worked for.
+          </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '24px' }}>
-          <div
-            style={{
-              background: 'var(--fp-surface-1)',
-              border: '1px solid var(--fp-border)',
-              borderRadius: '16px',
-              padding: 'clamp(20px, 4vw, 32px)',
-            }}
-          >
-            <div
-              style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '12px',
-                background: 'rgba(16, 185, 129, 0.15)',
-                color: 'var(--fp-benefit)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '16px',
-              }}
-            >
-              <CreditCard size={24} weight="bold" />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+          <div className="ecosystem-card">
+            <div className="ecosystem-card-icon">
+              <ChartLineUp size={24} weight="bold" />
             </div>
-            <h3 style={{ marginBottom: '10px' }}>1. Fund & Allocate</h3>
-            <p style={{ color: 'var(--fp-text-secondary)', lineHeight: 1.6, fontSize: '0.9rem' }}>
-              Employers configure corporate credit policies and onboard staff. Employees receive unique Luhn-checksum
-              FP-IDs and 16-character cryptographic credentials.
+            <div className="ecosystem-card-pillar">Step 1 • Accrual</div>
+            <h3 className="ecosystem-card-heading">Daily Wage Accrual</h3>
+            <p className="ecosystem-card-desc">
+              Your organization configures your contractual monthly salary. As each workday concludes, your eligible benefit allowance unlocks automatically.
             </p>
           </div>
 
-          <div
-            style={{
-              background: 'var(--fp-surface-1)',
-              border: '1px solid var(--fp-border)',
-              borderRadius: '16px',
-              padding: 'clamp(20px, 4vw, 32px)',
-            }}
-          >
-            <div
-              style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '12px',
-                background: 'rgba(56, 189, 248, 0.15)',
-                color: '#38BDF8',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '16px',
-              }}
-            >
+          <div className="ecosystem-card">
+            <div className="ecosystem-card-icon">
               <QrCode size={24} weight="bold" />
             </div>
-            <h3 style={{ marginBottom: '10px' }}>2. Instant Split Purchase</h3>
-            <p style={{ color: 'var(--fp-text-secondary)', lineHeight: 1.6, fontSize: '0.9rem' }}>
-              Employees scan QR codes at verified grocers, pharmacies, and transport stations. The SplitEngine calculates
-              benefits and prompts co-pay via M-PESA STK Push.
+            <div className="ecosystem-card-pillar">Step 2 • Checkout</div>
+            <h3 className="ecosystem-card-heading">Instant POS Split</h3>
+            <p className="ecosystem-card-desc">
+              Scan your cryptographic FP-ID QR code at partner grocers, clinics, and pharmacies. The SplitEngine dynamically applies your benefit with optional M-PESA co-pay.
             </p>
           </div>
 
-          <div
-            style={{
-              background: 'var(--fp-surface-1)',
-              border: '1px solid var(--fp-border)',
-              borderRadius: '16px',
-              padding: 'clamp(20px, 4vw, 32px)',
-            }}
-          >
-            <div
-              style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '12px',
-                background: 'rgba(245, 158, 11, 0.15)',
-                color: 'var(--fp-salary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '16px',
-              }}
-            >
-              <ArrowsClockwise size={24} weight="bold" />
+          <div className="ecosystem-card">
+            <div className="ecosystem-card-icon">
+              <Receipt size={24} weight="bold" />
             </div>
-            <h3 style={{ marginBottom: '10px' }}>3. Automated Payroll Settlement</h3>
-            <p style={{ color: 'var(--fp-text-secondary)', lineHeight: 1.6, fontSize: '0.9rem' }}>
-              At month-end, one-click settlement executes M-PESA B2C wires to merchants, deducts employee payroll, and
-              automatically resets employee credit limits.
+            <div className="ecosystem-card-pillar">Step 3 • Settlement</div>
+            <h3 className="ecosystem-card-heading">Payroll Reconciliation</h3>
+            <p className="ecosystem-card-desc">
+              At month end, employer HR executes automated payroll deductions. Merchants receive batched M-PESA B2C wires with official PDF settlement vouchers.
             </p>
           </div>
         </div>
       </section>
 
-      {/* 5. Features Grid */}
-      <section id="features" style={{ background: 'var(--fp-surface-1)', padding: 'clamp(48px, 8vw, 100px) 16px' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 'clamp(36px, 6vw, 64px)' }}>
-            <span style={{ color: 'var(--fp-benefit)', fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.1em' }}>
-              SECURITY & FINTECH CAPABILITIES
-            </span>
-            <h2 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.2rem)', marginTop: '8px' }}>Enterprise-Grade Controls</h2>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '20px' }}>
-            <div style={{ background: 'var(--fp-surface-2)', border: '1px solid var(--fp-border)', borderRadius: '16px', padding: 'clamp(20px, 4vw, 28px)' }}>
-              <LockKey size={26} color="var(--fp-benefit)" weight="bold" style={{ marginBottom: '14px' }} />
-              <h4 style={{ fontSize: '1.05rem', fontWeight: 700 }}>CSPRNG & Rejection Sampling</h4>
-              <p style={{ marginTop: '8px', fontSize: '0.875rem', lineHeight: 1.55 }}>
-                Zero plain-text password storage. Org Admins receive generated 16-character credentials shown once with auto-expiring modal.
-              </p>
-            </div>
-
-            <div style={{ background: 'var(--fp-surface-2)', border: '1px solid var(--fp-border)', borderRadius: '16px', padding: 'clamp(20px, 4vw, 28px)' }}>
-              <DeviceMobile size={26} color="#38BDF8" weight="bold" style={{ marginBottom: '14px' }} />
-              <h4 style={{ fontSize: '1.05rem', fontWeight: 700 }}>Safaricom Daraja Webhooks</h4>
-              <p style={{ marginTop: '8px', fontSize: '0.875rem', lineHeight: 1.55 }}>
-                Instant HTTP 200 acknowledgment with automatic credit reversal if employee cancels STK push on their handset.
-              </p>
-            </div>
-
-            <div style={{ background: 'var(--fp-surface-2)', border: '1px solid var(--fp-border)', borderRadius: '16px', padding: 'clamp(20px, 4vw, 28px)' }}>
-              <ChartLineUp size={26} color="var(--fp-salary)" weight="bold" style={{ marginBottom: '14px' }} />
-              <h4 style={{ fontSize: '1.05rem', fontWeight: 700 }}>Double-Entry Ledger</h4>
-              <p style={{ marginTop: '8px', fontSize: '0.875rem', lineHeight: 1.55 }}>
-                Strict invariant enforcement: SUM(debits) === SUM(credits) on every financial movement before committing to disk.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 6. Ecosystem Pillars */}
-      <section id="pillars" style={{ padding: 'clamp(48px, 8vw, 100px) 16px', maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 'clamp(36px, 6vw, 64px)' }}>
-          <h2 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.2rem)' }}>Built for the Entire Ethiopian Ecosystem</h2>
+      {/* 4. Ecosystem Pillars Section */}
+      <section id="ecosystem" className="ecosystem-section">
+        <div className="ecosystem-header">
+          <h2 className="ecosystem-title">Built for the Ethiopian economy.</h2>
+          <p className="ecosystem-subtitle">
+            One unified platform aligning employers, employees, and merchants in a cashless, compliant financial network.
+          </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '24px' }}>
-          <div style={{ border: '1px solid var(--fp-border)', borderRadius: '16px', padding: 'clamp(20px, 4vw, 32px)', background: 'var(--fp-surface-1)' }}>
-            <Buildings size={32} color="var(--fp-benefit)" weight="bold" style={{ marginBottom: '14px' }} />
-            <h3 style={{ marginBottom: '10px' }}>Organizations</h3>
-            <ul style={{ listStyle: 'none', padding: 0, color: 'var(--fp-text-secondary)', fontSize: '0.875rem', lineHeight: 1.8 }}>
-              <li>✓ Attract & retain top talent with food/health benefits</li>
-              <li>✓ Real-time utilization dashboards & spend limits</li>
-              <li>✓ One-click payroll settlement with automated M-PESA B2C</li>
+        <div className="ecosystem-grid">
+          {/* Pillar 1: Organizations */}
+          <div className="ecosystem-card">
+            <div className="ecosystem-card-icon">
+              <Buildings size={26} weight="bold" />
+            </div>
+            <div className="ecosystem-card-pillar">For Employers</div>
+            <h3 className="ecosystem-card-heading">Organization Portal</h3>
+            <p className="ecosystem-card-desc">
+              Eliminate off-cycle salary advance requests and boost employee retention with automated benefit policies.
+            </p>
+            <ul className="ecosystem-card-bullets">
+              <li className="ecosystem-card-bullet">
+                <Check size={16} color="var(--fp-orange)" weight="bold" />
+                <span>Automated Luhn FP-ID credential provisioning</span>
+              </li>
+              <li className="ecosystem-card-bullet">
+                <Check size={16} color="var(--fp-orange)" weight="bold" />
+                <span>Category allowance rules (Food, Health, Transit)</span>
+              </li>
+              <li className="ecosystem-card-bullet">
+                <Check size={16} color="var(--fp-orange)" weight="bold" />
+                <span>1-Click automated payroll deduction & wire preview</span>
+              </li>
             </ul>
-          </div>
-
-          <div style={{ border: '1px solid var(--fp-border)', borderRadius: '16px', padding: 'clamp(20px, 4vw, 32px)', background: 'var(--fp-surface-1)' }}>
-            <User size={32} color="#38BDF8" weight="bold" style={{ marginBottom: '14px' }} />
-            <h3 style={{ marginBottom: '10px' }}>Employees</h3>
-            <ul style={{ listStyle: 'none', padding: 0, color: 'var(--fp-text-secondary)', fontSize: '0.875rem', lineHeight: 1.8 }}>
-              <li>✓ Zero cash needed for daily meal and transit expenses</li>
-              <li>✓ Instant QR payment at certified partner merchants</li>
-              <li>✓ Effortless co-pay via M-PESA on checkout</li>
-            </ul>
-          </div>
-
-          <div style={{ border: '1px solid var(--fp-border)', borderRadius: '16px', padding: 'clamp(20px, 4vw, 32px)', background: 'var(--fp-surface-1)' }}>
-            <Storefront size={32} color="var(--fp-salary)" weight="bold" style={{ marginBottom: '14px' }} />
-            <h3 style={{ marginBottom: '10px' }}>Merchants</h3>
-            <ul style={{ listStyle: 'none', padding: 0, color: 'var(--fp-text-secondary)', fontSize: '0.875rem', lineHeight: 1.8 }}>
-              <li>✓ Guaranteed corporate receivables backed by employer credit</li>
-              <li>✓ 2-second POS verification by Luhn FP-ID</li>
-              <li>✓ Direct wire payouts to merchant M-PESA till</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      {/* 7. Footer */}
-      <footer
-        style={{
-          borderTop: '1px solid var(--fp-border)',
-          background: 'var(--fp-surface-1)',
-          padding: 'clamp(32px, 6vw, 48px) 16px calc(32px + var(--fp-safe-bottom, 0px))',
-        }}
-      >
-        <div
-          style={{
-            maxWidth: '1200px',
-            margin: '0 auto',
-            display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: '20px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div
-              style={{
-                width: '30px',
-                height: '30px',
-                borderRadius: '8px',
-                background: 'var(--fp-benefit)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 800,
-                color: '#060A14',
-              }}
+              className="ecosystem-card-action"
+              onClick={() => navigate('/auth/organization')}
             >
-              F
-            </div>
-            <div>
-              <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>FlexPay Ethiopia</span>
-              <p style={{ color: 'var(--fp-text-muted)', fontSize: '0.8rem', margin: 0 }}>
-                © {new Date().getFullYear()} Markova Technologies. All rights reserved.
-              </p>
+              <span>Launch Organization Portal</span>
+              <CaretRight size={16} weight="bold" />
             </div>
           </div>
 
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '12px 16px',
-              color: 'var(--fp-text-secondary)',
-              fontSize: '0.8rem',
-            }}
-          >
-            <span>NBE & CBE Compliant</span>
-            <span>•</span>
-            <span>Argon2id & RS256 Secured</span>
-            <span>•</span>
-            <span>Safaricom M-PESA Certified</span>
+          {/* Pillar 2: Employees */}
+          <div className="ecosystem-card">
+            <div className="ecosystem-card-icon">
+              <User size={26} weight="bold" />
+            </div>
+            <div className="ecosystem-card-pillar">For Employees</div>
+            <h3 className="ecosystem-card-heading">Digital Wallet</h3>
+            <p className="ecosystem-card-desc">
+              Access your earned salary before month end with complete dignity and transparency. Zero interest fees.
+            </p>
+            <ul className="ecosystem-card-bullets">
+              <li className="ecosystem-card-bullet">
+                <Check size={16} color="var(--fp-orange)" weight="bold" />
+                <span>Real-time dynamic credit utilization ring</span>
+              </li>
+              <li className="ecosystem-card-bullet">
+                <Check size={16} color="var(--fp-orange)" weight="bold" />
+                <span>Time-sensitive signed QR payment card</span>
+              </li>
+              <li className="ecosystem-card-bullet">
+                <Check size={16} color="var(--fp-orange)" weight="bold" />
+                <span>Transparent ledger audit trail for every purchase</span>
+              </li>
+            </ul>
+            <div
+              className="ecosystem-card-action"
+              onClick={() => navigate('/auth/employee')}
+            >
+              <span>Access Employee Wallet</span>
+              <CaretRight size={16} weight="bold" />
+            </div>
+          </div>
+
+          {/* Pillar 3: Merchants */}
+          <div className="ecosystem-card">
+            <div className="ecosystem-card-icon">
+              <Storefront size={26} weight="bold" />
+            </div>
+            <div className="ecosystem-card-pillar">For Merchants</div>
+            <h3 className="ecosystem-card-heading">Merchant POS</h3>
+            <p className="ecosystem-card-desc">
+              Accept pre-salary corporate payments with instant camera QR scanning and guaranteed employer wires.
+            </p>
+            <ul className="ecosystem-card-bullets">
+              <li className="ecosystem-card-bullet">
+                <Check size={16} color="var(--fp-orange)" weight="bold" />
+                <span>Camera scanner or instant 16-char FP-ID verification</span>
+              </li>
+              <li className="ecosystem-card-bullet">
+                <Check size={16} color="var(--fp-orange)" weight="bold" />
+                <span>Real-time Safaricom M-PESA STK Push confirmation</span>
+              </li>
+              <li className="ecosystem-card-bullet">
+                <Check size={16} color="var(--fp-orange)" weight="bold" />
+                <span>Official PDF settlement receipts and audit logs</span>
+              </li>
+            </ul>
+            <div
+              className="ecosystem-card-action"
+              onClick={() => navigate('/auth/merchant')}
+            >
+              <span>Launch Merchant POS</span>
+              <CaretRight size={16} weight="bold" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. Editorial Warm Cream Highlight Section */}
+      <section id="compliance" className="cream-editorial-section">
+        <div className="cream-card">
+          <div>
+            <div className="cream-badge-pill">
+              <ShieldCheck size={16} weight="bold" />
+              <span>National Bank of Ethiopia (NBE) Aligned</span>
+            </div>
+            <h2 className="cream-card-headline">
+              Not a loan. Earned wage access built on true financial dignity.
+            </h2>
+            <p className="cream-card-subtext">
+              Predatory payday lending traps hardworking Ethiopians in compounding interest cycles.
+              FlexPay enforces strict salary baselines, zero finance charges, and direct employer-to-merchant
+              reconciliation on Safaricom M-PESA rails.
+            </p>
+            <div className="cream-card-actions">
+              <button
+                onClick={() => navigate('/auth')}
+                className="cream-btn-dark"
+              >
+                <span>Sign In to Your Portal</span>
+                <ArrowRight size={16} weight="bold" />
+              </button>
+            </div>
+          </div>
+
+          {/* Right Visual Architecture Box */}
+          <div className="cream-visual-box">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #ECE7DE', paddingBottom: '12px' }}>
+              <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#080B10' }}>
+                Payment Infrastructure
+              </span>
+              <span style={{ fontSize: '0.72rem', background: '#E6F4EA', color: '#137333', padding: '3px 8px', borderRadius: '4px', fontWeight: 700 }}>
+                ACTIVE LIVE
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+                <span style={{ color: '#5F5A52' }}>Payment Rail</span>
+                <span style={{ fontWeight: 700, color: '#080B10' }}>Safaricom M-PESA Daraja</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+                <span style={{ color: '#5F5A52' }}>Disbursement Rail</span>
+                <span style={{ fontWeight: 700, color: '#080B10' }}>M-PESA B2C Instant Wires</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+                <span style={{ color: '#5F5A52' }}>Account Ledger</span>
+                <span style={{ fontWeight: 700, color: '#080B10' }}>Double-Entry (Zero Discrepancy)</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+                <span style={{ color: '#5F5A52' }}>Card Tokenization</span>
+                <span style={{ fontWeight: 700, color: '#080B10' }}>Luhn 16-Digit FP-ID</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. Footer */}
+      <footer className="landing-footer">
+        <div className="landing-footer-inner">
+          <div className="landing-footer-top">
+            <div className="landing-footer-brand">
+              <FlexPayLogo variant="full" size={36} />
+              <p className="landing-footer-desc">
+                FlexPay is Ethiopia's benefits-first Earned Wage Access platform.
+                Bridging corporate payroll and M-PESA merchant ecosystems with responsible credit.
+              </p>
+            </div>
+
+            <div className="landing-footer-links-grid">
+              <div className="landing-footer-col">
+                <span className="landing-footer-col-title">Portals</span>
+                <a onClick={() => navigate('/auth/organization')} className="landing-footer-link" style={{ cursor: 'pointer' }}>
+                  Organization HR
+                </a>
+                <a onClick={() => navigate('/auth/employee')} className="landing-footer-link" style={{ cursor: 'pointer' }}>
+                  Employee Wallet
+                </a>
+                <a onClick={() => navigate('/auth/merchant')} className="landing-footer-link" style={{ cursor: 'pointer' }}>
+                  Merchant POS
+                </a>
+              </div>
+
+              <div className="landing-footer-col">
+                <span className="landing-footer-col-title">Platform</span>
+                <a href="#how-it-works" className="landing-footer-link">How It Works</a>
+                <a href="#simulator" className="landing-footer-link">SplitEngine™</a>
+                <a href="#compliance" className="landing-footer-link">NBE Compliance</a>
+              </div>
+
+              <div className="landing-footer-col">
+                <span className="landing-footer-col-title">Ethiopia Rails</span>
+                <span className="landing-footer-link">Safaricom Daraja STK</span>
+                <span className="landing-footer-link">M-PESA B2C Wires</span>
+                <span className="landing-footer-link">Luhn FP-ID Verification</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="landing-footer-bottom">
+            <span>© 2026 FlexPay. All rights reserved.</span>
+            <span>Code! Cashless Community M-PESA Hackathon 2026</span>
           </div>
         </div>
       </footer>
-
-      {/* Responsive media rules for landing page */}
-      <style>{`
-        @media (max-width: 768px) {
-          .landing-desktop-nav {
-            display: none !important;
-          }
-          .landing-mob-toggle {
-            display: inline-flex !important;
-          }
-        }
-      `}</style>
     </div>
   );
 }
