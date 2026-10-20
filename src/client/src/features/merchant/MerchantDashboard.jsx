@@ -22,13 +22,22 @@ export function MerchantDashboard({ onNavigateToPos, onNavigateToSettlements }) 
       .then((res) => setData(res.data))
       .catch((err) => {
         console.warn('[MerchantDashboard] Failed to fetch dashboard data:', err);
-        const msg =
-          err.response?.data?.error ||
-          err.response?.data?.message ||
-          (err.code === 'ECONNABORTED'
-            ? 'Request timed out. Backend may be waking up.'
-            : 'Failed to load merchant dashboard metrics');
+        const isForbidden = err.response?.status === 403;
+        const msg = isForbidden
+          ? 'Merchant permissions required. Please log in with an authorized merchant account.'
+          : err.response?.data?.error ||
+            err.response?.data?.message ||
+            (err.code === 'ECONNABORTED'
+              ? 'Request timed out. Backend may be waking up.'
+              : 'Failed to load merchant dashboard metrics');
         toast.error(msg);
+        // Fallback to empty safe metrics so the dashboard renders safely
+        setData((prev) => prev || {
+          stats: { totalOutstandingReceivables: 0, totalSettledAmount: 0, uniqueOrganizations: 0, totalTransactions: 0 },
+          receivablesSummary: { totalReceivables: 0, totalSettled: 0, partnerOrgCount: 0, transactionCount: 0 },
+          recentTransactions: [],
+          recentSettlements: [],
+        });
       })
       .finally(() => setLoading(false));
   }, []);

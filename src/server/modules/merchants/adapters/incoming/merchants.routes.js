@@ -54,7 +54,7 @@ async function merchantRoutes(fastify, options) {
   // --------------------------------------------------------------------------
   fastify.post(
     '/merchant/verify-employee',
-    { preHandler: [requireRole('MERCHANT_OWNER', 'MERCHANT_STAFF')] },
+    { preHandler: [requireRole('MERCHANT_OWNER', 'MERCHANT_STAFF', 'MERCHANT', 'MERCHANT_ADMIN')] },
     async (request, reply) => {
       const parse = verifyEmployeeSchema.safeParse(request.body);
       if (!parse.success) {
@@ -154,7 +154,7 @@ async function merchantRoutes(fastify, options) {
   // --------------------------------------------------------------------------
   fastify.post(
     '/merchant/transaction',
-    { preHandler: [requireRole('MERCHANT_OWNER', 'MERCHANT_STAFF')] },
+    { preHandler: [requireRole('MERCHANT_OWNER', 'MERCHANT_STAFF', 'MERCHANT', 'MERCHANT_ADMIN')] },
     async (request, reply) => {
       const parse = createTransactionSchema.safeParse(request.body);
       if (!parse.success) {
@@ -206,7 +206,7 @@ async function merchantRoutes(fastify, options) {
   // --------------------------------------------------------------------------
   fastify.get(
     '/merchant/transactions',
-    { preHandler: [requireRole('MERCHANT_OWNER', 'MERCHANT_STAFF')] },
+    { preHandler: [requireRole('MERCHANT_OWNER', 'MERCHANT_STAFF', 'MERCHANT', 'MERCHANT_ADMIN')] },
     async (request, reply) => {
       const limit = Number(request.query.limit) || 20;
       const transactions = await txnRepo.listRecentByMerchant(request.user.merchantId, limit);
@@ -219,7 +219,7 @@ async function merchantRoutes(fastify, options) {
   // --------------------------------------------------------------------------
   fastify.get(
     '/merchant/dashboard',
-    { preHandler: [requireRole('MERCHANT_OWNER', 'MERCHANT_STAFF')] },
+    { preHandler: [requireRole('MERCHANT_OWNER', 'MERCHANT_STAFF', 'MERCHANT', 'MERCHANT_ADMIN')] },
     async (request, reply) => {
       try {
         const merchantId =
@@ -340,7 +340,7 @@ async function merchantRoutes(fastify, options) {
 
   fastify.get(
     '/merchant/analytics',
-    { preHandler: [requireRole('MERCHANT_OWNER', 'MERCHANT_STAFF')] },
+    { preHandler: [requireRole('MERCHANT_OWNER', 'MERCHANT_STAFF', 'MERCHANT', 'MERCHANT_ADMIN')] },
     async (request, reply) => {
       const period = request.query.period || 'month';
       const analytics = await getMerchantAnalyticsUseCase.execute({
@@ -356,7 +356,7 @@ async function merchantRoutes(fastify, options) {
   // --------------------------------------------------------------------------
   fastify.get(
     '/merchant/settlements',
-    { preHandler: [requireRole('MERCHANT_OWNER', 'MERCHANT_STAFF')] },
+    { preHandler: [requireRole('MERCHANT_OWNER', 'MERCHANT_STAFF', 'MERCHANT', 'MERCHANT_ADMIN')] },
     async (request, reply) => {
       const limit = Number(request.query.limit) || 50;
       let settlements = [];
@@ -376,7 +376,7 @@ async function merchantRoutes(fastify, options) {
   // --------------------------------------------------------------------------
   fastify.get(
     '/merchant/settlements/:lineId',
-    { preHandler: [requireRole('MERCHANT_OWNER', 'MERCHANT_STAFF')] },
+    { preHandler: [requireRole('MERCHANT_OWNER', 'MERCHANT_STAFF', 'MERCHANT', 'MERCHANT_ADMIN')] },
     async (request, reply) => {
       const { lineId } = request.params;
       let receiptData = null;
@@ -395,7 +395,7 @@ async function merchantRoutes(fastify, options) {
   // --------------------------------------------------------------------------
   fastify.get(
     '/merchant/settlements/:lineId/receipt',
-    { preHandler: [requireRole('MERCHANT_OWNER', 'MERCHANT_STAFF')] },
+    { preHandler: [requireRole('MERCHANT_OWNER', 'MERCHANT_STAFF', 'MERCHANT', 'MERCHANT_ADMIN')] },
     async (request, reply) => {
       const { lineId } = request.params;
       let receiptData = null;

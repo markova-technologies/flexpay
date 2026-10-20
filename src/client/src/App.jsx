@@ -151,7 +151,7 @@ export default function App() {
         <Route
           path="/merchant/*"
           element={
-            <ProtectedRoute allowedRoles={['MERCHANT_OWNER', 'MERCHANT_STAFF']}>
+            <ProtectedRoute allowedRoles={['MERCHANT_OWNER', 'MERCHANT_STAFF', 'MERCHANT', 'MERCHANT_ADMIN']}>
               <MerchantLayout />
             </ProtectedRoute>
           }
@@ -159,7 +159,7 @@ export default function App() {
         <Route
           path="/merchant"
           element={
-            <ProtectedRoute allowedRoles={['MERCHANT_OWNER', 'MERCHANT_STAFF']}>
+            <ProtectedRoute allowedRoles={['MERCHANT_OWNER', 'MERCHANT_STAFF', 'MERCHANT', 'MERCHANT_ADMIN']}>
               <MerchantLayout />
             </ProtectedRoute>
           }
