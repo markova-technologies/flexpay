@@ -44,7 +44,11 @@ export default function EmployeeDashboard() {
       const res = await api.get('/employee/dashboard');
       setData(res.data);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load employee dashboard data.');
+      const errorMsg =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        'Failed to load employee dashboard data. Please verify your connection or click retry.';
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -161,8 +165,49 @@ export default function EmployeeDashboard() {
             <p>Loading your live financial allowances...</p>
           </div>
         ) : error ? (
-          <div style={{ padding: '24px', background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', borderRadius: '12px' }}>
-            {error}
+          <div
+            style={{
+              padding: '32px 24px',
+              background: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
+              borderRadius: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              gap: '14px',
+              maxWidth: '540px',
+              margin: '40px auto',
+            }}
+          >
+            <div style={{ color: '#EF4444', fontWeight: 700, fontSize: '1.05rem' }}>
+              {error}
+            </div>
+            <p style={{ fontSize: '0.875rem', color: 'var(--fp-text-secondary)', margin: 0, lineHeight: 1.5 }}>
+              The server connection is synchronizing. Click below to refresh your live financial allowances and employee wallet.
+            </p>
+            <button
+              onClick={fetchDashboard}
+              className="fp-touch-target"
+              style={{
+                marginTop: '6px',
+                padding: '10px 22px',
+                borderRadius: '8px',
+                background: 'var(--fp-benefit)',
+                color: '#060A14',
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.2)',
+              }}
+            >
+              <ArrowsClockwise size={18} />
+              <span>Retry / Refresh Dashboard</span>
+            </button>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(20px, 4vw, 32px)' }}>

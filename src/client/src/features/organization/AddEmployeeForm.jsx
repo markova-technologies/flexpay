@@ -65,13 +65,12 @@ export function AddEmployeeForm({ onClose, onCreated }) {
     <div
       className="fp-modal-overlay"
       onClick={onClose}
-      style={{ zIndex: 150 }}
     >
       <div
         className="fp-modal"
         style={{
           width: '100%',
-          maxWidth: '480px',
+          maxWidth: '500px',
         }}
         onClick={(e) => e.stopPropagation()}
       >

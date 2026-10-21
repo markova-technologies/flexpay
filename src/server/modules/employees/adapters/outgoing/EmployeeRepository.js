@@ -17,6 +17,7 @@ class EmployeeRepository {
   }
 
   async findByFpId(fpEmployeeId) {
+    if (!fpEmployeeId) return null;
     return this.db
       .selectFrom('employees')
       .leftJoin('organizations', 'organizations.id', 'employees.organization_id')
@@ -28,6 +29,7 @@ class EmployeeRepository {
   }
 
   async findById(employeeId) {
+    if (!employeeId || typeof employeeId !== 'string') return null;
     return this.db
       .selectFrom('employees')
       .leftJoin('organizations', 'organizations.id', 'employees.organization_id')
@@ -39,6 +41,7 @@ class EmployeeRepository {
   }
 
   async findByOrgId(organizationId, { page = 1, limit = 20, search, department } = {}) {
+    if (!organizationId) return [];
     const offset = (Math.max(1, page) - 1) * limit;
 
     let query = this.db

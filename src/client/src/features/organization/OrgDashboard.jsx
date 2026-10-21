@@ -225,7 +225,7 @@ export default function OrgDashboard() {
               {stats?.organization?.name || stats?.org?.name || user?.orgName || user?.organizationName || 'Corporate Admin'}
             </h1>
             <span style={{ fontSize: '0.72rem', color: 'var(--fp-text-muted)', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              Org Management • {user?.role || 'ORG_ADMIN'}
+              Org Management • {stats?.organizationName || stats?.org?.name || stats?.organization?.name || user?.orgName || 'Corporate Partner'}
             </span>
           </div>
         </div>

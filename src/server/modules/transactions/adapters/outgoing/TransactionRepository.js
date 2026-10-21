@@ -173,6 +173,7 @@ class TransactionRepository {
   }
 
   async listRecentByEmployee(employeeId, limit = 20) {
+    if (!employeeId) return [];
     return this.db
       .selectFrom('transactions')
       .selectAll()

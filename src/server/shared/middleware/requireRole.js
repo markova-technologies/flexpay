@@ -60,7 +60,8 @@ function hasPermission(userRole, requiredRoles, userObj) {
   if (requiresEmployee) {
     if (
       normalizedUser === 'EMPLOYEE' ||
-      normalizedUser === 'WORKER'
+      normalizedUser === 'WORKER' ||
+      Boolean(userObj?.employeeId || userObj?.employee_id || userObj?.fpEmployeeId)
     ) {
       return true;
     }

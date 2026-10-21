@@ -27,7 +27,11 @@ export default function ProtectedRoute({ children, allowedRoles }) {
         (target.startsWith('ORG_') || target === 'EMPLOYER_ADMIN' || target === 'ORGANIZATION')
       ) {
         if (['EMPLOYEE', 'WORKER'].includes(userRole)) return false;
-        if (userRole.startsWith('ORG_') || userRole === 'EMPLOYER_ADMIN' || userRole === 'ORGANIZATION' || Boolean(user.orgId || user.organizationId)) {
+        if (
+          userRole.startsWith('ORG_') ||
+          userRole === 'EMPLOYER_ADMIN' ||
+          userRole === 'ORGANIZATION'
+        ) {
           return true;
         }
       }
@@ -41,6 +45,15 @@ export default function ProtectedRoute({ children, allowedRoles }) {
     });
 
     if (!isAllowed) {
+      if (['EMPLOYEE', 'WORKER'].includes(userRole)) {
+        return <Navigate to="/employee" replace />;
+      }
+      if (userRole === 'MERCHANT' || userRole.startsWith('MERCHANT_')) {
+        return <Navigate to="/merchant" replace />;
+      }
+      if (userRole.startsWith('ORG_') || userRole === 'EMPLOYER_ADMIN' || userRole === 'ORGANIZATION') {
+        return <Navigate to="/org" replace />;
+      }
       return <Navigate to="/auth" replace />;
     }
   }

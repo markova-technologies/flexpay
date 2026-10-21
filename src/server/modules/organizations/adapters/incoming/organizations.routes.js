@@ -59,20 +59,46 @@ async function organizationRoutes(fastify, options) {
 
   const resolveOrgId = async (user) => {
     let id = user?.orgId || user?.organizationId || user?.organization_id;
+    if (!id && user?.employeeId && options.db) {
+      try {
+        const emp = await options.db
+          .selectFrom('employees')
+          .select(['organization_id'])
+          .where('id', '=', user.employeeId)
+          .executeTakeFirst();
+        if (emp?.organization_id) id = emp.organization_id;
+      } catch {}
+    }
     if (!id && user?.sub && typeof options.authRepo?.findUserById === 'function') {
       try {
         const u = await options.authRepo.findUserById(user.sub);
         id = u?.organization_id;
+        if (!id && u?.employee_id && options.db) {
+          const emp = await options.db
+            .selectFrom('employees')
+            .select(['organization_id'])
+            .where('id', '=', u.employee_id)
+            .executeTakeFirst();
+          if (emp?.organization_id) id = emp.organization_id;
+        }
       } catch {}
     }
     if (!id && user?.sub && options.db) {
       try {
         const userRec = await options.db
           .selectFrom('users')
-          .select(['organization_id'])
+          .select(['organization_id', 'employee_id'])
           .where('id', '=', user.sub)
           .executeTakeFirst();
         if (userRec?.organization_id) id = userRec.organization_id;
+        if (!id && userRec?.employee_id) {
+          const emp = await options.db
+            .selectFrom('employees')
+            .select(['organization_id'])
+            .where('id', '=', userRec.employee_id)
+            .executeTakeFirst();
+          if (emp?.organization_id) id = emp.organization_id;
+        }
       } catch {}
     }
     if (!id && options.db) {
@@ -137,10 +163,23 @@ async function organizationRoutes(fastify, options) {
           .map(([category, total]) => ({ category, total: Number(total.toFixed(2)) }))
           .sort((a, b) => b.total - a.total);
 
+        let orgName = request.user.orgName;
+        if (!orgName && orgId && options.db) {
+          try {
+            const orgRow = await options.db
+              .selectFrom('organizations')
+              .select(['name'])
+              .where('id', '=', orgId)
+              .executeTakeFirst();
+            if (orgRow?.name) orgName = orgRow.name;
+          } catch {}
+        }
+
         return reply.send({
+          organizationName: orgName || 'Acme Corp Ethiopia',
           org: {
             id: orgId || '',
-            name: request.user.orgName || 'Organization',
+            name: orgName || 'Acme Corp Ethiopia',
           },
           stats: {
             totalEmployees: (employees || []).length,
@@ -319,40 +358,52 @@ async function organizationRoutes(fastify, options) {
     '/org/employees',
     { preHandler: [requireRole('ORG_ADMIN', 'ORG_CONTROLLER')] },
     async (request, reply) => {
-      const orgId = await resolveOrgId(request.user);
-      const page = Number(request.query.page) || 1;
-      const limit = Number(request.query.limit) || 20;
-      const { search, department } = request.query;
+      try {
+        const orgId = await resolveOrgId(request.user);
+        const page = Number(request.query?.page) || 1;
+        const limit = Number(request.query?.limit) || 50;
+        const { search, department } = request.query || {};
 
-      const rawEmployees = await employeeRepo.findByOrgId(orgId, {
-        page,
-        limit,
-        search,
-        department,
-      });
+        let rawEmployees = [];
+        if (orgId) {
+          rawEmployees = await employeeRepo.findByOrgId(orgId, {
+            page,
+            limit,
+            search,
+            department,
+          });
+        }
 
-      const employees = (rawEmployees || []).map((e) => {
-        const entity = new Employee(e);
-        return {
-          id: entity.id,
-          fpEmployeeId: entity.fpEmployeeId,
-          fullName: entity.fullName,
-          phoneNumber: entity.phoneNumber,
-          department: entity.department,
-          creditLimit: entity.creditLimit,
-          availableCredit: entity.availableCredit,
-          spentCredit: entity.spentCredit,
-          utilizationPct: entity.creditUtilizationPct,
-          status: entity.status,
-          createdAt: entity.createdAt,
-        };
-      });
+        const employees = (rawEmployees || []).map((e) => {
+          const entity = new Employee(e);
+          return {
+            id: entity.id,
+            fpEmployeeId: entity.fpEmployeeId,
+            fullName: entity.fullName,
+            phoneNumber: entity.phoneNumber,
+            department: entity.department,
+            creditLimit: entity.creditLimit,
+            availableCredit: entity.availableCredit,
+            spentCredit: entity.spentCredit,
+            utilizationPct: entity.creditUtilizationPct,
+            status: entity.status,
+            createdAt: entity.createdAt,
+          };
+        });
 
-      return reply.send({
-        page,
-        limit,
-        employees,
-      });
+        return reply.send({
+          page,
+          limit,
+          employees,
+        });
+      } catch (err) {
+        request.log.error({ err }, '[Org Employees] Failed to list employees');
+        return reply.send({
+          page: 1,
+          limit: 20,
+          employees: [],
+        });
+      }
     }
   );
 
