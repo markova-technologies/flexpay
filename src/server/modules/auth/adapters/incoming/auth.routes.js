@@ -227,6 +227,7 @@ async function authRoutes(fastify, options) {
               merchantId: existing.id,
               businessName: existing.business_name,
               category: existing.category,
+              mpesaNumber: existing.mpesa_number,
             },
           });
         }
@@ -268,6 +269,7 @@ async function authRoutes(fastify, options) {
         merchantId: merchant.id,
         businessName: merchant.business_name,
         category: merchant.category,
+        mpesaNumber: merchant.mpesa_number,
       },
     });
   });
@@ -327,6 +329,7 @@ async function authRoutes(fastify, options) {
         merchantId: merchant.id,
         businessName: merchant.business_name,
         category: merchant.category,
+        mpesaNumber: merchant.mpesa_number,
       },
     });
   });
