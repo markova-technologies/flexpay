@@ -3132,3 +3132,33 @@ Diagnosed and implemented a prominent, cohesive merchant profile identity across
 
 ---
 
+#### Turn 33 (Step 33)
+##### 👤 User Prompt:
+```text
+If so remove these cuz they there twice
+```
+
+##### 🤖 Agent Response:
+Diagnosed and removed the duplicate elements from the Merchant portal's desktop sidebar:
+
+1. **Duplicate Elements Identified**:
+   - **Sidebar Profile Card (`.sidebar__merchant-profile`)**: Was positioned directly under the FlexPay logo in the left sidebar, duplicating the primary store identity header (`Friendship Supermarket`, `Certified Merchant`, M-PESA Till, and Category) already prominently displayed in the sticky top desktop header.
+   - **Sidebar Sign-Out Button (`.sidebar__footer`)**: Was positioned at the bottom of the left sidebar, duplicating the dedicated Sign Out button in the top-right header actions bar.
+
+2. **Refactoring & Polish**:
+   - In `MerchantLayout.jsx`:
+     - Removed the redundant `.sidebar__merchant-profile` container from `<nav className="merchant-nav">`.
+     - Removed the redundant `.sidebar__footer` container and bottom sign-out button from `<nav className="merchant-nav">`.
+     - Retained the clean, single source of truth for merchant profile identity and sign-out in the top desktop header bar.
+     - Preserved mobile drawer profile card and drawer sign-out button for mobile viewports where the desktop header is hidden.
+   - In `MerchantLayout.css`:
+     - Cleaned up obsolete CSS rules for `.sidebar__merchant-profile` and `.sidebar__footer`.
+
+3. **Verification & Testing**:
+   - Frontend production build (`npm --prefix src/client run build`): Compiled cleanly in 17.89s with 0 errors.
+   - Backend unit tests (`npm run test:unit`): **81 passing tests across 31 suites, 0 failures**.
+   - Changes committed and pushed to [`origin/main`](https://github.com/markova-technologies/flexpay) in commit `b17f34c`.
+
+---
+
+
