@@ -3089,3 +3089,46 @@ Diagnosed and resolved the root cause of the Merchant Analytics screen showing `
    - Pushed commit `c92d408` to [`origin/main`](https://github.com/markova-technologies/flexpay).
 
 ---
+
+#### Turn 32 (Step 32)
+##### 👤 User Prompt:
+```text
+Okay good. Now, when you see the org's and employee's account there is somewhere that defines who they are likee a profile, but not in the merchant's dashboard
+```
+
+##### 🤖 Agent Response:
+Diagnosed and implemented a prominent, cohesive merchant profile identity across the Merchant Dashboard, directly matching the design parity and actor identity established in the Organization and Employee portals:
+
+1. **Root Cause & Visual Parity Analysis**:
+   - In `/employee`: The header prominently displays the organization partner ("Acme Corp Ethiopia • Employee Portal") on the left and the employee profile ("Abel Abebe / FP-ETH-2026-IH9WZ-R") plus Sign Out button on the right.
+   - In `/org`: The header displays the company name ("Acme Corp Ethiopia / Org Management • Acme Corp Ethiopia") with action buttons on the right.
+   - In `/merchant`: Previously, there was only a minimal FlexPay logo in the sidebar with no header at all in the main viewport, no visible business name (e.g. "Friendship Supermarket"), no M-PESA Till number, and no cashier/terminal station badge.
+
+2. **Frontend Merchant Profile Layout Implementation (`MerchantLayout.jsx`)**:
+   - **Dedicated Sticky Desktop Header (`.merchant-desktop-header`)**:
+     - **Store Profile (Left)**: Renders elevated Storefront icon badge, business name (`Friendship Supermarket` / dynamic `businessName`), "Certified Merchant" green badge with check icon, retail category badge (`GROCERY` / `RETAIL`), and metadata row (`M-PESA Till: 174379 • Terminal ID: POS-TILL-01 • EWA Cashless Partner`).
+     - **Cashier Station & Actions (Right)**: Renders live cashier profile badge with active status indicator dot ("Station Cashier / POS Cashier • Online"), direct **"Open POS Scanner"** action button, and **"Sign Out"** button.
+   - **Sidebar Merchant Profile Card (`.sidebar__merchant-profile`)**:
+     - Positioned right beneath the FlexPay logo in the desktop sidebar.
+     - Displays store avatar, truncated store name, M-PESA Till number, and active online pulsing status dot.
+   - **Mobile Top Bar & Drawer Upgrades**:
+     - Updated mobile top header to display store name and till number next to the FlexPay logo mark.
+     - Updated mobile drawer with full merchant profile card, till badge, and certified partner pill.
+   - **Dynamic Data Hydration**:
+     - Combines user session credentials with an automatic background fetch to `/api/v1/merchant/dashboard` to resolve `businessName`, `category`, `mpesaNumber`, and `terminalId` seamlessly.
+
+3. **Styling & Anthropic Cream Tokens (`MerchantLayout.css`)**:
+   - Implemented `.merchant-content-area` wrapping the desktop header and main content.
+   - Added sticky backdrop blur (`backdrop-filter: blur(12px)`) for the header.
+   - Applied Anthropic cream and terracotta tokens: `.merchant-badge-certified`, `.merchant-badge-category`, `.merchant-header-user-badge`, `.sidebar__merchant-profile`.
+
+4. **Backend Payload Enrichment (`auth.routes.js`)**:
+   - Included `mpesaNumber: merchant.mpesa_number` in the return payload for merchant registration and login routes so the Till number is immediately accessible in local session storage without waiting for subsequent API calls.
+
+5. **Testing, Build & Git Push**:
+   - Built frontend client (`npm --prefix src/client run build`): Compiled cleanly in 13.94s with 0 errors.
+   - Ran all unit tests (`npm run test:unit`): **81 passing tests across 31 suites, 0 failures**.
+   - Committed and pushed changes to [`origin/main`](https://github.com/markova-technologies/flexpay) in commit `948a899`.
+
+---
+
