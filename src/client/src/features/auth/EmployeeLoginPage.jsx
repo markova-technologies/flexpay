@@ -34,7 +34,7 @@ export default function EmployeeLoginPage() {
         fpEmployeeId: fpId.trim().toUpperCase(),
         password: password,
       });
-      setAuth(res.data.user, res.data.accessToken);
+      setAuth(res.data.user, res.data.accessToken, 'EMPLOYEE');
       navigate('/employee', { replace: true });
     } catch (err) {
       const msg =

@@ -82,7 +82,9 @@ function TableSkeleton({ rows = 5 }) {
 export default function OrgDashboard() {
   const navigate = useNavigate();
   const toast = useToast();
-  const { user, clearAuth } = useAuthStore();
+  const session = useAuthStore((s) => s.getSessionForPortal ? s.getSessionForPortal('ORG') : s);
+  const user = session?.user || useAuthStore((s) => s.user);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
 
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'employees' | 'resets' | 'payroll'
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -123,7 +125,7 @@ export default function OrgDashboard() {
     try {
       await api.post('/auth/logout');
     } catch {}
-    clearAuth();
+    clearAuth('ORG');
     navigate('/auth');
   };
 

@@ -20,7 +20,9 @@ import { useToast } from '../../contexts/ToastContext';
 
 export default function MerchantPOS() {
   const navigate = useNavigate();
-  const { user, clearAuth } = useAuthStore();
+  const session = useAuthStore((s) => s.getSessionForPortal ? s.getSessionForPortal('MERCHANT') : s);
+  const user = session?.user || useAuthStore((s) => s.user);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
   const toast = useToast();
 
   const [step, setStep] = useState(1); // 1 = Verify Employee, 2 = Enter Amount & Authorize, 3 = Receipt
@@ -53,7 +55,7 @@ export default function MerchantPOS() {
     try {
       await api.post('/auth/logout');
     } catch {}
-    clearAuth();
+    clearAuth('MERCHANT');
     navigate('/auth');
   };
 

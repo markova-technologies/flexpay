@@ -188,13 +188,46 @@ export default function PayrollPreview() {
     }
   };
 
-  if (loading) {
-    return (
-      <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--fp-text-muted)' }}>
-        <ArrowsClockwise size={32} className="spin" style={{ marginBottom: '8px' }} />
-        <p>Calculating real-time double-entry payroll balances...</p>
+function PayrollPreviewSkeleton() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+      {/* Overview Cards Skeleton */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '16px' }}>
+        <div style={{ background: 'var(--fp-surface-1)', border: '1px solid var(--fp-border)', borderRadius: '16px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div className="fp-skeleton" style={{ width: '140px', height: '16px' }} />
+          <div className="fp-skeleton" style={{ width: '180px', height: '36px', borderRadius: '8px' }} />
+          <div className="fp-skeleton" style={{ width: '160px', height: '12px' }} />
+        </div>
+        <div style={{ background: 'var(--fp-surface-1)', border: '1px solid var(--fp-border)', borderRadius: '16px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div className="fp-skeleton" style={{ width: '140px', height: '16px' }} />
+          <div className="fp-skeleton" style={{ width: '180px', height: '36px', borderRadius: '8px' }} />
+          <div className="fp-skeleton" style={{ width: '160px', height: '12px' }} />
+        </div>
+        <div style={{ background: 'var(--fp-surface-2)', border: '1px solid var(--fp-border-strong)', borderRadius: '16px', padding: '24px', display: 'flex', alignItems: 'center' }}>
+          <div className="fp-skeleton" style={{ width: '100%', height: '48px', borderRadius: '10px' }} />
+        </div>
       </div>
-    );
+
+      {/* Merchant Disbursements Skeleton */}
+      <div style={{ background: 'var(--fp-surface-1)', border: '1px solid var(--fp-border)', borderRadius: '16px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div className="fp-skeleton" style={{ width: '240px', height: '20px' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {[1, 2, 3].map((i) => (
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 100px', gap: '16px', padding: '12px', borderBottom: '1px solid var(--fp-border-subtle)' }}>
+              <div className="fp-skeleton" style={{ width: '140px', height: '16px' }} />
+              <div className="fp-skeleton" style={{ width: '80px', height: '16px' }} />
+              <div className="fp-skeleton" style={{ width: '100px', height: '16px' }} />
+              <div className="fp-skeleton" style={{ width: '70px', height: '28px', borderRadius: '6px' }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+  if (loading) {
+    return <PayrollPreviewSkeleton />;
   }
 
   const runningSettlements = history.filter((s) => s.status === 'RUNNING');

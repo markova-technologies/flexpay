@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore, getPortalForPath } from '../stores/authStore';
 
 function resolveBaseURL() {
   const envUrl = import.meta.env.VITE_API_URL;
@@ -21,9 +21,26 @@ const api = axios.create({
   timeout: 30000, // 30 second timeout for cold starts
 });
 
-// Request interceptor: attach current Bearer token
+/**
+ * Resolves the relevant portal for an outgoing request based on endpoint URI or active tab location.
+ */
+function resolvePortalForRequest(config) {
+  const url = config?.url || '';
+  if (url.includes('/org/')) return 'ORG';
+  if (url.includes('/merchants/') || url.includes('/merchant/')) return 'MERCHANT';
+  if (url.includes('/employees/') || url.includes('/employee/')) return 'EMPLOYEE';
+  if (typeof window !== 'undefined') {
+    return getPortalForPath(window.location.pathname);
+  }
+  return null;
+}
+
+// Request interceptor: attach portal-isolated Bearer token
 api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().accessToken;
+  const portal = resolvePortalForRequest(config);
+  const state = useAuthStore.getState();
+  const token = state.getTokenForPortal ? state.getTokenForPortal(portal) : state.accessToken;
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -65,6 +82,7 @@ api.interceptors.response.use(
 
     isRefreshing = true;
     originalRequest._retry = true;
+    const portal = resolvePortalForRequest(originalRequest);
 
     try {
       const { data } = await axios.post(
@@ -74,7 +92,7 @@ api.interceptors.response.use(
       );
 
       const newAccessToken = data.accessToken;
-      useAuthStore.getState().setAccessToken(newAccessToken);
+      useAuthStore.getState().setAccessToken(newAccessToken, portal);
 
       // Drain queue
       refreshQueue.forEach(({ resolve, config }) => {
@@ -86,11 +104,17 @@ api.interceptors.response.use(
       originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
       return api(originalRequest);
     } catch (refreshError) {
-      useAuthStore.getState().clearAuth();
+      useAuthStore.getState().clearAuth(portal);
       refreshQueue.forEach(({ reject }) => reject(refreshError));
       refreshQueue = [];
-      if (!window.location.pathname.startsWith('/auth') && window.location.pathname !== '/') {
-        window.location.href = '/auth';
+
+      if (typeof window !== 'undefined') {
+        if (portal === 'ORG') window.location.href = '/auth/organization';
+        else if (portal === 'MERCHANT') window.location.href = '/auth/merchant';
+        else if (portal === 'EMPLOYEE') window.location.href = '/auth/employee';
+        else if (!window.location.pathname.startsWith('/auth') && window.location.pathname !== '/') {
+          window.location.href = '/auth';
+        }
       }
       return Promise.reject(refreshError);
     } finally {

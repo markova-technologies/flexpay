@@ -3,6 +3,40 @@ import { Warning, CheckCircle, XCircle, ArrowsClockwise, ShieldCheck } from '@ph
 import api from '../../services/api';
 import { useToast } from '../../contexts/ToastContext';
 
+function PasswordResetSkeleton() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      {[1, 2, 3].map((i) => (
+        <div
+          key={i}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '2fr 1.5fr 1fr 120px',
+            gap: '16px',
+            alignItems: 'center',
+            padding: '16px 14px',
+            borderBottom: '1px solid var(--fp-border-subtle)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="fp-skeleton" style={{ width: '34px', height: '34px', borderRadius: '50%', flexShrink: 0 }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <div className="fp-skeleton" style={{ width: '130px', height: '16px' }} />
+              <div className="fp-skeleton" style={{ width: '80px', height: '12px' }} />
+            </div>
+          </div>
+          <div className="fp-skeleton" style={{ width: '120px', height: '16px' }} />
+          <div className="fp-skeleton" style={{ width: '90px', height: '16px' }} />
+          <div style={{ display: 'flex', gap: '8px', justifySelf: 'end' }}>
+            <div className="fp-skeleton" style={{ width: '48px', height: '32px', borderRadius: '6px' }} />
+            <div className="fp-skeleton" style={{ width: '48px', height: '32px', borderRadius: '6px' }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function PasswordResetRequests({ onPasswordGenerated }) {
   const toast = useToast();
   const [requests, setRequests] = useState([]);
@@ -121,10 +155,7 @@ export default function PasswordResetRequests({ onPasswordGenerated }) {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--fp-text-muted)' }}>
-          <ArrowsClockwise size={28} className="spin" style={{ marginBottom: '8px' }} />
-          <p>Loading pending requests...</p>
-        </div>
+        <PasswordResetSkeleton />
       ) : requests.length === 0 ? (
         <div
           style={{

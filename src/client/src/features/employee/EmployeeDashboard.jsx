@@ -26,9 +26,193 @@ import QRCodeCard from './QRCodeCard';
 import TransactionReceiptModal from './TransactionReceiptModal';
 import '../../pages/employee/EmployeeDashboard.css';
 
+function EmployeeDashboardSkeleton() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(20px, 4vw, 32px)' }}>
+      {/* Top Row: Gauge & Balance cards */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+          gap: 'clamp(16px, 3vw, 24px)',
+          alignItems: 'stretch',
+        }}
+      >
+        {/* Credit Ring Skeleton Card */}
+        <div
+          style={{
+            background: 'var(--fp-surface-1)',
+            border: '1px solid var(--fp-border)',
+            borderRadius: '24px',
+            padding: '28px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '260px',
+            gap: '16px',
+            boxShadow: 'var(--fp-shadow-sm)',
+          }}
+        >
+          <div
+            className="fp-skeleton"
+            style={{
+              width: '140px',
+              height: '140px',
+              borderRadius: '50%',
+            }}
+          />
+          <div className="fp-skeleton" style={{ width: '110px', height: '14px', borderRadius: '6px' }} />
+        </div>
+
+        {/* Available Credit Skeleton Card */}
+        <div
+          style={{
+            background: 'var(--fp-surface-1)',
+            border: '1px solid var(--fp-border)',
+            borderRadius: '24px',
+            padding: '28px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            minHeight: '260px',
+            boxShadow: 'var(--fp-shadow-sm)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="fp-skeleton" style={{ width: '120px', height: '16px', borderRadius: '6px' }} />
+            <div className="fp-skeleton" style={{ width: '64px', height: '22px', borderRadius: '12px' }} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: '20px 0' }}>
+            <div className="fp-skeleton" style={{ width: '80%', height: '42px', borderRadius: '8px' }} />
+            <div className="fp-skeleton" style={{ width: '50%', height: '14px', borderRadius: '6px' }} />
+          </div>
+          <div className="fp-skeleton" style={{ width: '100%', height: '8px', borderRadius: '4px' }} />
+        </div>
+
+        {/* Monthly Allowance & Spent Skeleton Card */}
+        <div
+          style={{
+            background: 'var(--fp-surface-1)',
+            border: '1px solid var(--fp-border)',
+            borderRadius: '24px',
+            padding: '28px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            minHeight: '260px',
+            boxShadow: 'var(--fp-shadow-sm)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="fp-skeleton" style={{ width: '130px', height: '16px', borderRadius: '6px' }} />
+            <div className="fp-skeleton" style={{ width: '50px', height: '22px', borderRadius: '12px' }} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: '20px 0' }}>
+            <div className="fp-skeleton" style={{ width: '70%', height: '36px', borderRadius: '8px' }} />
+            <div className="fp-skeleton" style={{ width: '55%', height: '14px', borderRadius: '6px' }} />
+          </div>
+          <div className="fp-skeleton" style={{ width: '100%', height: '44px', borderRadius: '12px' }} />
+        </div>
+      </div>
+
+      {/* Quick Action Banner Skeleton */}
+      <div
+        style={{
+          background: 'var(--fp-surface-1)',
+          border: '1px solid var(--fp-border)',
+          borderRadius: '20px',
+          padding: '24px 28px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '16px',
+          flexWrap: 'wrap',
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: '1', minWidth: '240px' }}>
+          <div className="fp-skeleton" style={{ width: '180px', height: '20px', borderRadius: '6px' }} />
+          <div className="fp-skeleton" style={{ width: '320px', height: '14px', borderRadius: '6px' }} />
+        </div>
+        <div className="fp-skeleton" style={{ width: '160px', height: '46px', borderRadius: '12px' }} />
+      </div>
+
+      {/* Spending Breakdown Skeleton */}
+      <div
+        style={{
+          background: 'var(--fp-surface-1)',
+          border: '1px solid var(--fp-border)',
+          borderRadius: '20px',
+          padding: '28px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '18px',
+        }}
+      >
+        <div className="fp-skeleton" style={{ width: '160px', height: '20px', borderRadius: '6px' }} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', background: 'var(--fp-surface-2)', borderRadius: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="fp-skeleton" style={{ width: '80px', height: '14px', borderRadius: '4px' }} />
+                <div className="fp-skeleton" style={{ width: '60px', height: '14px', borderRadius: '4px' }} />
+              </div>
+              <div className="fp-skeleton" style={{ width: '100%', height: '8px', borderRadius: '4px' }} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Recent Checkouts Table Skeleton */}
+      <div
+        style={{
+          background: 'var(--fp-surface-1)',
+          border: '1px solid var(--fp-border)',
+          borderRadius: '20px',
+          padding: '28px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px',
+        }}
+      >
+        <div className="fp-skeleton" style={{ width: '220px', height: '20px', borderRadius: '6px' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '14px 12px',
+                borderBottom: '1px solid var(--fp-border-subtle)',
+                gap: '12px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div className="fp-skeleton" style={{ width: '38px', height: '38px', borderRadius: '10px', flexShrink: 0 }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div className="fp-skeleton" style={{ width: '140px', height: '16px', borderRadius: '4px' }} />
+                  <div className="fp-skeleton" style={{ width: '90px', height: '12px', borderRadius: '4px' }} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                <div className="fp-skeleton" style={{ width: '85px', height: '18px', borderRadius: '4px' }} />
+                <div className="fp-skeleton" style={{ width: '60px', height: '12px', borderRadius: '4px' }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function EmployeeDashboard() {
   const navigate = useNavigate();
-  const { user, clearAuth } = useAuthStore();
+  const session = useAuthStore((s) => s.getSessionForPortal ? s.getSessionForPortal('EMPLOYEE') : s);
+  const user = session?.user || useAuthStore((s) => s.user);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
   const toast = useToast();
 
   const [data, setData] = useState(null);
@@ -62,7 +246,7 @@ export default function EmployeeDashboard() {
     try {
       await api.post('/auth/logout');
     } catch {}
-    clearAuth();
+    clearAuth('EMPLOYEE');
     navigate('/auth');
   };
 
@@ -160,10 +344,7 @@ export default function EmployeeDashboard() {
       {/* Main Content */}
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: 'clamp(20px, 4vw, 36px) clamp(14px, 4vw, 24px)', boxSizing: 'border-box' }}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--fp-text-muted)' }}>
-            <ArrowsClockwise size={36} className="spin" style={{ marginBottom: '12px' }} />
-            <p>Loading your live financial allowances...</p>
-          </div>
+          <EmployeeDashboardSkeleton />
         ) : error ? (
           <div
             style={{

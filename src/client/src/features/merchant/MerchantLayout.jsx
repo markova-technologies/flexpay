@@ -1,6 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { List, CaretDown, CreditCard, SignOut } from '@phosphor-icons/react';
+import {
+  List,
+  CaretDown,
+  CreditCard,
+  SignOut,
+  ChartBar,
+  Coins,
+  Buildings,
+  Users,
+  Receipt,
+  QrCode,
+  TrendUp,
+} from '@phosphor-icons/react';
 import { useAuthStore } from '../../stores/authStore';
 import api from '../../services/api';
 import { Drawer } from '../../components/ui/Drawer';
@@ -15,13 +27,13 @@ import MerchantAnalytics from './MerchantAnalytics';
 import './MerchantLayout.css';
 
 const NAV_ITEMS = [
-  { key: 'overview',       label: 'Overview',       icon: '📊', desc: 'Receivables, settlements & metrics' },
-  { key: 'settlements',    label: 'Settlements',    icon: '💰', desc: 'Employer wires & M-PESA receipts' },
-  { key: 'organizations',  label: 'Organizations',  icon: '🏢', desc: 'Corporate employer partners' },
-  { key: 'employees',      label: 'Employees',      icon: '👥', desc: 'Enrolled employee credit accounts' },
-  { key: 'transactions',   label: 'Transactions',   icon: '📋', desc: 'Audit log of in-store checkouts' },
-  { key: 'pos',            label: 'POS Scanner',    icon: '💳', desc: 'Camera QR scanner & manual FP-ID' },
-  { key: 'analytics',      label: 'Analytics',      icon: '📈', desc: 'Sales breakdown & top categories' },
+  { key: 'overview',       label: 'Overview',       Icon: ChartBar,   desc: 'Receivables, settlements & metrics' },
+  { key: 'settlements',    label: 'Settlements',    Icon: Coins,      desc: 'Employer wires & M-PESA receipts' },
+  { key: 'organizations',  label: 'Organizations',  Icon: Buildings,  desc: 'Corporate employer partners' },
+  { key: 'employees',      label: 'Employees',      Icon: Users,      desc: 'Enrolled employee credit accounts' },
+  { key: 'transactions',   label: 'Transactions',   Icon: Receipt,    desc: 'Audit log of in-store checkouts' },
+  { key: 'pos',            label: 'POS Scanner',    Icon: QrCode,     desc: 'Camera QR scanner & manual FP-ID' },
+  { key: 'analytics',      label: 'Analytics',      Icon: TrendUp,    desc: 'Sales breakdown & top categories' },
 ];
 
 export function MerchantLayout() {
@@ -34,7 +46,7 @@ export function MerchantLayout() {
     try {
       await api.post('/auth/logout');
     } catch {}
-    clearAuth();
+    clearAuth('MERCHANT');
     navigate('/auth');
   };
 
@@ -71,7 +83,9 @@ export function MerchantLayout() {
       {/* Mobile Active Section Sub-Bar */}
       <div className="merchant-mobile-subbar">
         <div className="merchant-mobile-subbar__current">
-          <span>{currentItem.icon}</span>
+          <span className="nav-icon-badge">
+            <currentItem.Icon size={16} weight="bold" />
+          </span>
           <span>{currentItem.label}</span>
         </div>
         <button
@@ -151,7 +165,7 @@ export function MerchantLayout() {
                     }}
                   >
                     <div className="merchant-drawer-nav-item__icon">
-                      {item.icon}
+                      <item.Icon size={20} weight={isActive ? 'fill' : 'bold'} />
                     </div>
                     <div className="merchant-drawer-nav-item__text">
                       <div className="merchant-drawer-nav-item__title">{item.label}</div>
@@ -188,7 +202,7 @@ export function MerchantLayout() {
                 minHeight: '44px',
               }}
             >
-              <SignOut size={18} />
+              <SignOut size={18} weight="bold" />
               <span>Sign Out of POS</span>
             </button>
           </div>
@@ -201,17 +215,22 @@ export function MerchantLayout() {
           <FlexPayLogo variant="compact" size={28} onClick={() => navigate('/')} style={{ cursor: 'pointer' }} />
         </div>
         <div className="merchant-nav__list">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              className={`sidebar__item fp-touch-target ${active === item.key ? 'active' : ''}`}
-              onClick={() => setActive(item.key)}
-            >
-              <span className="nav-icon">{item.icon}</span>
-              <span className="nav-label">{item.label}</span>
-            </button>
-          ))}
+          {NAV_ITEMS.map((item) => {
+            const isActive = active === item.key;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                className={`sidebar__item fp-touch-target ${isActive ? 'active' : ''}`}
+                onClick={() => setActive(item.key)}
+              >
+                <span className="nav-icon-badge">
+                  <item.Icon size={18} weight={isActive ? 'fill' : 'bold'} />
+                </span>
+                <span className="nav-label">{item.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         <div className="sidebar__footer desktop-only">
@@ -221,7 +240,9 @@ export function MerchantLayout() {
             style={{ color: 'var(--text-muted, #64748B)' }}
             onClick={handleLogout}
           >
-            <span>🚪</span>
+            <span className="nav-icon-badge">
+              <SignOut size={18} weight="bold" />
+            </span>
             <span>Sign Out</span>
           </button>
         </div>

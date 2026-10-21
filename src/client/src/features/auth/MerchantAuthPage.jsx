@@ -33,7 +33,7 @@ export default function MerchantAuthPage() {
         mpesaNumber: loginMpesaNumber.trim(),
         password: loginPassword,
       });
-      setAuth(res.data.user, res.data.accessToken);
+      setAuth(res.data.user, res.data.accessToken, 'MERCHANT');
       navigate('/merchant', { replace: true });
     } catch (err) {
       const msg =
@@ -65,7 +65,7 @@ export default function MerchantAuthPage() {
         password: regPassword,
       });
       if (res.data.user && res.data.accessToken) {
-        setAuth(res.data.user, res.data.accessToken);
+        setAuth(res.data.user, res.data.accessToken, 'MERCHANT');
         navigate('/merchant', { replace: true });
       } else {
         setMode('login');
