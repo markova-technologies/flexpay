@@ -107,14 +107,43 @@ class MerchantRepository {
 
   async getKPIs(merchantId, period = 'month') {
     const summary = await this.getReceivablesSummary(merchantId);
+
+    // Fetch all completed transactions for this merchant to compute accurate analytics
+    const txns = await this.db
+      .selectFrom('transactions')
+      .selectAll()
+      .where('merchant_id', '=', merchantId)
+      .where('status', '=', 'COMPLETED')
+      .execute();
+
+    const totalVolume = Number(txns.reduce((acc, t) => acc + Number(t.total_amount || 0), 0).toFixed(2));
+    const totalCredit = Number(txns.reduce((acc, t) => acc + Number(t.credit_portion || 0), 0).toFixed(2));
+    const totalCopay = Number(txns.reduce((acc, t) => acc + Number(t.copay_portion || 0), 0).toFixed(2));
+    const count = txns.length;
+    const avgTicket = count > 0 ? Number((totalVolume / count).toFixed(2)) : 0;
+    const splitRatioPercent = totalVolume > 0 ? Math.round((totalCredit / totalVolume) * 100) : 100;
+
     return {
+      // Primary Volume & Ticket Metrics
+      totalVolume: totalVolume > 0 ? totalVolume : Number(summary.totalOutstandingReceivables || 0),
+      totalCredit,
+      totalCopay,
+      avgTicket,
+      avgTicketSize: avgTicket,
+      splitRatio: `${splitRatioPercent}%`,
+      splitPercent: splitRatioPercent,
+
+      // Receivables & Settled Balances
       totalReceivable: summary.totalOutstandingReceivables,
-      totalTransactions: summary.totalTransactions,
+      totalReceivables: summary.totalOutstandingReceivables,
+      totalSettled: summary.totalSettledAmount,
+      totalSettledAmount: summary.totalSettledAmount,
+
+      // Activity & Entity Metrics
+      totalTransactions: count,
+      transactionCount: count,
       uniqueEmployees: summary.uniqueEmployees,
       uniqueOrganizations: summary.uniqueOrganizations,
-      avgTicketSize: summary.totalTransactions > 0
-        ? Number((summary.totalOutstandingReceivables / summary.totalTransactions).toFixed(2))
-        : 0,
     };
   }
 
@@ -138,8 +167,61 @@ class MerchantRepository {
   }
 
   async getCreditByOrg(merchantId, period = 'month') {
+    const txns = await this.db
+      .selectFrom('transactions')
+      .select([
+        'organization_id',
+        'org_name_snapshot',
+        'credit_portion',
+        'total_amount',
+        'employee_id',
+      ])
+      .where('merchant_id', '=', merchantId)
+      .where('status', '=', 'COMPLETED')
+      .execute();
+
+    const orgMap = new Map();
+    for (const t of txns) {
+      const orgId = t.organization_id || 'UNKNOWN';
+      const prev = orgMap.get(orgId) || {
+        orgId,
+        orgName: t.org_name_snapshot || 'Employer Organization',
+        org_name: t.org_name_snapshot || 'Employer Organization',
+        totalCredit: 0,
+        total_credit: 0,
+        totalVolume: 0,
+        amount: 0,
+        totalOwed: 0,
+        employees: new Set(),
+      };
+      const credit = Number(t.credit_portion || 0);
+      const total = Number(t.total_amount || credit);
+      prev.totalCredit = Number((prev.totalCredit + credit).toFixed(2));
+      prev.total_credit = prev.totalCredit;
+      prev.totalVolume = Number((prev.totalVolume + total).toFixed(2));
+      prev.amount = prev.totalCredit;
+      prev.totalOwed = prev.totalCredit;
+      if (t.employee_id) prev.employees.add(t.employee_id);
+      orgMap.set(orgId, prev);
+    }
+
+    if (orgMap.size > 0) {
+      return Array.from(orgMap.values())
+        .map((o) => ({
+          ...o,
+          employeeCount: o.employees.size,
+        }))
+        .sort((a, b) => b.totalCredit - a.totalCredit);
+    }
+
     const summary = await this.getReceivablesSummary(merchantId);
-    return summary.receivablesByOrg;
+    return (summary.receivablesByOrg || []).map((o) => ({
+      ...o,
+      org_name: o.orgName,
+      total_credit: o.totalOwed,
+      amount: o.totalOwed,
+      totalCredit: o.totalOwed,
+    }));
   }
 
   async getDailyVolume(merchantId, days = 30) {
@@ -171,6 +253,7 @@ class MerchantRepository {
         'employee_name_snapshot',
         'org_name_snapshot',
         'credit_portion',
+        'total_amount',
         'created_at',
       ])
       .where('merchant_id', '=', merchantId)
@@ -183,13 +266,21 @@ class MerchantRepository {
       const prev = empMap.get(key) || {
         employeeId: key,
         fpEmployeeId: t.employee_fp_id_snapshot,
-        name: t.employee_name_snapshot,
+        fp_employee_id: t.employee_fp_id_snapshot,
+        fpId: t.employee_fp_id_snapshot,
+        name: t.employee_name_snapshot || 'Customer',
+        employee_name: t.employee_name_snapshot || 'Customer',
         orgName: t.org_name_snapshot,
         totalSpent: 0,
+        total_amount: 0,
+        spent: 0,
         visitCount: 0,
         lastVisit: t.created_at,
       };
-      prev.totalSpent = Number((prev.totalSpent + Number(t.credit_portion || 0)).toFixed(2));
+      const credit = Number(t.credit_portion || t.total_amount || 0);
+      prev.totalSpent = Number((prev.totalSpent + credit).toFixed(2));
+      prev.total_amount = prev.totalSpent;
+      prev.spent = prev.totalSpent;
       prev.visitCount++;
       if (new Date(t.created_at) > new Date(prev.lastVisit)) {
         prev.lastVisit = t.created_at;
