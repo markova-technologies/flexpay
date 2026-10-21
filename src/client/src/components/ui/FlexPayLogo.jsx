@@ -23,8 +23,9 @@ export function FlexPayLogo({
   style = {},
   onClick,
 }) {
-  // 1. Direct Image Variant (Uses exact raster asset for hero, cream cards or print)
+  // 1. Direct Image Variant (Uses exact official mark icon)
   if (variant === 'image') {
+    const markSrc = isDark ? '/flexpay-mark-light.png' : '/flexpay-mark.png';
     return (
       <div
         className={`flexpay-logo-image-wrap ${className}`}
@@ -32,68 +33,56 @@ export function FlexPayLogo({
         style={{
           display: 'inline-flex',
           alignItems: 'center',
+          justifyContent: 'center',
           cursor: onClick ? 'pointer' : 'default',
+          flexShrink: 0,
           ...style,
         }}
       >
         <img
-          src="/flexpay-logo.png"
-          alt="FlexPay — Your Salary. More Possibilities."
+          src={markSrc}
+          alt="FlexPay Mark"
+          width={size}
+          height={Math.round((size * 196) / 190)}
           style={{
             height: `${size}px`,
             width: 'auto',
+            maxHeight: `${size}px`,
             objectFit: 'contain',
-            borderRadius: '6px',
             display: 'block',
+            userSelect: 'none',
           }}
+          draggable={false}
         />
       </div>
     );
   }
 
-  // 2. Vector SVG Ribbon Geometry
-  // Top ribbon: Vibrant Terracotta / Electric Orange (#FF4D26)
-  // Bottom ribbon: Deep Obsidian Ink (#141413) on warm cream, Warm Cream (#FAF7F2) on dark
+  // 2. Official Brand Mark Asset (interlocking ribbon mark)
   const isDark = theme === 'dark';
   const bottomRibbonColor = isDark ? '#FAF7F2' : '#141413';
   const wordmarkColor = isDark ? '#FAF7F2' : '#141413';
   const taglineColor = isDark ? '#8C857B' : '#59544E';
+  const markSrc = isDark ? '/flexpay-mark-light.png' : '/flexpay-mark.png';
 
-  const markSvg = (
-    <svg
+  const markElement = (
+    <img
+      src={markSrc}
+      alt="FlexPay Official Mark"
       width={size}
-      height={Math.round((size * 44) / 48)}
-      viewBox="0 0 52 46"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      style={{ flexShrink: 0, display: 'block' }}
-      aria-label="FlexPay Mark"
-      role="img"
-    >
-      <defs>
-        <linearGradient id="fp-mark-orange-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FF5733" />
-          <stop offset="100%" stopColor="#FF3815" />
-        </linearGradient>
-        <filter id="fp-mark-glow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#FF4D26" floodOpacity="0.25" />
-        </filter>
-      </defs>
-
-      {/* Top Folded Ribbon: Dynamic Electric Orange */}
-      <path
-        d="M3.2 27.8 C1.8 26.2 2.2 23.6 4.1 21.7 L16.8 9.0 C19.9 5.9 24.1 4.2 28.5 4.2 H40.5 C45.2 4.2 49.0 8.0 49.0 12.7 C49.0 17.4 45.2 21.2 40.5 21.2 H20.5 C17.8 21.2 15.4 22.8 14.2 25.2 L3.2 27.8 Z"
-        fill="url(#fp-mark-orange-grad)"
-        filter="url(#fp-mark-glow)"
-      />
-
-      {/* Bottom Counter-Loop Ribbon: Interlocking Warm Cream or Obsidian */}
-      <path
-        d="M8.0 41.5 L17.5 31.0 C20.6 27.6 25.1 25.8 29.8 25.8 H39.5 C44.2 25.8 48.0 29.6 48.0 34.3 C48.0 39.0 44.2 42.8 39.5 42.8 H23.5 C20.2 42.8 17.5 44.6 16.0 47.2 L8.0 41.5 Z"
-        fill={bottomRibbonColor}
-        opacity={isDark ? 0.95 : 1}
-      />
-    </svg>
+      height={Math.round((size * 196) / 190)}
+      style={{
+        width: `${size}px`,
+        height: 'auto',
+        maxHeight: `${Math.round((size * 196) / 190)}px`,
+        objectFit: 'contain',
+        display: 'block',
+        flexShrink: 0,
+        userSelect: 'none',
+        pointerEvents: 'none',
+      }}
+      draggable={false}
+    />
   );
 
   // If mark-only requested
@@ -105,11 +94,13 @@ export function FlexPayLogo({
         style={{
           display: 'inline-flex',
           alignItems: 'center',
+          justifyContent: 'center',
           cursor: onClick ? 'pointer' : 'default',
+          flexShrink: 0,
           ...style,
         }}
       >
-        {markSvg}
+        {markElement}
       </div>
     );
   }
@@ -131,7 +122,7 @@ export function FlexPayLogo({
         ...style,
       }}
     >
-      {markSvg}
+      {markElement}
       <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.05 }}>
         <div
           style={{
