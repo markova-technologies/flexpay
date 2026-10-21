@@ -48,68 +48,6 @@
   border-radius: 6px;
 }
 
-/* Sidebar Merchant Profile Card */
-.sidebar__merchant-profile {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  background: var(--fp-surface-2, #F5EFE6);
-  border: 1px solid var(--border, var(--fp-border, rgba(32, 28, 24, 0.08)));
-  border-radius: 12px;
-  margin-bottom: 12px;
-}
-
-.sidebar__merchant-avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
-  background: var(--fp-orange-dim, rgba(255, 77, 38, 0.12));
-  color: var(--fp-orange, #FF4D26);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.sidebar__merchant-info {
-  min-width: 0;
-  flex: 1;
-}
-
-.sidebar__merchant-name {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--text-primary, var(--fp-text-primary, #141413));
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.2;
-}
-
-.sidebar__merchant-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-  margin-top: 3px;
-}
-
-.sidebar__merchant-till {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--fp-orange, #FF4D26);
-}
-
-.sidebar__merchant-status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #10B981;
-  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
-  flex-shrink: 0;
-}
-
 .sidebar__item {
   width: 100%;
   display: flex;
@@ -173,12 +111,6 @@
   color: var(--fp-orange, #FF4D26);
   box-shadow: 0 0 12px rgba(255, 77, 38, 0.22);
   transform: scale(1.04);
-}
-
-.sidebar__footer {
-  margin-top: auto;
-  padding-top: 16px;
-  border-top: 1px solid var(--border, var(--fp-border, rgba(255, 255, 255, 0.08)));
 }
 
 /* Content Area & Desktop Header */

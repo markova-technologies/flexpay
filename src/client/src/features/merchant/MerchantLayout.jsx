@@ -284,22 +284,6 @@ export function MerchantLayout() {
           <FlexPayLogo variant="compact" size={28} onClick={() => navigate('/')} style={{ cursor: 'pointer' }} />
         </div>
 
-        {/* Dedicated Sidebar Merchant Profile Card */}
-        <div className="sidebar__merchant-profile desktop-only">
-          <div className="sidebar__merchant-avatar">
-            <Storefront size={20} weight="fill" />
-          </div>
-          <div className="sidebar__merchant-info">
-            <div className="sidebar__merchant-name" title={businessName}>
-              {businessName}
-            </div>
-            <div className="sidebar__merchant-meta">
-              <span className="sidebar__merchant-till">Till: {mpesaNumber}</span>
-              <span className="sidebar__merchant-status-dot" title="Active & Online" />
-            </div>
-          </div>
-        </div>
-
         <div className="merchant-nav__list">
           {NAV_ITEMS.map((item) => {
             const isActive = active === item.key;
@@ -317,20 +301,6 @@ export function MerchantLayout() {
               </button>
             );
           })}
-        </div>
-
-        <div className="sidebar__footer desktop-only">
-          <button
-            type="button"
-            className="sidebar__item"
-            style={{ color: 'var(--text-muted, #64748B)' }}
-            onClick={handleLogout}
-          >
-            <span className="nav-icon-badge">
-              <SignOut size={18} weight="bold" />
-            </span>
-            <span>Sign Out</span>
-          </button>
         </div>
       </nav>
 
